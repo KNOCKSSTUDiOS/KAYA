@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Download, Repeat, Repeat1, Loader2, Activity, ChevronUp, ChevronDown } from 'lucide-react';
+import { Play, Download, Repeat, Repeat1, Loader2, Activity, ChevronUp, ChevronDown, Scissors } from 'lucide-react';
 import { PlateBezel, HardwareButton, LedStatusIndicator } from './HardwarePrimitives.js';
 import type { LogEntry } from './VideoOutput.js';
 
@@ -19,6 +19,9 @@ interface MasterControlDeckProps {
   hasReadyVideo: boolean;
   downloading: boolean;
   logs: LogEntry[];
+  activeStyleLabel?: string;
+  activeFps?: number;
+  onOpenFullTimeline?: () => void;
 }
 
 function formatTime(sec: number): string {
@@ -44,33 +47,93 @@ export function MasterControlDeck({
   hasReadyVideo,
   downloading,
   logs,
+  activeStyleLabel = 'Pro & Candy HDR',
+  activeFps = 60,
+  onOpenFullTimeline,
 }: MasterControlDeckProps) {
   const [monitorOpen, setMonitorOpen] = useState(false);
 
   const isGenerating = appState === 'GENERATING_VIDEO';
   const targetSeconds = parseInt(targetDuration, 10) || 10;
   const effectiveDuration = hasReadyVideo && videoDuration > 0 ? videoDuration : targetSeconds;
+  const playheadPct =
+    effectiveDuration > 0 ? Math.min(100, Math.max(0, (currentTime / effectiveDuration) * 100)) : 0;
   const latestLog = logs[logs.length - 1];
 
   const statusTone = isGenerating ? 'red' : hasReadyVideo ? 'cyan' : 'emerald';
   const statusLabel = isGenerating ? 'Rendering' : hasReadyVideo ? 'Output Ready' : 'Standby';
 
   return (
+    <div id="studio-timeline" className="scroll-mt-20">
     <PlateBezel accent={isGenerating ? 'red' : 'neutral'} className="p-5 sm:p-6 space-y-4">
       {/* Header Label Row */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-        <span
-          className="text-xs font-bold uppercase tracking-[0.2em] text-[#E6ECF5]/75"
-          style={{ fontFamily: 'var(--font-display)' }}
-        >
-          Master Control
-        </span>
+        <div className="flex items-center gap-2.5">
+          <Scissors className="w-4 h-4 text-[#FF2E63]" />
+          <span
+            className="text-xs font-bold uppercase tracking-[0.2em] text-[#E6ECF5]"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
+            Timeline &amp; Master Control
+          </span>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
+          {onOpenFullTimeline && (
+            <HardwareButton size="sm" tone="magenta" active={false} onClick={onOpenFullTimeline}>
+              <Scissors className="w-3.5 h-3.5 text-[#FF5C8A]" />
+              <span>Full NLE Timeline</span>
+            </HardwareButton>
+          )}
           <LedStatusIndicator label={statusLabel} tone={statusTone} pulse={isGenerating} />
           <LedStatusIndicator
             label={isLooping ? 'Loop On' : 'Single'}
             tone={isLooping ? 'magenta' : 'neutral'}
           />
+        </div>
+      </div>
+
+      {/* Multi-Track Visual Timeline Ruler (Click to scrub playhead) */}
+      <div className="cnc-recess rounded-[8px] p-3 space-y-2">
+        <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-[#E6ECF5]/60">
+          <span>Multi-Track Timeline ({effectiveDuration.toFixed(1)}s · {activeFps}fps)</span>
+          <span className="text-[#F1F5F9] tabular-nums">
+            {hasReadyVideo ? `${formatTime(currentTime)} / ${formatTime(effectiveDuration)}` : `Duration ${targetSeconds}s`}
+          </span>
+        </div>
+        <div
+          onClick={(e) => {
+            if (!hasReadyVideo) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+            onSeek(ratio * effectiveDuration);
+          }}
+          className={`relative rounded-[6px] bg-[#040507] border border-white/10 p-2 space-y-1.5 overflow-hidden select-none ${
+            hasReadyVideo ? 'cursor-pointer' : 'cursor-default'
+          }`}
+        >
+          {/* Ruler Ticks */}
+          <div className="flex justify-between font-mono text-[9px] text-[#E6ECF5]/40 pb-0.5 border-b border-white/10 tabular-nums">
+            <span>00:00</span>
+            <span>{formatTime(effectiveDuration * 0.25)}</span>
+            <span>{formatTime(effectiveDuration * 0.5)}</span>
+            <span>{formatTime(effectiveDuration * 0.75)}</span>
+            <span>{formatTime(effectiveDuration)}</span>
+          </div>
+          {/* Live Red Playhead Line */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-0 bottom-0 w-0.5 bg-[#FF0A3C] z-20 shadow-[0_0_8px_#FF0A3C]"
+            style={{ left: `${playheadPct}%` }}
+          />
+          <div className="h-5 rounded bg-[#14171F] border border-[#F1F5F9]/25 flex items-center px-2 font-mono text-[10px] text-[#F1F5F9]">
+            V1 VIDEO · {hasReadyVideo ? 'Rendered Master Track' : `Armed (${targetSeconds}s @ ${activeFps}fps)`}
+          </div>
+          <div className="h-4 rounded bg-[#180A12] border border-[#FF2E63]/35 flex items-center px-2 font-mono text-[10px] text-[#FF5C8A]">
+            FX GRADE · {activeStyleLabel}
+          </div>
+          <div className="h-4 rounded bg-[#101218] border border-white/15 flex items-center px-2 font-mono text-[10px] text-[#E6ECF5]/70">
+            A1 AUDIO · 44.1 kHz Stereo Sync Bed
+          </div>
         </div>
       </div>
 
@@ -91,7 +154,7 @@ export function MasterControlDeck({
                     : entry.type === 'warn'
                     ? 'text-amber-300'
                     : entry.type === 'success'
-                    ? 'text-[#00E5FF]'
+                    ? 'text-[#F1F5F9]'
                     : 'text-[#E6ECF5]/75'
                 }
               >
@@ -134,7 +197,7 @@ export function MasterControlDeck({
               className="hw-capsule-slider flex-1 min-w-0"
             />
           )}
-          <span className="font-mono text-xs font-semibold text-[#00E5FF] tabular-nums whitespace-nowrap shrink-0">
+          <span className="font-mono text-xs font-semibold text-[#F1F5F9] tabular-nums whitespace-nowrap shrink-0">
             {hasReadyVideo
               ? `${formatTime(currentTime)} / ${formatTime(effectiveDuration)}`
               : `${String(targetSeconds).padStart(2, '0')}s`}
@@ -148,7 +211,7 @@ export function MasterControlDeck({
           </span>
           <div className="flex-1 h-2.5 rounded-full bg-[#050609] border border-white/10 overflow-hidden shadow-inner">
             <div
-              className="h-full bg-gradient-to-r from-[#FF1E42] via-[#E6399B] to-[#00E5FF] transition-all duration-200"
+              className="h-full bg-gradient-to-r from-[#FF1E42] via-[#FF2E63] to-[#F1F5F9] transition-all duration-200"
               style={{
                 width: `${isGenerating ? Math.max(5, renderProgress) : hasReadyVideo ? 100 : 0}%`,
               }}
@@ -166,10 +229,10 @@ export function MasterControlDeck({
         <button
           type="button"
           onClick={() => setMonitorOpen((o) => !o)}
-          className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-[8px] cnc-recess hover:border-[#00E5FF]/40 text-left transition-colors cursor-pointer flex-1 min-w-0 focus-visible:outline-2 focus-visible:outline-[#00E5FF]"
+          className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-[8px] cnc-recess hover:border-[#F1F5F9]/40 text-left transition-colors cursor-pointer flex-1 min-w-0 focus-visible:outline-2 focus-visible:outline-[#F1F5F9]"
         >
           <span className="flex items-center gap-2 min-w-0 font-mono text-xs text-[#E6ECF5]/75">
-            <Activity className="w-3.5 h-3.5 text-[#00E5FF] shrink-0" />
+            <Activity className="w-3.5 h-3.5 text-[#F1F5F9] shrink-0" />
             <span className="truncate">
               {latestLog ? latestLog.message : 'Activity Monitor: Ready to render sequence'}
             </span>
@@ -188,7 +251,7 @@ export function MasterControlDeck({
             onClick={onToggleLoop}
             aria-label={isLooping ? 'Disable infinite loop' : 'Enable infinite loop'}
           >
-            {isLooping ? <Repeat className="w-3.5 h-3.5 text-[#FF64B8]" /> : <Repeat1 className="w-3.5 h-3.5" />}
+            {isLooping ? <Repeat className="w-3.5 h-3.5 text-[#FF5C8A]" /> : <Repeat1 className="w-3.5 h-3.5" />}
             <span>Loop: {isLooping ? 'ON' : 'OFF'}</span>
           </HardwareButton>
 
@@ -199,7 +262,7 @@ export function MasterControlDeck({
               disabled={downloading}
               onClick={onSaveVideo}
             >
-              {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5 text-[#00E5FF]" />}
+              {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />}
               <span>Save Reel</span>
             </HardwareButton>
           )}
@@ -226,5 +289,6 @@ export function MasterControlDeck({
         </div>
       </div>
     </PlateBezel>
+    </div>
   );
 }

@@ -80,7 +80,7 @@ export function StudioGatesGallery({
       subtitle: 'Web Audio Synth · Spectrum · WAV Master',
       specs: ['44.1 / 48 kHz', 'Low-Pass Filter', 'Live Spectrum', 'WAV Export'],
       tone: 'cyan',
-      icon: <Volume2 className="w-4 h-4 text-[#00E5FF]" />,
+      icon: <Volume2 className="w-4 h-4 text-[#F1F5F9]" />,
     },
     {
       id: 'video',
@@ -100,7 +100,7 @@ export function StudioGatesGallery({
       specs: ['PNG / JPG / Alpha', '16:9 · 2.39 · 9:16', 'Exposure & LUTs', 'Transparent Cutout'],
       previewImage: subjectImage,
       tone: 'cyan',
-      icon: <ImageIcon className="w-4 h-4 text-[#00E5FF]" />,
+      icon: <ImageIcon className="w-4 h-4 text-[#F1F5F9]" />,
     },
     {
       id: 'editor',
@@ -109,7 +109,7 @@ export function StudioGatesGallery({
       subtitle: 'Multi-Track Ruler · In/Out Trim · Retiming',
       specs: [`${cutsCount} Recorded Cuts`, '0.25x – 2x Speed', 'V1 / FX / A1 Tracks', 'LUT Grade Preview'],
       tone: 'magenta',
-      icon: <Scissors className="w-4 h-4 text-[#FF64B8]" />,
+      icon: <Scissors className="w-4 h-4 text-[#FF5C8A]" />,
     },
   ];
 
@@ -122,7 +122,7 @@ export function StudioGatesGallery({
       specs: ['Zero API Keys', 'Voice Trigger', 'Swatch Analysis', 'Build Grounding'],
       previewImage: subjectImage,
       tone: 'cyan',
-      icon: <Cpu className="w-4 h-4 text-[#00E5FF]" />,
+      icon: <Cpu className="w-4 h-4 text-[#F1F5F9]" />,
     },
     {
       id: 'vfx',
@@ -132,7 +132,7 @@ export function StudioGatesGallery({
       specs: ['Motion Trails', '2D Halftone', 'Kaleidoscope', '.ZIP Sequence'],
       previewImage: environmentImage,
       tone: 'magenta',
-      icon: <Sparkles className="w-4 h-4 text-[#FF64B8]" />,
+      icon: <Sparkles className="w-4 h-4 text-[#FF5C8A]" />,
     },
     {
       id: 'animator',
@@ -151,7 +151,7 @@ export function StudioGatesGallery({
       subtitle: 'Procedural Impact Matrix · Viseme Rig',
       specs: ['Sub Boom & Braam', '0.5x – 2x Pitch', 'WAV Pad Export', '60fps Visemes'],
       tone: 'cyan',
-      icon: <Waves className="w-4 h-4 text-[#00E5FF]" />,
+      icon: <Waves className="w-4 h-4 text-[#F1F5F9]" />,
     },
   ];
 
@@ -163,7 +163,7 @@ export function StudioGatesGallery({
       subtitle: 'Multi-Channel Synth Broadcast & Live Host Mic',
       specs: ['88–108 MHz Tuner', '5 Live Channels', 'Live Spectrum', 'Host Mic Feed'],
       tone: 'cyan',
-      icon: <Radio className="w-4 h-4 text-[#00E5FF]" />,
+      icon: <Radio className="w-4 h-4 text-[#F1F5F9]" />,
     },
     {
       id: 'school',
@@ -172,7 +172,7 @@ export function StudioGatesGallery({
       subtitle: 'Rust Systems · Three.js UVs · Shader Lab',
       specs: ['Rust & WASM', 'Mesh 3D Math', 'Telemetry HUD', 'Interactive Sandbox'],
       tone: 'magenta',
-      icon: <GraduationCap className="w-4 h-4 text-[#FF64B8]" />,
+      icon: <GraduationCap className="w-4 h-4 text-[#FF5C8A]" />,
     },
     {
       id: 'merch',
@@ -192,7 +192,7 @@ export function StudioGatesGallery({
       specs: ['Webcam + Mic Live', 'On-Air Lower 3rd', 'Record .WebM', 'Social Share Mesh'],
       previewImage: environmentImage,
       tone: 'cyan',
-      icon: <Camera className="w-4 h-4 text-[#00E5FF]" />,
+      icon: <Camera className="w-4 h-4 text-[#F1F5F9]" />,
     },
   ];
 
@@ -225,7 +225,7 @@ export function StudioGatesGallery({
               onClick={() => setGatesOpen((g) => !g)}
               title="Open or seal the Grade-7 titanium entrance gates"
             >
-              {gatesOpen ? <Unlock className="w-3.5 h-3.5 text-[#00E5FF]" /> : <Lock className="w-3.5 h-3.5 text-[#FF3B5C]" />}
+              {gatesOpen ? <Unlock className="w-3.5 h-3.5 text-[#F1F5F9]" /> : <Lock className="w-3.5 h-3.5 text-[#FF3B5C]" />}
               <span>{gatesOpen ? 'Seal Gates' : 'Open Gates'}</span>
             </HardwareButton>
 
@@ -238,7 +238,7 @@ export function StudioGatesGallery({
               disabled={galleryDeck === 0}
               aria-label="Previous 4 studio tiles"
             >
-              <ChevronLeft className="w-4 h-4 text-[#00E5FF]" />
+              <ChevronLeft className="w-4 h-4 text-[#F1F5F9]" />
               <span>Left</span>
             </HardwareButton>
 
@@ -255,7 +255,7 @@ export function StudioGatesGallery({
               aria-label="Next 4 studio tiles"
             >
               <span>Right</span>
-              <ChevronRight className="w-4 h-4 text-[#FF64B8]" />
+              <ChevronRight className="w-4 h-4 text-[#FF5C8A]" />
             </HardwareButton>
           </div>
         </div>
@@ -268,8 +268,8 @@ export function StudioGatesGallery({
               tile.tone === 'red'
                 ? 'border-[#FF1E42]/55 hover:border-[#FF1E42]'
                 : tile.tone === 'magenta'
-                ? 'border-[#E6399B]/55 hover:border-[#E6399B]'
-                : 'border-[#00E5FF]/50 hover:border-[#00E5FF]';
+                ? 'border-[#FF2E63]/55 hover:border-[#FF2E63]'
+                : 'border-[#F1F5F9]/50 hover:border-[#F1F5F9]';
 
             return (
               <button
@@ -277,7 +277,7 @@ export function StudioGatesGallery({
                 type="button"
                 onClick={() => onSelectTool(tile.id)}
                 className={`group relative cnc-module rounded-[10px] p-4 sm:p-5 text-left flex flex-col justify-between min-h-[215px] overflow-hidden border transition-all duration-200 cursor-pointer ${borderTone} ${
-                  isSelected ? 'ring-1 ring-[#00E5FF] shadow-[0_0_24px_rgba(0,229,255,0.22)]' : ''
+                  isSelected ? 'ring-1 ring-[#F1F5F9] shadow-[0_0_24px_rgba(255, 10, 60,0.22)]' : ''
                 }`}
               >
                 {/* Live Asset Preview Strip for Photo/Video Tiles */}
@@ -311,7 +311,7 @@ export function StudioGatesGallery({
                     </div>
                   </div>
 
-                  <span className="inline-flex items-center gap-1 font-mono text-[11px] text-[#00E5FF] group-hover:translate-x-0.5 transition-transform">
+                  <span className="inline-flex items-center gap-1 font-mono text-[11px] text-[#F1F5F9] group-hover:translate-x-0.5 transition-transform">
                     <span>Launch</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
@@ -364,7 +364,7 @@ export function StudioGatesGallery({
           }`}
         >
           <div className="text-left space-y-1">
-            <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-[#00E5FF] block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-[#F1F5F9] block">
               Enter Studio Stage
             </span>
             <span

@@ -93,9 +93,9 @@ export function renderAnimatedReelFrame(
     ctx.globalCompositeOperation = 'screen';
     const sweepX = ((t * 0.35) % 1.4 - 0.2) * w;
     const beam = ctx.createLinearGradient(sweepX - 70, 0, sweepX + 70, 0);
-    beam.addColorStop(0, 'rgba(0,229,255,0)');
-    beam.addColorStop(0.5, 'rgba(0,229,255,0.22)');
-    beam.addColorStop(1, 'rgba(0,229,255,0)');
+    beam.addColorStop(0, 'rgba(255, 10, 60,0)');
+    beam.addColorStop(0.5, 'rgba(255, 10, 60,0.22)');
+    beam.addColorStop(1, 'rgba(255, 10, 60,0)');
     ctx.fillStyle = beam;
     ctx.fillRect(0, 0, w, h);
 
@@ -104,7 +104,7 @@ export function renderAnimatedReelFrame(
       const px = ((i * 197 + t * 38) % (w + 40)) - 20;
       const py = ((i * 113 - t * 22 + h * 10) % (h + 40)) - 20;
       const r = 1.2 + (i % 3) * 0.9;
-      ctx.fillStyle = i % 3 === 0 ? 'rgba(0,229,255,0.65)' : 'rgba(255,210,130,0.55)';
+      ctx.fillStyle = i % 3 === 0 ? 'rgba(255, 10, 60,0.65)' : 'rgba(255,210,130,0.55)';
       ctx.beginPath();
       ctx.arc(px, py, r, 0, Math.PI * 2);
       ctx.fill();
@@ -119,7 +119,7 @@ export function renderAnimatedReelFrame(
       ctx.save();
       ctx.rotate(t * (ring === 0 ? 0.55 : -0.4));
       ctx.scale(1.3, 0.52);
-      ctx.strokeStyle = ring === 0 ? 'rgba(0,229,255,0.42)' : 'rgba(255,30,66,0.38)';
+      ctx.strokeStyle = ring === 0 ? 'rgba(255, 10, 60,0.42)' : 'rgba(255,30,66,0.38)';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.arc(0, 0, Math.min(w, h) * (0.34 + ring * 0.08), 0, Math.PI * 2);
@@ -177,7 +177,7 @@ export function renderAnimatedReelFrame(
       const scale = Math.pow(z, 2.1);
       const rw = w * scale * 1.15;
       const rh = h * scale * 1.15;
-      ctx.strokeStyle = r % 2 === 0 ? `rgba(0,229,255,${z * 0.75})` : `rgba(255,30,66,${z * 0.65})`;
+      ctx.strokeStyle = r % 2 === 0 ? `rgba(255, 10, 60,${z * 0.75})` : `rgba(255,30,66,${z * 0.65})`;
       ctx.lineWidth = 1 + z * 2.2;
       ctx.strokeRect(cx - rw / 2, cy - rh / 2, rw, rh);
     }
@@ -186,7 +186,7 @@ export function renderAnimatedReelFrame(
       const ang = (k / 18) * Math.PI * 2 + t * 0.25;
       const r1 = 35 + ((t * 240 + k * 40) % 280);
       const r2 = r1 + 90;
-      ctx.strokeStyle = k % 3 === 0 ? 'rgba(230,57,155,0.65)' : 'rgba(0,229,255,0.65)';
+      ctx.strokeStyle = k % 3 === 0 ? 'rgba(255, 46, 99,0.65)' : 'rgba(255, 10, 60,0.65)';
       ctx.lineWidth = 1.6;
       ctx.beginPath();
       ctx.moveTo(cx + Math.cos(ang) * r1, cy + Math.sin(ang) * r1);
@@ -215,7 +215,7 @@ export function renderAnimatedReelFrame(
           Math.abs(Math.cos(t * 2.1 - b * 0.25));
       const bh = h * 0.48 * amp;
       const grad = ctx.createLinearGradient(0, h * 0.68 - bh, 0, h * 0.68);
-      grad.addColorStop(0, b % 3 === 0 ? '#FF1E42' : b % 3 === 1 ? '#00E5FF' : '#E6399B');
+      grad.addColorStop(0, b % 3 === 0 ? '#FF1E42' : b % 3 === 1 ? '#F1F5F9' : '#FF2E63');
       grad.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = grad;
       ctx.fillRect(b * bw + 3, h * 0.68 - bh, bw - 6, bh);
@@ -229,7 +229,7 @@ export function renderAnimatedReelFrame(
     for (let l = 0; l < 5; l++) {
       const ox = (w * (l + 1)) / 6;
       const dx = ox + Math.sin(t * 1.9 + l * 1.4) * w * 0.35;
-      ctx.strokeStyle = l % 2 === 0 ? 'rgba(0,229,255,0.45)' : 'rgba(255,30,66,0.45)';
+      ctx.strokeStyle = l % 2 === 0 ? 'rgba(255, 10, 60,0.45)' : 'rgba(255,30,66,0.45)';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(ox, 0);

@@ -79,7 +79,7 @@ export function MerchPrintPage({ defaultArtworkUrl }: { defaultArtworkUrl: strin
 
       // Subtle studio spotlight backdrop
       const bg = ctx.createRadialGradient(w / 2, h * 0.42, 10, w / 2, h / 2, w * 0.58);
-      bg.addColorStop(0, 'rgba(0, 229, 255, 0.14)');
+      bg.addColorStop(0, 'rgba(255, 10, 60, 0.14)');
       bg.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, w, h);
@@ -234,7 +234,7 @@ export function MerchPrintPage({ defaultArtworkUrl }: { defaultArtworkUrl: strin
                 type="text"
                 value={itemTitle}
                 onChange={(e) => setItemTitle(e.target.value)}
-                className="w-full rounded-[6px] bg-[#020203] border border-white/15 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00E5FF]"
+                className="w-full rounded-[6px] bg-[#020203] border border-white/15 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F1F5F9]"
               />
             </label>
             <label className="space-y-1 font-mono text-xs text-[#E6ECF5]/80">
@@ -245,7 +245,7 @@ export function MerchPrintPage({ defaultArtworkUrl }: { defaultArtworkUrl: strin
                 max={250}
                 value={retailPrice}
                 onChange={(e) => setRetailPrice(Math.max(activeBase.baseCost, Number(e.target.value)))}
-                className="w-full rounded-[6px] bg-[#020203] border border-white/15 px-3 py-2 text-xs text-[#00E5FF] tabular-nums focus:outline-none focus:border-[#00E5FF]"
+                className="w-full rounded-[6px] bg-[#020203] border border-white/15 px-3 py-2 text-xs text-[#F1F5F9] tabular-nums focus:outline-none focus:border-[#F1F5F9]"
               />
             </label>
           </div>
@@ -260,7 +260,7 @@ export function MerchPrintPage({ defaultArtworkUrl }: { defaultArtworkUrl: strin
                   onClick={() => setGarmentHex(hex)}
                   aria-label={`Color ${hex}`}
                   className={`w-6 h-6 rounded-full border cursor-pointer ${
-                    garmentHex === hex ? 'border-[#00E5FF] ring-2 ring-[#00E5FF]/40' : 'border-white/25'
+                    garmentHex === hex ? 'border-[#F1F5F9] ring-2 ring-[#F1F5F9]/40' : 'border-white/25'
                   }`}
                   style={{ backgroundColor: hex }}
                 />
@@ -283,7 +283,7 @@ export function MerchPrintPage({ defaultArtworkUrl }: { defaultArtworkUrl: strin
 
           <div className="flex flex-wrap items-center gap-2">
             <label className="cursor-pointer">
-              <span className="inline-flex items-center gap-2 px-3 py-2 rounded-[7px] bg-[#020203] border border-white/20 hover:border-[#00E5FF] font-mono text-xs text-[#00E5FF]">
+              <span className="inline-flex items-center gap-2 px-3 py-2 rounded-[7px] bg-[#020203] border border-white/20 hover:border-[#F1F5F9] font-mono text-xs text-[#F1F5F9]">
                 <Upload className="w-3.5 h-3.5" />
                 <span>Upload Print Art</span>
               </span>
@@ -304,7 +304,7 @@ export function MerchPrintPage({ defaultArtworkUrl }: { defaultArtworkUrl: strin
             </HardwareButton>
 
             <HardwareButton size="sm" tone="cyan" active onClick={exportMockupPng}>
-              <Download className="w-3.5 h-3.5 text-[#00E5FF]" />
+              <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
               <span>Export Mockup PNG</span>
             </HardwareButton>
           </div>
@@ -327,7 +327,7 @@ export function MerchPrintPage({ defaultArtworkUrl }: { defaultArtworkUrl: strin
                   <img src={item.artworkUrl} alt={item.title} className="w-10 h-10 rounded-[5px] object-cover border border-white/15 shrink-0" />
                   <div className="min-w-0">
                     <div className="font-mono text-xs text-white truncate">{item.title}</div>
-                    <div className="font-mono text-[11px] text-[#00E5FF] tabular-nums">
+                    <div className="font-mono text-[11px] text-[#F1F5F9] tabular-nums">
                       ${item.retailPrice.toFixed(2)} · Net +${(item.retailPrice - item.baseCost).toFixed(2)}
                     </div>
                   </div>
@@ -408,7 +408,7 @@ export function LiveBroadcastStreamPage({ fallbackBackdropUrl }: { fallbackBackd
           // Clean Lower-Third Broadcast Graphic
           ctx.fillStyle = 'rgba(2, 2, 3, 0.82)';
           ctx.fillRect(24, h - 72, w - 48, 48);
-          ctx.strokeStyle = recording ? '#FF1E42' : '#00E5FF';
+          ctx.strokeStyle = recording ? '#FF1E42' : '#F1F5F9';
           ctx.lineWidth = 2;
           ctx.strokeRect(24, h - 72, w - 48, 48);
 
@@ -494,7 +494,7 @@ export function LiveBroadcastStreamPage({ fallbackBackdropUrl }: { fallbackBackd
     <PlateBezel accent="cyan" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Video className="w-4 h-4 text-[#00E5FF]" />
+          <Video className="w-4 h-4 text-[#F1F5F9]" />
           <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-display)' }}>
             Live Scene Camera, Recorder &amp; Multi-Social Stream Hub
           </h2>
@@ -516,7 +516,7 @@ export function LiveBroadcastStreamPage({ fallbackBackdropUrl }: { fallbackBackd
               type="text"
               value={bannerText}
               onChange={(e) => setBannerText(e.target.value)}
-              className="w-full rounded-[6px] bg-[#020203] border border-white/15 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00E5FF]"
+              className="w-full rounded-[6px] bg-[#020203] border border-white/15 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#F1F5F9]"
             />
           </label>
           <div className="space-y-1">
@@ -558,7 +558,7 @@ export function LiveBroadcastStreamPage({ fallbackBackdropUrl }: { fallbackBackd
           </HardwareButton>
 
           <HardwareButton size="sm" tone="magenta" active onClick={triggerSocialShare}>
-            <Share2 className="w-3.5 h-3.5 text-[#FF64B8]" />
+            <Share2 className="w-3.5 h-3.5 text-[#FF5C8A]" />
             <span>Broadcast / Social Share</span>
           </HardwareButton>
 
@@ -566,7 +566,7 @@ export function LiveBroadcastStreamPage({ fallbackBackdropUrl }: { fallbackBackd
             <a
               href={recordedUrl}
               download="kaya-live-scene.webm"
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[7px] bg-[#020203] border border-[#00E5FF]/50 font-mono text-xs text-[#00E5FF] hover:text-white"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[7px] bg-[#020203] border border-[#F1F5F9]/50 font-mono text-xs text-[#F1F5F9] hover:text-white"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download Recorded Scene</span>

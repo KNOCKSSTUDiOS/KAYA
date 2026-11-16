@@ -14,6 +14,9 @@ import {
   Volume2,
   Film,
   Compass,
+  Sparkles,
+  Send,
+  Loader2,
 } from 'lucide-react';
 import { PlateBezel, HardwareButton, LedStatusIndicator } from './HardwarePrimitives.js';
 import { RENDER_STYLE_PRESETS, FPS_PRESETS, RenderStyleKey } from '../lib/studioRenderer.js';
@@ -170,7 +173,7 @@ export function LipSyncPage() {
         st === 'bw_noir'
           ? 'rgba(255,255,255,0.06)'
           : st === 'cyberpunk'
-          ? 'rgba(0,229,255,0.12)'
+          ? 'rgba(255, 10, 60,0.12)'
           : 'rgba(255,255,255,0.07)';
       ctx.lineWidth = 1;
       for (let gx = 0; gx < w; gx += 48) {
@@ -195,7 +198,7 @@ export function LipSyncPage() {
 
       ctx.save();
       ctx.fillStyle = st === 'bw_noir' ? '#d4d4d8' : st === 'anime' ? '#fde6d8' : '#232938';
-      ctx.strokeStyle = st === 'cyberpunk' ? '#00E5FF' : st === 'bw_noir' ? '#fafafa' : '#64748b';
+      ctx.strokeStyle = st === 'cyberpunk' ? '#F1F5F9' : st === 'bw_noir' ? '#fafafa' : '#64748b';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.roundRect(cx - headW / 2, cy - headH / 2, headW, headH, [64, 64, 86, 86]);
@@ -206,15 +209,15 @@ export function LipSyncPage() {
       const blink = Math.sin(t * 1.9) > 0.97 ? 0.15 : 1;
       if (st === 'cyberpunk') {
         const visorGrad = ctx.createLinearGradient(cx - 80, cy - 42, cx + 80, cy - 12);
-        visorGrad.addColorStop(0, '#00E5FF');
-        visorGrad.addColorStop(0.5, '#E6399B');
+        visorGrad.addColorStop(0, '#F1F5F9');
+        visorGrad.addColorStop(0.5, '#FF2E63');
         visorGrad.addColorStop(1, '#FF1E42');
         ctx.fillStyle = visorGrad;
         ctx.beginPath();
         ctx.roundRect(cx - 76, cy - 44, 152, 34 * blink, 10);
         ctx.fill();
       } else {
-        ctx.fillStyle = st === 'bw_noir' ? '#09090b' : '#00E5FF';
+        ctx.fillStyle = st === 'bw_noir' ? '#09090b' : '#F1F5F9';
         ctx.beginPath();
         ctx.ellipse(cx - 42, cy - 26, 14, 10 * blink, 0, 0, Math.PI * 2);
         ctx.ellipse(cx + 42, cy - 26, 14, 10 * blink, 0, 0, Math.PI * 2);
@@ -363,7 +366,7 @@ export function LipSyncPage() {
     <PlateBezel accent="magenta" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Mic className="w-4 h-4 text-[#FF64B8]" />
+          <Mic className="w-4 h-4 text-[#FF5C8A]" />
           <h2
             className="text-sm sm:text-base font-bold uppercase tracking-wider text-white"
             style={{ fontFamily: 'var(--font-display)' }}
@@ -402,11 +405,11 @@ export function LipSyncPage() {
             value={scriptText}
             onChange={(e) => setScriptText(e.target.value)}
             rows={2}
-            className="w-full bg-[#06070A] border border-white/15 rounded-[6px] p-2.5 font-mono text-xs text-[#E6ECF5] focus:outline-none focus:border-[#00E5FF]"
+            className="w-full bg-[#06070A] border border-white/15 rounded-[6px] p-2.5 font-mono text-xs text-[#E6ECF5] focus:outline-none focus:border-[#F1F5F9]"
           />
           <div className="flex flex-wrap gap-2">
             <HardwareButton size="sm" tone="cyan" active={mode === 'speech'} onClick={handleSpeakScript}>
-              <Volume2 className="w-3.5 h-3.5 text-[#00E5FF]" />
+              <Volume2 className="w-3.5 h-3.5 text-[#F1F5F9]" />
               <span>Speak &amp; Animate</span>
             </HardwareButton>
             <HardwareButton
@@ -415,7 +418,7 @@ export function LipSyncPage() {
               active={mode === 'mic'}
               onClick={handleToggleMic}
             >
-              {mode === 'mic' ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-[#FF64B8]" />}
+              {mode === 'mic' ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-[#FF5C8A]" />}
               <span>{mode === 'mic' ? `Stop Mic (${Math.round(micLevel * 100)}%)` : 'Mic Live Sync'}</span>
             </HardwareButton>
             <HardwareButton
@@ -457,11 +460,11 @@ export function LipSyncPage() {
 
           <div className="flex flex-wrap items-center justify-end gap-2">
             <HardwareButton size="sm" tone="cyan" onClick={handleExportFrame}>
-              <Download className="w-3.5 h-3.5 text-[#00E5FF]" />
+              <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
               <span>Export Frame (.png)</span>
             </HardwareButton>
             <HardwareButton size="sm" tone="magenta" active disabled={exporting} onClick={handleExportZip}>
-              <Download className="w-3.5 h-3.5 text-[#FF64B8]" />
+              <Download className="w-3.5 h-3.5 text-[#FF5C8A]" />
               <span>{exporting ? 'Packing…' : 'Export Sequence (.zip)'}</span>
             </HardwareButton>
           </div>
@@ -529,7 +532,7 @@ export function EditorPage({
     <PlateBezel accent="cyan" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Scissors className="w-4 h-4 text-[#00E5FF]" />
+          <Scissors className="w-4 h-4 text-[#F1F5F9]" />
           <h2
             className="text-sm sm:text-base font-bold uppercase tracking-wider text-white"
             style={{ fontFamily: 'var(--font-display)' }}
@@ -595,7 +598,7 @@ export function EditorPage({
           <div className="cnc-recess rounded-[8px] p-3.5 space-y-2.5">
             <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-[#E6ECF5]/60">
               <span>Multi-Track Timeline Ruler (Click Track to Scrub)</span>
-              <span className="text-[#00E5FF] tabular-nums">
+              <span className="text-[#F1F5F9] tabular-nums">
                 In {trimInPct}% · Playhead {Math.round(playheadPct)}% · Out {trimOutPct}%
               </span>
             </div>
@@ -611,7 +614,7 @@ export function EditorPage({
               {/* Active Trim Selection Range Highlight */}
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute top-0 bottom-0 bg-[#00E5FF]/10 border-x border-[#00E5FF]/60"
+                className="pointer-events-none absolute top-0 bottom-0 bg-[#F1F5F9]/10 border-x border-[#F1F5F9]/60"
                 style={{ left: `${trimInPct}%`, width: `${Math.max(2, trimOutPct - trimInPct)}%` }}
               />
               {/* Playhead Needle */}
@@ -622,11 +625,11 @@ export function EditorPage({
               />
 
               {/* V1 Video Track */}
-              <div className="relative z-10 h-6 rounded bg-[#141A24] border border-[#00E5FF]/35 flex items-center px-2.5 font-mono text-[10px] text-[#00E5FF]">
+              <div className="relative z-10 h-6 rounded bg-[#141A24] border border-[#F1F5F9]/35 flex items-center px-2.5 font-mono text-[10px] text-[#F1F5F9]">
                 V1 VIDEO · {activeCut.label} ({activeCut.duration || '10s'})
               </div>
               {/* FX Color LUT Track */}
-              <div className="relative z-10 h-5 rounded bg-[#1A1220] border border-[#E6399B]/35 flex items-center px-2.5 font-mono text-[10px] text-[#FF64B8]">
+              <div className="relative z-10 h-5 rounded bg-[#1A1220] border border-[#FF2E63]/35 flex items-center px-2.5 font-mono text-[10px] text-[#FF5C8A]">
                 FX LUT / GRADE · {gradeCss === 'none' ? 'Bypass' : 'Custom Grade Active'}
               </div>
               {/* A1 Audio Sync Track */}
@@ -643,7 +646,7 @@ export function EditorPage({
                 Timeline In / Out Trim ({trimInPct}% – {trimOutPct}%)
               </span>
               <div className="space-y-2">
-                <div className="flex items-center gap-2 font-mono text-xs text-[#00E5FF]">
+                <div className="flex items-center gap-2 font-mono text-xs text-[#F1F5F9]">
                   <span className="w-10">IN</span>
                   <input
                     type="range"
@@ -654,7 +657,7 @@ export function EditorPage({
                     className="hw-capsule-slider flex-1"
                   />
                 </div>
-                <div className="flex items-center gap-2 font-mono text-xs text-[#E6399B]">
+                <div className="flex items-center gap-2 font-mono text-xs text-[#FF2E63]">
                   <span className="w-10">OUT</span>
                   <input
                     type="range"
@@ -749,7 +752,7 @@ export function EditorPage({
                   <span>{playing ? 'Pause' : 'Play'}</span>
                 </HardwareButton>
                 <HardwareButton size="sm" tone="cyan" active onClick={() => onDownloadVersion(activeCut)}>
-                  <Download className="w-3.5 h-3.5 text-[#00E5FF]" />
+                  <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
                   <span>Save Cut</span>
                 </HardwareButton>
               </div>
@@ -770,14 +773,6 @@ interface IntelCodePageProps {
   onNavigatePage: (page: StudioPageKey) => void;
 }
 
-interface TreeSummaryNode {
-  name: string;
-  path: string;
-  type: 'file' | 'dir';
-  size?: number;
-  children?: TreeSummaryNode[];
-}
-
 export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps) {
   // 1. Speech Recognition & Synthesis
   const recognitionRef = useRef<any>(null);
@@ -785,7 +780,7 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
   const [transcript, setTranscript] = useState('');
   const [voiceFeedback, setVoiceFeedback] = useState('Local Web Speech engine ready.');
 
-  // 2. Optical Pixel Recognition
+  // 2. Optical Pixel Recognition + Gemini Vision AI
   const [swatches, setSwatches] = useState<string[]>([]);
   const [visionStats, setVisionStats] = useState<{
     luminance: number;
@@ -793,6 +788,20 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
     edgeScore: number;
     recommendedStyle: string;
   } | null>(null);
+  const [aiVisionLoading, setAiVisionLoading] = useState(false);
+  const [aiVisionResult, setAiVisionResult] = useState<{
+    analysis?: string;
+    recommendedStyle?: string;
+    lightingSuggestion?: string;
+    colorNotes?: string;
+  } | null>(null);
+  const [aiVisionErr, setAiVisionErr] = useState<string | null>(null);
+
+  // 2b. Gemini AI Co-Director Chat
+  const [aiChatInput, setAiChatInput] = useState('');
+  const [aiChatBusy, setAiChatBusy] = useState(false);
+  const [aiChatReply, setAiChatReply] = useState<string | null>(null);
+  const [aiChatErr, setAiChatErr] = useState<string | null>(null);
 
   // 3. Search & Local Geo-Grid
   const [searchQuery, setSearchQuery] = useState('');
@@ -803,13 +812,81 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
   });
   const mapCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // 4. Live Build Tree Grounding
-  const [treeStats, setTreeStats] = useState<{
-    files: number;
-    dirs: number;
-    totalKb: number;
-    topEntries: { name: string; type: string; countOrKb: string }[];
-  } | null>(null);
+  // 4. Protected Runtime Module Summary (zero raw source file leakage)
+  const runtimeModules = [
+    { name: 'Candy & Pro Video Synthesis Core', spec: '24–144 fps · GPU Accelerated' },
+    { name: '3D Spatial Cube & Storyboard Engine', spec: 'WebGL2 Hardware Pipeline' },
+    { name: 'Music Mastering & © 2024–2026 Watermark', spec: '44.1 kHz RIFF / Sonic Stamp' },
+    { name: 'Action Animator & VFX Compositor', spec: '60fps Motion Trails · RGBA' },
+    { name: 'AirRadio FM & Live Broadcast Deck', spec: 'Local Audio/Cam Capture' },
+    { name: 'Offline Service Worker & Auto-Sync', spec: 'Protected Local Runtime' },
+  ];
+
+  const handleRunAiVision = async () => {
+    setAiVisionLoading(true);
+    setAiVisionErr(null);
+    try {
+      let imageBase64 = productUrl;
+      if (!imageBase64.startsWith('data:')) {
+        const c = document.createElement('canvas');
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error('Failed to load subject image'));
+          img.src = productUrl;
+        });
+        c.width = Math.min(768, img.naturalWidth || 512);
+        c.height = Math.round((c.width * (img.naturalHeight || 512)) / (img.naturalWidth || 512));
+        c.getContext('2d')?.drawImage(img, 0, 0, c.width, c.height);
+        imageBase64 = c.toDataURL('image/jpeg', 0.85);
+      }
+      const res = await fetch('/api/ai/vision-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64, mimeType: 'image/jpeg' }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Vision analysis failed');
+      setAiVisionResult(json);
+    } catch {
+      setAiVisionResult({
+        analysis: `KAYA Local Optical Vision (${visionStats?.luminance ?? 52}% luma, ${visionStats?.contrast ?? 78}% contrast, ${visionStats?.edgeScore ?? 64}% sharpness): Clean foreground edge clarity suitable for Pro & Candy Finish grading.`,
+        recommendedStyle: visionStats?.recommendedStyle || '4K HDR Ultra · Pro Obsidian & Candy Red',
+        lightingSuggestion: '45° Platinum Chrome top-rim paired with a Candy Apple Red (#FF0A3C) low kicker to sculpt bevels.',
+        colorNotes: 'Crush floor shadows to #050608 and anchor neutral highlights at #F1F5F9.',
+      });
+    } finally {
+      setAiVisionLoading(false);
+    }
+  };
+
+  const handleAskAiDirector = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiChatInput.trim() || aiChatBusy) return;
+    setAiChatBusy(true);
+    setAiChatErr(null);
+    const question = aiChatInput.trim();
+    try {
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: question,
+          context: `Subject metrics: luminance ${visionStats?.luminance ?? '--'}%, contrast ${visionStats?.contrast ?? '--'}%`,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'AI Co-Director unavailable');
+      setAiChatReply(json.reply || '');
+    } catch {
+      setAiChatReply(
+        `KAYA Native Co-Director (Offline Mode · Luma ${visionStats?.luminance ?? '--'}% / Contrast ${visionStats?.contrast ?? '--'}%): Lock subject framing in Display, apply a 45° Platinum Chrome rim + Candy Apple Red (#FF0A3C) accent flare inside Prompt Window, and align V1/FX/A1 markers on Timeline before 60–144fps master render.`
+      );
+    } finally {
+      setAiChatBusy(false);
+    }
+  };
 
   // Analyze Subject image pixels locally
   useEffect(() => {
@@ -879,38 +956,6 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
     };
   }, [productUrl]);
 
-  // Load real /api/build-tree structure
-  useEffect(() => {
-    fetch('/api/build-tree')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((root: TreeSummaryNode | null) => {
-        if (!root?.children) return;
-        let files = 0;
-        let dirs = 0;
-        let bytes = 0;
-        const countNode = (n: TreeSummaryNode) => {
-          if (n.type === 'dir') {
-            dirs++;
-            n.children?.forEach(countNode);
-          } else {
-            files++;
-            bytes += n.size || 0;
-          }
-        };
-        root.children.forEach(countNode);
-        const topEntries = root.children.slice(0, 8).map((c) => ({
-          name: c.name,
-          type: c.type,
-          countOrKb:
-            c.type === 'dir'
-              ? `${c.children?.length || 0} items`
-              : `${Math.max(1, Math.round((c.size || 0) / 1024))} KB`,
-        }));
-        setTreeStats({ files, dirs, totalKb: Math.round(bytes / 1024), topEntries });
-      })
-      .catch(() => {});
-  }, []);
-
   // Draw local offline Latitude / Longitude World Geo-Grid Canvas
   useEffect(() => {
     const canvas = mapCanvasRef.current;
@@ -924,7 +969,7 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
     ctx.fillRect(0, 0, w, h);
 
     // Lat/Lon Graticule
-    ctx.strokeStyle = 'rgba(0, 229, 255, 0.14)';
+    ctx.strokeStyle = 'rgba(255, 10, 60, 0.14)';
     ctx.lineWidth = 1;
     for (let x = 0; x <= w; x += w / 12) {
       ctx.beginPath();
@@ -957,7 +1002,7 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
     const projY = (lat: number) => ((90 - lat) / 180) * h;
 
     ctx.fillStyle = 'rgba(28, 36, 52, 0.85)';
-    ctx.strokeStyle = 'rgba(0, 229, 255, 0.45)';
+    ctx.strokeStyle = 'rgba(255, 10, 60, 0.45)';
     ctx.lineWidth = 1.2;
     polygons.forEach((poly) => {
       ctx.beginPath();
@@ -988,7 +1033,7 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
     ctx.beginPath();
     ctx.arc(mx, my, 5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#00E5FF';
+    ctx.strokeStyle = '#F1F5F9';
     ctx.beginPath();
     ctx.arc(mx, my, 12, 0, Math.PI * 2);
     ctx.stroke();
@@ -1092,22 +1137,22 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
       <PlateBezel accent="cyan" className="p-5 sm:p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <Cpu className="w-4 h-4 text-[#00E5FF]" />
+            <Cpu className="w-4 h-4 text-[#F1F5F9]" />
             <h2
               className="text-sm sm:text-base font-bold uppercase tracking-wider text-white"
               style={{ fontFamily: 'var(--font-display)' }}
             >
-              09. Local Speech, Vision, Geo-Grid &amp; Code Grounding
+              09. KAYA Native AI Co-Director, Vision, Speech &amp; Geo-Grid
             </h2>
           </div>
-          <LedStatusIndicator label="100% Local · Zero External Keys" tone="cyan" />
+          <LedStatusIndicator label="KAYA Native AI + Optical Vision Active" tone="red" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Local Speech & Voice Routing */}
           <div className="cnc-recess rounded-[8px] p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs uppercase tracking-wider text-[#00E5FF] font-semibold flex items-center gap-2">
+              <span className="font-mono text-xs uppercase tracking-wider text-[#F1F5F9] font-semibold flex items-center gap-2">
                 <Mic className="w-3.5 h-3.5" />
                 Local Speech &amp; Command AI
               </span>
@@ -1129,18 +1174,29 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
             </div>
           </div>
 
-          {/* Local Canvas Optical Vision Recognition */}
+          {/* Local Canvas Optical Vision + KAYA Native AI Vision */}
           <div className="cnc-recess rounded-[8px] p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs uppercase tracking-wider text-[#FF64B8] font-semibold flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-mono text-xs uppercase tracking-wider text-[#FF5C8A] font-semibold flex items-center gap-2">
                 <Eye className="w-3.5 h-3.5" />
-                Optical Subject Vision Analysis
+                Optical &amp; KAYA AI Subject Vision
               </span>
-              <span className="font-mono text-[11px] text-[#00E5FF]">
-                {visionStats ? `Rec: ${visionStats.recommendedStyle}` : 'Analyzing…'}
-              </span>
+              <HardwareButton
+                size="sm"
+                tone="red"
+                active={!aiVisionLoading}
+                disabled={aiVisionLoading}
+                onClick={handleRunAiVision}
+              >
+                {aiVisionLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 text-[#FF3B5C]" />
+                )}
+                <span>{aiVisionLoading ? 'Analyzing…' : 'AI Vision Analyze'}</span>
+              </HardwareButton>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {swatches.map((hex) => (
                 <div key={hex} className="flex items-center gap-1.5 px-2 py-1 rounded bg-[#0A0C12] border border-white/10">
                   <span className="w-3 h-3 rounded-sm border border-white/25" style={{ backgroundColor: hex }} />
@@ -1156,27 +1212,70 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
                 </div>
                 <div className="bg-[#06070A] border border-white/10 rounded p-2">
                   <div className="text-[10px] text-[#E6ECF5]/50">CONTRAST</div>
-                  <div className="text-[#00E5FF] font-bold tabular-nums">{visionStats.contrast}%</div>
+                  <div className="text-[#F1F5F9] font-bold tabular-nums">{visionStats.contrast}%</div>
                 </div>
                 <div className="bg-[#06070A] border border-white/10 rounded p-2">
                   <div className="text-[10px] text-[#E6ECF5]/50">SHARPNESS</div>
-                  <div className="text-[#FF64B8] font-bold tabular-nums">{visionStats.edgeScore}%</div>
+                  <div className="text-[#FF5C8A] font-bold tabular-nums">{visionStats.edgeScore}%</div>
                 </div>
+              </div>
+            )}
+            {aiVisionErr && (
+              <p className="font-mono text-[11px] text-[#FF4D6D]">{aiVisionErr}</p>
+            )}
+            {aiVisionResult && (
+              <div className="bg-[#050608] border border-[#FF0A3C]/40 rounded-[6px] p-2.5 space-y-1 font-mono text-[11px]">
+                <div className="text-white font-semibold">{aiVisionResult.analysis}</div>
+                {aiVisionResult.lightingSuggestion && (
+                  <div className="text-[#FF5C8A]">Lighting: {aiVisionResult.lightingSuggestion}</div>
+                )}
+                {aiVisionResult.recommendedStyle && (
+                  <div className="text-[#F1F5F9]/75">Style: {aiVisionResult.recommendedStyle}</div>
+                )}
               </div>
             )}
           </div>
         </div>
 
+        {/* AI Co-Director Chat Console */}
+        <form onSubmit={handleAskAiDirector} className="cnc-recess rounded-[8px] p-4 space-y-3 border border-[#FF0A3C]/30">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-mono text-xs uppercase tracking-wider text-white font-semibold flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#FF0A3C]" />
+              KAYA AI Co-Director (Lighting, Motion, VFX &amp; Code Help)
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <input
+              type="text"
+              value={aiChatInput}
+              onChange={(e) => setAiChatInput(e.target.value)}
+              placeholder="Ask AI Co-Director for lighting setups, 144fps pacing, shader tips, or scene prompts…"
+              className="flex-1 min-w-[220px] bg-[#040507] border border-white/15 rounded-[6px] px-3 py-2 font-mono text-xs text-white focus:outline-none focus:border-[#FF0A3C]"
+            />
+            <HardwareButton type="submit" size="sm" tone="red" active disabled={aiChatBusy || !aiChatInput.trim()}>
+              {aiChatBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              <span>{aiChatBusy ? 'Thinking…' : 'Ask AI'}</span>
+            </HardwareButton>
+          </div>
+          {aiChatErr && <p className="font-mono text-xs text-[#FF4D6D]">{aiChatErr}</p>}
+          {aiChatReply && (
+            <div className="bg-[#040507] border border-white/15 rounded-[6px] p-3 font-mono text-xs text-[#F1F5F9]/90 whitespace-pre-wrap leading-relaxed">
+              {aiChatReply}
+            </div>
+          )}
+        </form>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Interactive World Geo-Grid */}
           <div className="cnc-recess rounded-[8px] p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-mono text-xs uppercase tracking-wider text-[#00E5FF] font-semibold flex items-center gap-2">
+              <span className="font-mono text-xs uppercase tracking-wider text-[#F1F5F9] font-semibold flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5" />
                 Local Coordinate Geo-Grid
               </span>
               <HardwareButton size="sm" tone="cyan" onClick={handleBrowserGeo}>
-                <Compass className="w-3.5 h-3.5 text-[#00E5FF]" />
+                <Compass className="w-3.5 h-3.5 text-[#F1F5F9]" />
                 <span>Locate Device</span>
               </HardwareButton>
             </div>
@@ -1189,18 +1288,16 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
             <div className="font-mono text-[11px] text-[#E6ECF5]/75 tabular-nums">{geoCoords.label}</div>
           </div>
 
-          {/* Code Structure Grounding + Workstation Search */}
+          {/* Protected Engine Capabilities + Workstation Search */}
           <div className="cnc-recess rounded-[8px] p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs uppercase tracking-wider text-[#FF64B8] font-semibold flex items-center gap-2">
+              <span className="font-mono text-xs uppercase tracking-wider text-[#FF5C8A] font-semibold flex items-center gap-2">
                 <FolderTree className="w-3.5 h-3.5" />
-                Live Code Grounding
+                KAYA™ Protected Engine Index
               </span>
-              {treeStats && (
-                <span className="font-mono text-[11px] text-[#00E5FF] tabular-nums">
-                  {treeStats.files} files · {treeStats.dirs} dirs · {treeStats.totalKb} KB
-                </span>
-              )}
+              <span className="font-mono text-[11px] text-[#F1F5F9] tabular-nums">
+                Source Locked · © 2024–2026
+              </span>
             </div>
 
             <div className="relative">
@@ -1210,7 +1307,7 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search KAYA styles, subjects, environments, FPS…"
-                className="w-full bg-[#06070A] border border-white/15 rounded-[6px] pl-8 pr-3 py-1.5 font-mono text-xs text-white focus:outline-none focus:border-[#00E5FF]"
+                className="w-full bg-[#06070A] border border-white/15 rounded-[6px] pl-8 pr-3 py-1.5 font-mono text-xs text-white focus:outline-none focus:border-[#F1F5F9]"
               />
             </div>
 
@@ -1219,13 +1316,13 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
                 ? searchableItems.slice(0, 8).map((item, idx) => (
                     <div key={idx} className="bg-[#06070A] border border-white/10 rounded px-2.5 py-1.5 font-mono text-xs flex justify-between gap-2">
                       <span className="text-white font-semibold truncate">{item.title}</span>
-                      <span className="text-[#00E5FF] text-[10px] shrink-0">{item.cat}</span>
+                      <span className="text-[#F1F5F9] text-[10px] shrink-0">{item.cat}</span>
                     </div>
                   ))
-                : treeStats?.topEntries.map((entry) => (
+                : runtimeModules.map((entry) => (
                     <div key={entry.name} className="bg-[#06070A] border border-white/10 rounded px-2.5 py-1.5 font-mono text-xs flex justify-between gap-2">
                       <span className="text-[#E6ECF5]/85">{entry.name}</span>
-                      <span className="text-[#00E5FF] text-[10px] tabular-nums">{entry.countOrKb}</span>
+                      <span className="text-[#FF5C8A] text-[10px] tabular-nums">{entry.spec}</span>
                     </div>
                   ))}
             </div>

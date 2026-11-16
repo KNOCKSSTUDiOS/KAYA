@@ -116,7 +116,7 @@ export function PictureStudioPage({
     <PlateBezel accent="cyan" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <ImageIcon className="w-4 h-4 text-[#00E5FF]" />
+          <ImageIcon className="w-4 h-4 text-[#F1F5F9]" />
           <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-display)' }}>
             Picture Tools · 4K Multi-Style Renderer
           </h2>
@@ -170,7 +170,7 @@ export function PictureStudioPage({
         <div className="space-y-1.5">
           <div className="flex justify-between font-mono text-xs text-[#E6ECF5]/80">
             <span>Exposure</span>
-            <span className="text-[#00E5FF] tabular-nums">{exposure.toFixed(2)}</span>
+            <span className="text-[#F1F5F9] tabular-nums">{exposure.toFixed(2)}</span>
           </div>
           <input
             type="range"
@@ -200,7 +200,7 @@ export function PictureStudioPage({
         <div className="space-y-1.5">
           <div className="flex justify-between font-mono text-xs text-[#E6ECF5]/80">
             <span>Saturation</span>
-            <span className="text-[#E6399B] tabular-nums">{saturation.toFixed(2)}</span>
+            <span className="text-[#FF2E63] tabular-nums">{saturation.toFixed(2)}</span>
           </div>
           <input
             type="range"
@@ -241,7 +241,7 @@ export function PictureStudioPage({
 
         <div className="flex flex-wrap items-center gap-2">
           <HardwareButton tone="cyan" active disabled={rendering} onClick={() => handleSavePicture('png')}>
-            <Download className="w-3.5 h-3.5 text-[#00E5FF]" />
+            <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
             <span>Save 4K PNG</span>
           </HardwareButton>
           {!transparentCutout && (
@@ -368,7 +368,7 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
               const ang = (s / 14) * Math.PI * 2 + t * 1.4;
               const r1 = 80 + ((t * 180 + s * 35) % 240);
               const r2 = r1 + 65 * intensity;
-              ctx.strokeStyle = s % 2 === 0 ? 'rgba(0, 229, 255, 0.7)' : 'rgba(255, 30, 66, 0.65)';
+              ctx.strokeStyle = s % 2 === 0 ? 'rgba(255, 10, 60, 0.7)' : 'rgba(255, 30, 66, 0.65)';
               ctx.lineWidth = 2.4;
               ctx.beginPath();
               ctx.moveTo(w / 2 + orbitX + Math.cos(ang) * r1, h / 2 + orbitY + Math.sin(ang) * r1);
@@ -378,7 +378,7 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
             ctx.restore();
           } else if (effect === 'cyber_rain') {
             ctx.save();
-            ctx.strokeStyle = `rgba(0, 229, 255, ${0.35 + 0.45 * intensity})`;
+            ctx.strokeStyle = `rgba(255, 10, 60, ${0.35 + 0.45 * intensity})`;
             ctx.lineWidth = 2;
             particles.forEach((p) => {
               const py = ((p.y + (playing ? t * p.speed * 0.45 : 0)) % 1) * h;
@@ -395,13 +395,13 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
             const fx = w * (0.5 + Math.sin(t * 1.3) * 0.3);
             const g = ctx.createLinearGradient(0, h * 0.45, w, h * 0.45);
             g.addColorStop(0, 'rgba(0,0,0,0)');
-            g.addColorStop(0.5, `rgba(0, 229, 255, ${0.65 * intensity})`);
+            g.addColorStop(0.5, `rgba(255, 10, 60, ${0.65 * intensity})`);
             g.addColorStop(1, 'rgba(0,0,0,0)');
             ctx.fillStyle = g;
             ctx.fillRect(0, h * 0.43, w, h * 0.05);
             const r = ctx.createRadialGradient(fx, h * 0.45, 4, fx, h * 0.45, 220 * intensity);
             r.addColorStop(0, 'rgba(255,255,255,0.85)');
-            r.addColorStop(0.4, 'rgba(230, 57, 155, 0.45)');
+            r.addColorStop(0.4, 'rgba(255, 46, 99, 0.45)');
             r.addColorStop(1, 'rgba(0,0,0,0)');
             ctx.fillStyle = r;
             ctx.fillRect(0, 0, w, h);
@@ -412,13 +412,13 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
             for (let s = 0; s < 6; s++) {
               const sy = ((Math.sin(t * 8 + s * 3.1) + 1) * 0.5) * h;
               const sh = 6 + (s % 3) * 8;
-              ctx.fillStyle = s % 2 === 0 ? `rgba(255, 30, 66, ${0.3 * intensity})` : `rgba(0, 229, 255, ${0.3 * intensity})`;
+              ctx.fillStyle = s % 2 === 0 ? `rgba(255, 30, 66, ${0.3 * intensity})` : `rgba(255, 10, 60, ${0.3 * intensity})`;
               ctx.fillRect(0, sy, w, sh);
             }
             ctx.restore();
           } else if (effect === 'scifi_hud') {
             ctx.save();
-            ctx.strokeStyle = `rgba(0, 229, 255, ${0.55 * intensity})`;
+            ctx.strokeStyle = `rgba(255, 10, 60, ${0.55 * intensity})`;
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(w / 2, h / 2, 160, t, t + Math.PI * 1.4);
@@ -431,7 +431,7 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
           } else if (effect === '2d_halftone') {
             // 2D Optical Comic / Print Halftone Dot Grid Overlay
             ctx.save();
-            ctx.fillStyle = `rgba(0, 229, 255, ${0.28 * intensity})`;
+            ctx.fillStyle = `rgba(255, 10, 60, ${0.28 * intensity})`;
             const step = 20;
             for (let gx = 10; gx < w; gx += step) {
               for (let gy = 10; gy < h; gy += step) {
@@ -450,7 +450,7 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
             for (let k = 0; k < 8; k++) {
               ctx.save();
               ctx.rotate((k * Math.PI) / 4 + t * 0.45);
-              ctx.strokeStyle = k % 2 === 0 ? `rgba(230, 57, 155, ${0.55 * intensity})` : `rgba(0, 229, 255, ${0.55 * intensity})`;
+              ctx.strokeStyle = k % 2 === 0 ? `rgba(255, 46, 99, ${0.55 * intensity})` : `rgba(255, 10, 60, ${0.55 * intensity})`;
               ctx.lineWidth = 2;
               ctx.strokeRect(40, -18, 220 * intensity, 36);
               ctx.restore();
@@ -494,7 +494,7 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
     <PlateBezel accent="magenta" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Sparkles className="w-4 h-4 text-[#FF64B8]" />
+          <Sparkles className="w-4 h-4 text-[#FF5C8A]" />
           <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-display)' }}>
             VFX Shaders · 2D Effects &amp; Motion Trails Stage
           </h2>
@@ -560,7 +560,7 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
               <span>{playing ? 'Pause' : 'Play'}</span>
             </HardwareButton>
             <HardwareButton size="sm" tone="cyan" active disabled={exportingSeq} onClick={handleSaveVfxZip}>
-              <Download className="w-3.5 h-3.5 text-[#00E5FF]" />
+              <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
               <span>{exportingSeq ? 'Packing…' : 'Export VFX PNGs (.zip)'}</span>
             </HardwareButton>
           </div>

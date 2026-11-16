@@ -2,13 +2,14 @@
   "id": "/",
   "name": "KAYA",
   "short_name": "KAYA",
-  "description": "KAYA self-contained 4K HDR media synthesis workstation.",
+  "description": "KAYA Pro & Candy Finish self-contained workstation.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "any",
-  "theme_color": "#07080B",
-  "background_color": "#07080B",
+  "theme_color": "#050608",
+  "background_color": "#050608",
   "categories": ["photo", "video", "productivity"],
   "icons": [
     {

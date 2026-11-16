@@ -24,7 +24,7 @@ const STORYBOARD_BEATS: StoryboardBeat[] = [
     shot: 'Shot 01 · Hero Silhouette',
     timecode: '00:00 – 00:02',
     camera: '24mm Wide Low-Angle Tracking',
-    lighting: 'Deep Obsidian Rim + Cyan Edge Fill',
+    lighting: 'Deep Obsidian Rim + Platinum Edge Fill',
     action: '3D Icosahedron cage unfolds into primary subject silhouette.',
   },
   {
@@ -38,7 +38,7 @@ const STORYBOARD_BEATS: StoryboardBeat[] = [
     shot: 'Shot 03 · 360° Orbital Push',
     timecode: '00:04 – 00:06',
     camera: '360° Continuous Gimbal Orbit',
-    lighting: 'Dual Neon Red & Electric Cyan Cross-Key',
+    lighting: 'Dual Candy Red & Platinum Cross-Key',
     action: 'Dynamic motion trails wrap subject across environment horizon.',
   },
   {
@@ -96,7 +96,7 @@ export function StoryboardLogoPage({
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
     scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight(0x00e5ff, 2.8, 100);
+    const pointLight = new THREE.PointLight(0xf1f5f9, 2.8, 100);
     pointLight.position.set(8, 8, 10);
     scene.add(pointLight);
     pointLightRef.current = pointLight;
@@ -107,11 +107,11 @@ export function StoryboardLogoPage({
 
     const geometry = new THREE.IcosahedronGeometry(2.05, 1);
     const material = new THREE.MeshStandardMaterial({
-      color: 0x00e5ff,
+      color: 0xf1f5f9,
       wireframe: true,
       roughness: 0.2,
       metalness: 0.85,
-      emissive: 0x002433,
+      emissive: 0x1a040a,
     });
     const shape = new THREE.Mesh(geometry, material);
     scene.add(shape);
@@ -164,18 +164,18 @@ export function StoryboardLogoPage({
     const mat = shapeRef.current?.material as THREE.MeshStandardMaterial | undefined;
     if (next === 'logo') {
       if (mat) {
-        mat.color.setHex(0x00e5ff);
-        mat.emissive.setHex(0x002433);
+        mat.color.setHex(0xf1f5f9);
+        mat.emissive.setHex(0x1a040a);
       }
-      if (pointLightRef.current) pointLightRef.current.color.setHex(0x00e5ff);
+      if (pointLightRef.current) pointLightRef.current.color.setHex(0xf1f5f9);
       speedRef.current = { x: 0.006, y: 0.01 };
       setStatusBanner('KAYA™ 3D Interactive Engine Active · © 2024–2026 Protected.');
     } else if (next === 'storyboard') {
       if (mat) {
-        mat.color.setHex(0xe6399b);
-        mat.emissive.setHex(0x3a0024);
+        mat.color.setHex(0xff2e63);
+        mat.emissive.setHex(0x3a0014);
       }
-      if (pointLightRef.current) pointLightRef.current.color.setHex(0xe6399b);
+      if (pointLightRef.current) pointLightRef.current.color.setHex(0xff2e63);
       speedRef.current = { x: 0.009, y: 0.014 };
       setStatusBanner('5-Shot 3D Cinema Storyboard Sequence Generated & Synced.');
     } else {
@@ -191,7 +191,7 @@ export function StoryboardLogoPage({
 
   const handleExportStoryboard = () => {
     const payload = {
-      studio: 'KAYA™ 4K HDR Studio',
+      studio: 'KAYA™ Pro & Candy Finish',
       copyright: '© 2024–2026 KAYA™ Music & Studio — All Rights Reserved',
       format: formatSummary,
       mode,
@@ -215,7 +215,7 @@ export function StoryboardLogoPage({
     <PlateBezel accent={mode === 'storyboard' ? 'magenta' : mode === 'overdrive' ? 'red' : 'cyan'} className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Clapperboard className="w-4 h-4 text-[#00E5FF]" />
+          <Clapperboard className="w-4 h-4 text-[#F1F5F9]" />
           <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-display)' }}>
             3D Interactive Logo &amp; Storyboard Deck
           </h2>
@@ -238,7 +238,7 @@ export function StoryboardLogoPage({
           <div ref={mountRef} className="w-full h-full" />
 
           {/* Top Watermark Stamp Badge */}
-          <div className="pointer-events-none absolute top-3 left-3 px-2.5 py-1 rounded bg-black/75 border border-white/15 font-mono text-[10px] uppercase tracking-widest text-[#00E5FF] flex items-center gap-1.5">
+          <div className="pointer-events-none absolute top-3 left-3 px-2.5 py-1 rounded bg-black/75 border border-white/15 font-mono text-[10px] uppercase tracking-widest text-[#F1F5F9] flex items-center gap-1.5">
             <ShieldCheck className="w-3 h-3 text-[#FF3B5C]" />
             <span>© 2024–2026 KAYA™ · {formatSummary}</span>
           </div>
@@ -253,11 +253,11 @@ export function StoryboardLogoPage({
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <HardwareButton size="sm" tone="cyan" active={mode === 'logo'} onClick={() => triggerMode('logo')}>
-                <Box className="w-3.5 h-3.5 text-[#00E5FF]" />
+                <Box className="w-3.5 h-3.5 text-[#F1F5F9]" />
                 <span>3D KAYA™ Logo</span>
               </HardwareButton>
               <HardwareButton size="sm" tone="magenta" active={mode === 'storyboard'} onClick={() => triggerMode('storyboard')}>
-                <Sparkles className="w-3.5 h-3.5 text-[#FF64B8]" />
+                <Sparkles className="w-3.5 h-3.5 text-[#FF5C8A]" />
                 <span>Generate Storyboard</span>
               </HardwareButton>
               <HardwareButton size="sm" tone="red" active={mode === 'overdrive'} onClick={() => triggerMode('overdrive')}>
@@ -268,7 +268,7 @@ export function StoryboardLogoPage({
                 <span>{autoSpin ? 'Spin ON' : 'Paused'}</span>
               </HardwareButton>
               <HardwareButton size="sm" tone="cyan" active={false} onClick={handleExportStoryboard}>
-                <Download className="w-3.5 h-3.5 text-[#00E5FF]" />
+                <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
                 <span>Export Storyboard</span>
               </HardwareButton>
             </div>
@@ -288,8 +288,8 @@ export function StoryboardLogoPage({
             }}
             className={`text-left p-3 rounded-[9px] cnc-module transition-all cursor-pointer border ${
               selectedShot === idx
-                ? 'border-[#FF64B8] shadow-[0_0_16px_rgba(230,57,155,0.28)]'
-                : 'border-white/10 hover:border-[#00E5FF]/50'
+                ? 'border-[#FF5C8A] shadow-[0_0_16px_rgba(255, 46, 99,0.28)]'
+                : 'border-white/10 hover:border-[#F1F5F9]/50'
             }`}
           >
             <div className="relative aspect-video rounded-[6px] overflow-hidden bg-black mb-2 border border-white/10">
@@ -298,12 +298,12 @@ export function StoryboardLogoPage({
                 alt={item.shot}
                 className="w-full h-full object-cover opacity-80"
               />
-              <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 font-mono text-[9px] text-[#00E5FF]">
+              <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 font-mono text-[9px] text-[#F1F5F9]">
                 {item.timecode}
               </span>
             </div>
             <div className="font-mono text-xs font-bold text-white truncate">{item.shot}</div>
-            <div className="font-mono text-[10px] text-[#00E5FF] mt-0.5 truncate">{item.camera}</div>
+            <div className="font-mono text-[10px] text-[#F1F5F9] mt-0.5 truncate">{item.camera}</div>
             <p className="text-[11px] text-[#E6ECF5]/65 mt-1 line-clamp-2">{item.action}</p>
           </button>
         ))}

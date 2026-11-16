@@ -248,7 +248,7 @@ export function RubiksCubeHubPage({
     controls.update();
 
     // Grade-7 Titanium Metallic Studio Lighting Rig
-    scene.add(new THREE.HemisphereLight(0x88e8ff, 0x050608, 0.9));
+    scene.add(new THREE.HemisphereLight(0xf1f5f9, 0x050608, 0.9));
 
     const keyLight = new THREE.DirectionalLight(0xfff4e2, 2.5);
     keyLight.position.set(6, 9, 6);
@@ -264,7 +264,7 @@ export function RubiksCubeHubPage({
     redRim.position.set(-6, 3, -5);
     scene.add(redRim);
 
-    const cyanRim = new THREE.DirectionalLight(0x00e5ff, 1.4);
+    const cyanRim = new THREE.DirectionalLight(0xf1f5f9, 1.4);
     cyanRim.position.set(4, -3, -6);
     scene.add(cyanRim);
 
@@ -411,11 +411,11 @@ export function RubiksCubeHubPage({
       const sy = h * (0.5 + Math.sin(t * 0.9 + channelIdx) * 0.35);
       const sweep = ctx.createRadialGradient(sx, sy, 4, sx, sy, w * 0.55);
       if (channelIdx % 3 === 0) {
-        sweep.addColorStop(0, 'rgba(0, 229, 255, 0.28)');
+        sweep.addColorStop(0, 'rgba(255, 10, 60, 0.28)');
       } else if (channelIdx % 3 === 1) {
         sweep.addColorStop(0, 'rgba(255, 30, 66, 0.26)');
       } else {
-        sweep.addColorStop(0, 'rgba(230, 57, 155, 0.26)');
+        sweep.addColorStop(0, 'rgba(255, 46, 99, 0.26)');
       }
       sweep.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = sweep;
@@ -425,7 +425,7 @@ export function RubiksCubeHubPage({
       if (!isBackdrop) {
         // Sleek chamfer metal border around each cube face channel
         ctx.strokeStyle =
-          channelIdx % 2 === 0 ? 'rgba(0, 229, 255, 0.45)' : 'rgba(255, 30, 66, 0.45)';
+          channelIdx % 2 === 0 ? 'rgba(255, 10, 60, 0.45)' : 'rgba(255, 30, 66, 0.45)';
         ctx.lineWidth = 4;
         ctx.strokeRect(2, 2, w - 4, h - 4);
       }
@@ -833,11 +833,11 @@ export function RubiksCubeHubPage({
         <div className="font-mono text-xs text-white flex items-center gap-2 whitespace-nowrap">
           <span className="font-bold tracking-wider uppercase">KAYA 360° Video Cube</span>
           <span className="text-[#E6ECF5]/40">·</span>
-          <span className="text-[#00E5FF] tabular-nums">{turnCount} turns</span>
+          <span className="text-[#F1F5F9] tabular-nums">{turnCount} turns</span>
           <span className="text-[#E6ECF5]/40 hidden sm:inline">·</span>
           <span className="text-[#E6ECF5]/70 hidden sm:inline uppercase">{shapeMode}</span>
           <span className="text-[#E6ECF5]/40 hidden md:inline">·</span>
-          <span className="text-[#FF64B8] hidden md:inline truncate max-w-[180px]">{activeMixLabel}</span>
+          <span className="text-[#FF5C8A] hidden md:inline truncate max-w-[180px]">{activeMixLabel}</span>
         </div>
       </div>
 
@@ -866,7 +866,7 @@ export function RubiksCubeHubPage({
           onClick={() => setDockOpen((o) => !o)}
           className="inline-flex items-center gap-2 px-3.5 py-1 rounded-[7px] bg-[#020203] hover:bg-[#08090C] border border-white/20 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5] transition-colors cursor-pointer"
         >
-          {dockOpen ? <ChevronDown className="w-3.5 h-3.5 text-[#00E5FF]" /> : <ChevronUp className="w-3.5 h-3.5 text-[#00E5FF]" />}
+          {dockOpen ? <ChevronDown className="w-3.5 h-3.5 text-[#F1F5F9]" /> : <ChevronUp className="w-3.5 h-3.5 text-[#F1F5F9]" />}
           <span>{dockOpen ? 'Hide Cube Player' : 'Show Video Cube Player'}</span>
         </button>
 
@@ -907,7 +907,7 @@ export function RubiksCubeHubPage({
                   shuffleMixRef.current();
                 }}
               >
-                <Shuffle className="w-3.5 h-3.5 text-[#00E5FF]" />
+                <Shuffle className="w-3.5 h-3.5 text-[#F1F5F9]" />
                 <span>Shuffle &amp; Mix</span>
               </HardwareButton>
 
@@ -937,7 +937,7 @@ export function RubiksCubeHubPage({
                 }}
                 title="Morph 3D cube geometry while rotating"
               >
-                <Shapes className="w-3.5 h-3.5 text-[#FF64B8]" />
+                <Shapes className="w-3.5 h-3.5 text-[#FF5C8A]" />
                 <span className="capitalize">Shape: {shapeMode}</span>
               </HardwareButton>
 
@@ -957,7 +957,7 @@ export function RubiksCubeHubPage({
                 onClick={() => fileInputRef.current?.click()}
                 title="Load local videos or pictures directly onto spinning Rubik's Cube faces"
               >
-                <Upload className="w-3.5 h-3.5 text-[#00E5FF]" />
+                <Upload className="w-3.5 h-3.5 text-[#F1F5F9]" />
                 <span>+ Workspace Media</span>
               </HardwareButton>
               <input

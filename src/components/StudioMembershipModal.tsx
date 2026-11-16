@@ -180,7 +180,7 @@ export function StudioMembershipModal({
                 <div
                   key={tier.key}
                   className={`cnc-recess rounded-[10px] p-4 flex flex-col justify-between gap-4 border ${
-                    active ? 'border-[#00E5FF]' : 'border-white/15'
+                    active ? 'border-[#F1F5F9]' : 'border-white/15'
                   }`}
                 >
                   <div className="space-y-3">
@@ -191,7 +191,7 @@ export function StudioMembershipModal({
                       >
                         {tier.title}
                       </h3>
-                      <span className="font-mono text-sm font-bold text-[#00E5FF] tabular-nums block">
+                      <span className="font-mono text-sm font-bold text-[#F1F5F9] tabular-nums block">
                         {priceText}
                       </span>
                     </div>
@@ -201,7 +201,7 @@ export function StudioMembershipModal({
                           key={perk}
                           className="flex items-start gap-1.5 font-mono text-[11px] text-[#E6ECF5]/80"
                         >
-                          <Check className="w-3.5 h-3.5 text-[#00E5FF] shrink-0 mt-0.5" />
+                          <Check className="w-3.5 h-3.5 text-[#F1F5F9] shrink-0 mt-0.5" />
                           <span>{perk}</span>
                         </li>
                       ))}
@@ -225,7 +225,7 @@ export function StudioMembershipModal({
           {/* Paid Engine Add-Ons */}
           <div className="cnc-recess rounded-[8px] p-4 space-y-3">
             <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-white font-semibold">
-              <Sparkles className="w-4 h-4 text-[#FF64B8]" />
+              <Sparkles className="w-4 h-4 text-[#FF5C8A]" />
               <span>Optional Paid Studio Modules &amp; Expansion Packs</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
@@ -241,7 +241,7 @@ export function StudioMembershipModal({
                     onClick={() => toggleAddon(addon.id)}
                   >
                     <span className="truncate">{addon.label}</span>
-                    <span className="text-[11px] text-[#FF64B8] tabular-nums shrink-0">
+                    <span className="text-[11px] text-[#FF5C8A] tabular-nums shrink-0">
                       {cycle === 'yearly' ? addon.yearly : addon.monthly}
                     </span>
                   </HardwareButton>
@@ -252,7 +252,7 @@ export function StudioMembershipModal({
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
             <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-[#E6ECF5]/60">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#00E5FF]" />
+              <ShieldCheck className="w-3.5 h-3.5 text-[#F1F5F9]" />
               100% local workstation subscription profile ({cycle === 'yearly' ? 'Annual' : 'Monthly'} billing).
             </span>
             <HardwareButton size="sm" tone="cyan" active onClick={onClose}>

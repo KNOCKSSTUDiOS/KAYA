@@ -31,9 +31,9 @@ const TABS: {
   icon: React.ReactNode;
 }[] = [
   { key: 'brand', label: 'Brand™ & IP', tone: 'red', icon: <Award className="w-3.5 h-3.5 text-[#FF3B5C]" /> },
-  { key: 'security', label: 'Protections', tone: 'cyan', icon: <ShieldCheck className="w-3.5 h-3.5 text-[#00E5FF]" /> },
-  { key: 'policies', label: 'Studio Policies', tone: 'magenta', icon: <Scale className="w-3.5 h-3.5 text-[#FF64B8]" /> },
-  { key: 'terms', label: 'Terms & Privacy', tone: 'cyan', icon: <FileText className="w-3.5 h-3.5 text-[#00E5FF]" /> },
+  { key: 'security', label: 'Protections', tone: 'cyan', icon: <ShieldCheck className="w-3.5 h-3.5 text-[#F1F5F9]" /> },
+  { key: 'policies', label: 'Studio Policies', tone: 'magenta', icon: <Scale className="w-3.5 h-3.5 text-[#FF5C8A]" /> },
+  { key: 'terms', label: 'Terms & Privacy', tone: 'cyan', icon: <FileText className="w-3.5 h-3.5 text-[#F1F5F9]" /> },
   { key: 'gpu', label: 'GPU & 120fps+', tone: 'red', icon: <Gauge className="w-3.5 h-3.5 text-[#FF3B5C]" /> },
 ];
 
@@ -181,7 +181,7 @@ export function StudioLegalModal({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="cnc-module rounded-[8px] p-4 space-y-2">
-                  <h3 className="font-mono text-xs font-bold uppercase text-[#00E5FF]">
+                  <h3 className="font-mono text-xs font-bold uppercase text-[#F1F5F9]">
                     100% Creator Export &amp; © 2024–2026 Music Stamp
                   </h3>
                   <p className="text-xs text-[#E6ECF5]/75 leading-relaxed">
@@ -190,7 +190,7 @@ export function StudioLegalModal({
                   </p>
                 </div>
                 <div className="cnc-module rounded-[8px] p-4 space-y-2">
-                  <h3 className="font-mono text-xs font-bold uppercase text-[#FF64B8]">
+                  <h3 className="font-mono text-xs font-bold uppercase text-[#FF5C8A]">
                     Commercial Broadcast Licensing
                   </h3>
                   <p className="text-xs text-[#E6ECF5]/75 leading-relaxed">
@@ -204,8 +204,8 @@ export function StudioLegalModal({
 
           {tab === 'security' && (
             <div className="space-y-4">
-              <div className="cnc-recess rounded-[10px] p-4 space-y-2 border border-[#00E5FF]/30">
-                <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase text-[#00E5FF]">
+              <div className="cnc-recess rounded-[10px] p-4 space-y-2 border border-[#F1F5F9]/30">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase text-[#F1F5F9]">
                   <Lock className="w-4 h-4" />
                   <span>Zero-Telemetry Local Processing Guarantee</span>
                 </div>
@@ -248,7 +248,7 @@ export function StudioLegalModal({
           {tab === 'policies' && (
             <div className="space-y-3">
               <div className="cnc-recess rounded-[10px] p-4 space-y-2">
-                <h3 className="font-mono text-xs font-bold uppercase text-[#FF64B8]">
+                <h3 className="font-mono text-xs font-bold uppercase text-[#FF5C8A]">
                   Acceptable Use &amp; Broadcast Policy
                 </h3>
                 <ul className="space-y-1.5 text-xs text-[#E6ECF5]/80 list-disc list-inside leading-relaxed">
@@ -260,7 +260,7 @@ export function StudioLegalModal({
               </div>
 
               <div className="cnc-recess rounded-[10px] p-4 space-y-2">
-                <h3 className="font-mono text-xs font-bold uppercase text-[#00E5FF]">
+                <h3 className="font-mono text-xs font-bold uppercase text-[#F1F5F9]">
                   Membership Billing &amp; Cancellation Protection
                 </h3>
                 <p className="text-xs text-[#E6ECF5]/80 leading-relaxed">
@@ -287,7 +287,7 @@ export function StudioLegalModal({
               <div className="cnc-module rounded-[8px] p-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="space-y-1">
                   <span className="font-mono text-xs font-bold text-white flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#00E5FF]" />
+                    <Sparkles className="w-3.5 h-3.5 text-[#F1F5F9]" />
                     Compliance Stamp
                   </span>
                   <p className="font-mono text-[11px] text-[#E6ECF5]/60">
@@ -302,7 +302,7 @@ export function StudioLegalModal({
                   active={!!acceptedAt}
                   onClick={handleAcknowledge}
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#00E5FF]" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#F1F5F9]" />
                   <span>{acceptedAt ? 'Policies Accepted' : 'Accept & Verify'}</span>
                 </HardwareButton>
               </div>
@@ -319,7 +319,7 @@ export function StudioLegalModal({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 font-mono">
                   <div className="cnc-module rounded-[8px] p-3 space-y-1">
                     <span className="text-[10px] uppercase text-[#E6ECF5]/55 block">WebGL2 Adapter</span>
-                    <span className="text-xs text-[#00E5FF] font-semibold break-words">{gpuRenderer}</span>
+                    <span className="text-xs text-[#F1F5F9] font-semibold break-words">{gpuRenderer}</span>
                   </div>
                   <div className="cnc-module rounded-[8px] p-3 space-y-1">
                     <span className="text-[10px] uppercase text-[#E6ECF5]/55 block">Studio Output FPS</span>
@@ -327,7 +327,7 @@ export function StudioLegalModal({
                   </div>
                   <div className="cnc-module rounded-[8px] p-3 space-y-1">
                     <span className="text-[10px] uppercase text-[#E6ECF5]/55 block">Detected Display Hz</span>
-                    <span className="text-xs text-[#FF64B8] font-bold tabular-nums">
+                    <span className="text-xs text-[#FF5C8A] font-bold tabular-nums">
                       {measuredHz ? `${measuredHz} Hz` : 'Measuring…'}
                     </span>
                   </div>
@@ -335,7 +335,7 @@ export function StudioLegalModal({
               </div>
 
               <div className="cnc-module rounded-[8px] p-4 space-y-1.5 text-xs text-[#E6ECF5]/80">
-                <span className="font-mono text-[11px] font-bold uppercase text-[#00E5FF] block">
+                <span className="font-mono text-[11px] font-bold uppercase text-[#F1F5F9] block">
                   Customer Frame Rate Support (24 / 30 / 60 / 90 / 120 / 144 fps)
                 </span>
                 <p className="leading-relaxed">

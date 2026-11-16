@@ -445,13 +445,13 @@ function applyPostStylePass(
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
     const split = ctx.createLinearGradient(0, 0, width, height);
-    split.addColorStop(0, 'rgba(0, 229, 255, 0.16)');
+    split.addColorStop(0, 'rgba(255, 10, 60, 0.16)');
     split.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
-    split.addColorStop(1, 'rgba(230, 57, 155, 0.22)');
+    split.addColorStop(1, 'rgba(255, 46, 99, 0.22)');
     ctx.fillStyle = split;
     ctx.fillRect(0, 0, width, height);
 
-    ctx.strokeStyle = 'rgba(0, 229, 255, 0.14)';
+    ctx.strokeStyle = 'rgba(255, 10, 60, 0.14)';
     ctx.lineWidth = Math.max(1, Math.round(height / 720));
     const horizonY = height * 0.68;
     for (let i = -8; i <= 8; i++) {
@@ -464,12 +464,12 @@ function applyPostStylePass(
   } else if (style === '3d_scifi') {
     // Holographic scanlines & orbital targeting reticle ticks
     ctx.save();
-    ctx.fillStyle = 'rgba(0, 229, 255, 0.045)';
+    ctx.fillStyle = 'rgba(255, 10, 60, 0.045)';
     const step = Math.max(4, Math.round(height / 140));
     for (let y = 0; y < height; y += step * 2) {
       ctx.fillRect(0, y, width, 1);
     }
-    ctx.strokeStyle = 'rgba(0, 229, 255, 0.22)';
+    ctx.strokeStyle = 'rgba(255, 10, 60, 0.22)';
     ctx.lineWidth = Math.max(1, Math.round(width / 1280));
     ctx.beginPath();
     ctx.arc(width / 2, height / 2, Math.min(width, height) * 0.42, t * Math.PI * 2, t * Math.PI * 2 + Math.PI * 0.65);
@@ -479,7 +479,7 @@ function applyPostStylePass(
     // Sculpted 3D triangular wireframe mesh overlay + vertex markers
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
-    ctx.strokeStyle = 'rgba(0, 229, 255, 0.24)';
+    ctx.strokeStyle = 'rgba(255, 10, 60, 0.24)';
     ctx.lineWidth = Math.max(1, Math.round(height / 720));
     const cols = 12;
     const rows = 7;
@@ -503,7 +503,7 @@ function applyPostStylePass(
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
     const arc = ctx.createRadialGradient(width * 0.5, height * 0.25, 10, width * 0.5, height * 0.5, width * 0.65);
-    arc.addColorStop(0, style === 'real_3d' ? 'rgba(0, 229, 255, 0.14)' : 'rgba(255, 220, 180, 0.10)');
+    arc.addColorStop(0, style === 'real_3d' ? 'rgba(255, 10, 60, 0.14)' : 'rgba(255, 220, 180, 0.10)');
     arc.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = arc;
     ctx.fillRect(0, 0, width, height);
@@ -538,8 +538,8 @@ function applyPostStylePass(
     const bandY = ((Math.sin(t * Math.PI * 2) + 1) * 0.5) * height;
     const prism = ctx.createLinearGradient(0, bandY - height * 0.18, 0, bandY + height * 0.18);
     prism.addColorStop(0, 'rgba(0,0,0,0)');
-    prism.addColorStop(0.35, 'rgba(0, 229, 255, 0.18)');
-    prism.addColorStop(0.5, 'rgba(230, 57, 155, 0.22)');
+    prism.addColorStop(0.35, 'rgba(255, 10, 60, 0.18)');
+    prism.addColorStop(0.5, 'rgba(255, 46, 99, 0.22)');
     prism.addColorStop(0.65, 'rgba(255, 210, 90, 0.14)');
     prism.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = prism;
@@ -549,7 +549,7 @@ function applyPostStylePass(
     // Optical rangefinder horizon reticle, grid locks & bracket frame
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
-    ctx.strokeStyle = 'rgba(0, 229, 255, 0.34)';
+    ctx.strokeStyle = 'rgba(255, 10, 60, 0.34)';
     ctx.lineWidth = Math.max(1, Math.round(height / 720));
     const pad = Math.round(Math.min(width, height) * 0.06);
     const arm = Math.round(Math.min(width, height) * 0.05);
@@ -588,7 +588,7 @@ function applyPostStylePass(
     ctx.globalCompositeOperation = 'screen';
     const caustic = ctx.createLinearGradient(0, 0, width, height);
     caustic.addColorStop(0, 'rgba(255, 255, 255, 0.14)');
-    caustic.addColorStop(0.45, 'rgba(0, 229, 255, 0.08)');
+    caustic.addColorStop(0.45, 'rgba(255, 10, 60, 0.08)');
     caustic.addColorStop(1, 'rgba(255, 255, 255, 0.12)');
     ctx.fillStyle = caustic;
     ctx.fillRect(0, 0, width, height);
@@ -742,12 +742,12 @@ function drawCompositionFrame(params: FrameDrawParams) {
       halo.addColorStop(
         0,
         renderStyle === '3d_cyberpunk'
-          ? 'rgba(230, 57, 155, 0.32)'
+          ? 'rgba(255, 46, 99, 0.32)'
           : isWarmer
           ? 'rgba(255, 195, 130, 0.26)'
-          : 'rgba(0, 229, 255, 0.24)'
+          : 'rgba(255, 10, 60, 0.24)'
       );
-      halo.addColorStop(0.55, isUltra ? 'rgba(230, 57, 155, 0.14)' : 'rgba(255, 255, 255, 0.06)');
+      halo.addColorStop(0.55, isUltra ? 'rgba(255, 46, 99, 0.14)' : 'rgba(255, 255, 255, 0.06)');
       halo.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = halo;
       ctx.fillRect(0, 0, width, height);
@@ -791,9 +791,9 @@ function drawCompositionFrame(params: FrameDrawParams) {
 
   if (!transparentBackground || includeShadow) {
     ctx.shadowColor = renderStyle === '3d_scifi'
-      ? 'rgba(0, 229, 255, 0.35)'
+      ? 'rgba(255, 10, 60, 0.35)'
       : renderStyle === '3d_cyberpunk'
-      ? 'rgba(230, 57, 155, 0.42)'
+      ? 'rgba(255, 46, 99, 0.42)'
       : 'rgba(0, 0, 0, 0.55)';
     ctx.shadowBlur = Math.round(height * 0.035);
     ctx.shadowOffsetY = Math.round(height * 0.018);
@@ -818,7 +818,7 @@ function drawCompositionFrame(params: FrameDrawParams) {
       lightGrad.addColorStop(1, 'rgba(0, 0, 0, 0.38)');
     } else if (isCooler || renderStyle === '3d_scifi') {
       lightGrad.addColorStop(0, isHDR ? 'rgba(186, 240, 255, 0.36)' : 'rgba(186, 230, 253, 0.26)');
-      lightGrad.addColorStop(0.45, 'rgba(0, 229, 255, 0.16)');
+      lightGrad.addColorStop(0.45, 'rgba(255, 10, 60, 0.16)');
       lightGrad.addColorStop(1, 'rgba(0, 0, 0, 0.42)');
     } else {
       lightGrad.addColorStop(0, isHDR ? 'rgba(255, 255, 255, 0.30)' : 'rgba(255, 255, 255, 0.20)');
@@ -945,13 +945,13 @@ export async function renderCinematicReel(
 
   const flarePrimary =
     renderStyle === '3d_cyberpunk'
-      ? 'rgba(230, 57, 155, 0.5)'
+      ? 'rgba(255, 46, 99, 0.5)'
       : isWarmer
       ? 'rgba(255, 210, 140, 0.45)'
       : isCooler || renderStyle === '3d_scifi'
       ? 'rgba(100, 235, 255, 0.48)'
-      : 'rgba(0, 229, 255, 0.36)';
-  const flareSecondary = isWarmer ? 'rgba(255, 120, 60, 0.2)' : 'rgba(230, 57, 155, 0.22)';
+      : 'rgba(255, 10, 60, 0.36)';
+  const flareSecondary = isWarmer ? 'rgba(255, 120, 60, 0.2)' : 'rgba(255, 46, 99, 0.22)';
   const flareSprite = createAnamorphicFlareSprite(
     Math.round(width * 0.72),
     Math.round(height * 0.22),
@@ -1134,8 +1134,8 @@ export async function exportCompositionStillFrame(
   const flareSprite = createAnamorphicFlareSprite(
     Math.round(width * 0.72),
     Math.round(height * 0.22),
-    'rgba(0, 229, 255, 0.36)',
-    'rgba(230, 57, 155, 0.22)'
+    'rgba(255, 10, 60, 0.36)',
+    'rgba(255, 46, 99, 0.22)'
   );
 
   drawCompositionFrame({
@@ -1213,8 +1213,8 @@ export async function exportCompositionSequenceArchive(
   const flareSprite = createAnamorphicFlareSprite(
     Math.round(width * 0.72),
     Math.round(height * 0.22),
-    'rgba(0, 229, 255, 0.36)',
-    'rgba(230, 57, 155, 0.22)'
+    'rgba(255, 10, 60, 0.36)',
+    'rgba(255, 46, 99, 0.22)'
   );
 
   const entries: ZipEntryInput[] = [];

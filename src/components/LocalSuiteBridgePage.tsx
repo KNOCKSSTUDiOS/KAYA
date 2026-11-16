@@ -100,8 +100,8 @@ export function LocalSuiteBridgePage({
   <rect width="1920" height="1080" fill="#030406"/>
   <rect x="36" y="36" width="1848" height="1008" rx="28" fill="#0B0D12" stroke="#FF1E42" stroke-width="4"/>
   <g transform="translate(960,540)">
-    <polygon points="0,-240 208,-120 208,120 0,240 -208,120 -208,-120" fill="none" stroke="#00E5FF" stroke-width="6"/>
-    <rect x="-110" y="-110" width="220" height="220" rx="24" fill="none" stroke="#E6399B" stroke-width="5"/>
+    <polygon points="0,-240 208,-120 208,120 0,240 -208,120 -208,-120" fill="none" stroke="#F1F5F9" stroke-width="6"/>
+    <rect x="-110" y="-110" width="220" height="220" rx="24" fill="none" stroke="#FF2E63" stroke-width="5"/>
   </g>
   <text x="960" y="960" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-size="64" letter-spacing="18">KAYA</text>
 </svg>`;
@@ -200,7 +200,7 @@ print("[KAYA Bridge] WebSocket endpoint protocol: ws://127.0.0.1:${wsPort}")
     <PlateBezel accent="cyan" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Cable className="w-4 h-4 text-[#00E5FF]" />
+          <Cable className="w-4 h-4 text-[#F1F5F9]" />
           <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-display)' }}>
             Desktop Workstation Bridge (Open Local Protocols)
           </h2>
@@ -217,7 +217,7 @@ print("[KAYA Bridge] WebSocket endpoint protocol: ws://127.0.0.1:${wsPort}")
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="cnc-recess rounded-[8px] p-4 flex flex-col justify-between gap-3 border border-white/10">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#00E5FF] uppercase">
+            <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#F1F5F9] uppercase">
               <Box className="w-4 h-4" />
               <span>3D Viewport Mesh Link</span>
             </div>
@@ -226,14 +226,14 @@ print("[KAYA Bridge] WebSocket endpoint protocol: ws://127.0.0.1:${wsPort}")
             </p>
           </div>
           <HardwareButton size="sm" fullWidth tone="cyan" active disabled={busy} onClick={handleExportGlbScene}>
-            <Download className="w-3.5 h-3.5 text-[#00E5FF]" />
+            <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
             <span>Export 3D Scene (.GLB)</span>
           </HardwareButton>
         </div>
 
         <div className="cnc-recess rounded-[8px] p-4 flex flex-col justify-between gap-3 border border-white/10">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#FF64B8] uppercase">
+            <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#FF5C8A] uppercase">
               <Layers className="w-4 h-4" />
               <span>Paint &amp; Raster Stack</span>
             </div>
@@ -242,7 +242,7 @@ print("[KAYA Bridge] WebSocket endpoint protocol: ws://127.0.0.1:${wsPort}")
             </p>
           </div>
           <HardwareButton size="sm" fullWidth tone="magenta" active disabled={busy} onClick={handleExportLayeredPaintBundle}>
-            <Download className="w-3.5 h-3.5 text-[#FF64B8]" />
+            <Download className="w-3.5 h-3.5 text-[#FF5C8A]" />
             <span>Export Paint Bundle (.ZIP)</span>
           </HardwareButton>
         </div>
@@ -266,7 +266,7 @@ print("[KAYA Bridge] WebSocket endpoint protocol: ws://127.0.0.1:${wsPort}")
         <div className="cnc-recess rounded-[8px] p-4 flex flex-col justify-between gap-3 border border-white/10">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 font-mono text-xs font-bold text-white uppercase">
-              <FileCode className="w-4 h-4 text-[#00E5FF]" />
+              <FileCode className="w-4 h-4 text-[#F1F5F9]" />
               <span>Local Bridge Daemon</span>
             </div>
             <p className="text-[11px] font-mono text-[#E6ECF5]/65">
@@ -274,7 +274,7 @@ print("[KAYA Bridge] WebSocket endpoint protocol: ws://127.0.0.1:${wsPort}")
             </p>
           </div>
           <HardwareButton size="sm" fullWidth tone="cyan" active={false} onClick={handleDownloadPythonBridge}>
-            <Download className="w-3.5 h-3.5 text-[#00E5FF]" />
+            <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
             <span>Download kaya-bridge.py</span>
           </HardwareButton>
         </div>
@@ -290,7 +290,7 @@ print("[KAYA Bridge] WebSocket endpoint protocol: ws://127.0.0.1:${wsPort}")
             type="text"
             value={wsPort}
             onChange={(e) => setWsPort(e.target.value.replace(/\D/g, '').slice(0, 5) || '8765')}
-            className="w-20 bg-[#020203] border border-white/20 rounded-[6px] px-2.5 py-1 font-mono text-xs text-[#00E5FF] focus:outline-none focus:border-[#00E5FF]"
+            className="w-20 bg-[#020203] border border-white/20 rounded-[6px] px-2.5 py-1 font-mono text-xs text-[#F1F5F9] focus:outline-none focus:border-[#F1F5F9]"
           />
           {wsStatus === 'connected' && (
             <span className="inline-flex items-center gap-1 font-mono text-xs text-emerald-400">

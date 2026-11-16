@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="obsidianBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0A0C12" />
+      <stop offset="100%" stop-color="#030406" />
+    </linearGradient>
+    <linearGradient id="platinumRim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F8FAFC" />
+      <stop offset="45%" stop-color="#94A3B8" />
+      <stop offset="100%" stop-color="#E2E8F0" />
+    </linearGradient>
+    <radialGradient id="candyCore" cx="45%" cy="38%" r="60%">
+      <stop offset="0%" stop-color="#FF5C8A" />
+      <stop offset="52%" stop-color="#FF0A3C" />
+      <stop offset="100%" stop-color="#7F001C" />
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#obsidianBg)" />
+  <rect x="44" y="44" width="424" height="424" rx="92" fill="#07090D" stroke="url(#platinumRim)" stroke-width="20" />
+  <circle cx="256" cy="256" r="154" fill="#050608" stroke="#334155" stroke-width="8" />
+  <polygon points="256,126 368.6,191 368.6,321 256,386 143.4,321 143.4,191" fill="none" stroke="#FF2E63" stroke-width="10" stroke-linejoin="round" opacity="0.85" />
+  <polygon points="256,154 344.3,205 344.3,307 256,358 167.7,307 167.7,205" fill="url(#candyCore)" stroke="#FF8FA3" stroke-width="5" stroke-linejoin="round" />
+</svg>

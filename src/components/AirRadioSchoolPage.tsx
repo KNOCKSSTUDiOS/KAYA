@@ -183,7 +183,7 @@ export function AirRadioPage() {
           ctx.fillRect(0, 0, w, h);
 
           // Subtle FM frequency ruler lines
-          ctx.strokeStyle = 'rgba(0, 229, 255, 0.14)';
+          ctx.strokeStyle = 'rgba(255, 10, 60, 0.14)';
           ctx.lineWidth = 1;
           for (let x = 20; x < w; x += 40) {
             ctx.beginPath();
@@ -199,7 +199,7 @@ export function AirRadioPage() {
             for (let i = 0; i < 48; i++) {
               const mag = bins[i] / 255;
               const bh = Math.max(4, mag * (h * 0.82));
-              ctx.fillStyle = i % 3 === 0 ? '#FF1E42' : i % 2 === 0 ? '#00E5FF' : '#E6399B';
+              ctx.fillStyle = i % 3 === 0 ? '#FF1E42' : i % 2 === 0 ? '#F1F5F9' : '#FF2E63';
               ctx.fillRect(i * barW + 2, h - bh, Math.max(2, barW - 4), bh);
             }
           } else {
@@ -221,7 +221,7 @@ export function AirRadioPage() {
     <PlateBezel accent="cyan" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Radio className="w-4 h-4 text-[#00E5FF]" />
+          <Radio className="w-4 h-4 text-[#F1F5F9]" />
           <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-display)' }}>
             KAYA AirRadio · Broadcast &amp; Live FM Synth Console
           </h2>
@@ -232,7 +232,7 @@ export function AirRadioPage() {
       {/* Live FM Spectrum & Carrier Readout */}
       <div className="cnc-recess rounded-[10px] p-3 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
-          <span className="text-[#00E5FF] font-bold text-lg tabular-nums">{tunerFreq.toFixed(1)} MHz</span>
+          <span className="text-[#F1F5F9] font-bold text-lg tabular-nums">{tunerFreq.toFixed(1)} MHz</span>
           <span className="text-[#E6ECF5]/75">{activeChannel.name} · {activeChannel.genre}</span>
           <span className="text-[#FF3B5C] tabular-nums">{activeChannel.bpm} BPM</span>
         </div>
@@ -364,7 +364,7 @@ const ACADEMY_LESSONS: AcademyLesson[] = [
     title: '04 · Telemetry HUD & Cinema Compositing',
     level: 'Rendering School',
     summary: 'Combining rangefinder overlays, horizon reticles, and 2.39:1 scope color grading inside 60fps streams.',
-    code: `// Horizon Lock & Optical HUD Pass\nctx.strokeStyle = 'rgba(0, 229, 255, 0.8)';\ndrawReticle(centerX, centerY, radius, sweepAngle);`,
+    code: `// Horizon Lock & Optical HUD Pass\nctx.strokeStyle = 'rgba(255, 10, 60, 0.8)';\ndrawReticle(centerX, centerY, radius, sweepAngle);`,
     demoMode: 'telemetry',
   },
 ];
@@ -408,12 +408,12 @@ export function CodingRenderingSchoolPage() {
             for (let y = 0; y < h; y += 14) {
               for (let x = 0; x < w; x += 22) {
                 const wave = Math.sin(x * 0.02 + y * 0.015 + t * 2.4);
-                ctx.fillStyle = wave > 0.2 ? 'rgba(255, 118, 42, 0.75)' : wave < -0.2 ? 'rgba(0, 229, 255, 0.55)' : 'rgba(255, 30, 66, 0.25)';
+                ctx.fillStyle = wave > 0.2 ? 'rgba(255, 118, 42, 0.75)' : wave < -0.2 ? 'rgba(255, 10, 60, 0.55)' : 'rgba(255, 30, 66, 0.25)';
                 ctx.fillRect(x, y, 16, 8);
               }
             }
           } else if (activeLesson.demoMode === 'mesh') {
-            ctx.strokeStyle = '#00E5FF';
+            ctx.strokeStyle = '#F1F5F9';
             ctx.lineWidth = 1.4;
             const cx = w / 2;
             const cy = h / 2;
@@ -428,7 +428,7 @@ export function CodingRenderingSchoolPage() {
               ctx.stroke();
             }
           } else if (activeLesson.demoMode === 'telemetry') {
-            ctx.strokeStyle = '#00E5FF';
+            ctx.strokeStyle = '#F1F5F9';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(w / 2, h / 2, 74, t * 2, t * 2 + Math.PI * 1.3);
@@ -475,7 +475,7 @@ export function CodingRenderingSchoolPage() {
     <PlateBezel accent="magenta" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <GraduationCap className="w-4 h-4 text-[#FF64B8]" />
+          <GraduationCap className="w-4 h-4 text-[#FF5C8A]" />
           <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-display)' }}>
             KAYA Coding &amp; Rendering Academy (Rust · Three.js · Shaders)
           </h2>
@@ -500,9 +500,9 @@ export function CodingRenderingSchoolPage() {
               onClick={() => setSelectedId(lesson.id)}
             >
               {lesson.track === 'coding' ? (
-                <Code2 className="w-3.5 h-3.5 text-[#00E5FF] shrink-0" />
+                <Code2 className="w-3.5 h-3.5 text-[#F1F5F9] shrink-0" />
               ) : (
-                <Sparkles className="w-3.5 h-3.5 text-[#FF64B8] shrink-0" />
+                <Sparkles className="w-3.5 h-3.5 text-[#FF5C8A] shrink-0" />
               )}
               <span className="truncate">{lesson.title}</span>
               {done && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
@@ -515,7 +515,7 @@ export function CodingRenderingSchoolPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="cnc-recess rounded-[10px] p-4 space-y-3 flex flex-col justify-between">
           <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2 font-mono text-xs text-[#00E5FF]">
+            <div className="flex items-center justify-between gap-2 font-mono text-xs text-[#F1F5F9]">
               <span className="flex items-center gap-1.5 font-bold">
                 <Terminal className="w-3.5 h-3.5" />
                 <span>{activeLesson.level}</span>
@@ -528,13 +528,13 @@ export function CodingRenderingSchoolPage() {
               onChange={(e) => setEditableCode(e.target.value)}
               rows={7}
               spellCheck={false}
-              className="w-full rounded-[6px] bg-[#020203] border border-white/15 p-3 font-mono text-xs text-[#00E5FF] focus:outline-none focus:border-[#00E5FF]"
+              className="w-full rounded-[6px] bg-[#020203] border border-white/15 p-3 font-mono text-xs text-[#F1F5F9] focus:outline-none focus:border-[#F1F5F9]"
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <HardwareButton size="sm" tone="cyan" active onClick={() => setRunningTick((t) => t + 1)}>
-              <Cpu className="w-3.5 h-3.5 text-[#00E5FF]" />
+              <Cpu className="w-3.5 h-3.5 text-[#F1F5F9]" />
               <span>Execute Shader Lab</span>
             </HardwareButton>
             <HardwareButton

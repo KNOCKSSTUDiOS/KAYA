@@ -122,7 +122,7 @@ export function PictureAnimatorPage({
             const oppX = w * (0.72 - strike * 0.16);
             const bounceY = Math.sin(t * 7) * 10;
 
-            drawFighter(heroImg, heroX, h * 0.54 + bounceY, h * 0.58, strike * 0.14, 1, 1, '#00E5FF');
+            drawFighter(heroImg, heroX, h * 0.54 + bounceY, h * 0.58, strike * 0.14, 1, 1, '#F1F5F9');
             drawFighter(oppImg, oppX, h * 0.54 - bounceY, h * 0.58, -strike * 0.14, -1, 1, '#FF1E42');
 
             // Shockwave ring + sparks at center impact
@@ -130,7 +130,7 @@ export function PictureAnimatorPage({
               ctx.save();
               ctx.globalCompositeOperation = 'screen';
               const radius = (strike - 0.45) * 320;
-              ctx.strokeStyle = 'rgba(0, 229, 255, 0.85)';
+              ctx.strokeStyle = 'rgba(255, 10, 60, 0.85)';
               ctx.lineWidth = 4;
               ctx.beginPath();
               ctx.arc(w / 2, h * 0.5, radius, 0, Math.PI * 2);
@@ -138,7 +138,7 @@ export function PictureAnimatorPage({
 
               for (let k = 0; k < 14; k++) {
                 const ang = (k / 14) * Math.PI * 2 + t * 5;
-                ctx.strokeStyle = k % 2 === 0 ? '#FF1E42' : '#00E5FF';
+                ctx.strokeStyle = k % 2 === 0 ? '#FF1E42' : '#F1F5F9';
                 ctx.lineWidth = 2.5;
                 ctx.beginPath();
                 ctx.moveTo(w / 2 + Math.cos(ang) * 20, h * 0.5 + Math.sin(ang) * 20);
@@ -152,27 +152,27 @@ export function PictureAnimatorPage({
             }
           } else if (mode === 'hero_entrance') {
             const zoomH = h * (0.52 + Math.sin(t * 1.4) * 0.1);
-            drawFighter(heroImg, w / 2, h * 0.54 + Math.sin(t * 2.5) * 12, zoomH, Math.sin(t * 1.2) * 0.05, 1, 1, '#00E5FF');
+            drawFighter(heroImg, w / 2, h * 0.54 + Math.sin(t * 2.5) * 12, zoomH, Math.sin(t * 1.2) * 0.05, 1, 1, '#F1F5F9');
           } else if (mode === 'supercharge_aura') {
             const hoverY = Math.sin(t * 4.5) * 18;
             ctx.save();
             ctx.globalCompositeOperation = 'screen';
             for (let r = 0; r < 3; r++) {
               const rad = 85 + ((t * 160 + r * 60) % 210);
-              ctx.strokeStyle = r % 2 === 0 ? 'rgba(0,229,255,0.65)' : 'rgba(230,57,155,0.65)';
+              ctx.strokeStyle = r % 2 === 0 ? 'rgba(255, 10, 60,0.65)' : 'rgba(255, 46, 99,0.65)';
               ctx.lineWidth = 3;
               ctx.beginPath();
               ctx.ellipse(w / 2, h * 0.78, rad * 1.4, rad * 0.38, 0, 0, Math.PI * 2);
               ctx.stroke();
             }
             ctx.restore();
-            drawFighter(heroImg, w / 2, h * 0.5 + hoverY, h * 0.62, 0, 1 + Math.sin(t * 12) * 0.02, 1, '#E6399B');
+            drawFighter(heroImg, w / 2, h * 0.5 + hoverY, h * 0.62, 0, 1 + Math.sin(t * 12) * 0.02, 1, '#FF2E63');
           } else if (mode === 'mesh_turntable') {
             const turnCos = Math.cos(t * 1.8);
             const sx = Math.abs(turnCos) < 0.14 ? 0.14 : Math.abs(turnCos);
-            drawFighter(heroImg, w / 2, h * 0.52, h * 0.62, Math.sin(t * 1.8) * 0.06, sx, 1, '#00E5FF');
+            drawFighter(heroImg, w / 2, h * 0.52, h * 0.62, Math.sin(t * 1.8) * 0.06, sx, 1, '#F1F5F9');
             ctx.save();
-            ctx.strokeStyle = 'rgba(0, 229, 255, 0.25)';
+            ctx.strokeStyle = 'rgba(255, 10, 60, 0.25)';
             ctx.lineWidth = 1;
             for (let i = 0; i < 16; i++) {
               ctx.beginPath();
@@ -186,9 +186,9 @@ export function PictureAnimatorPage({
             const squashX = 1.15 - bounce * 0.22;
             const stretchY = 0.85 + bounce * 0.26;
             const cy = h * 0.68 - bounce * h * 0.22;
-            drawFighter(heroImg, w / 2, cy, h * 0.54, Math.sin(t * 4.2) * 0.08, squashX, stretchY, '#FF64B8');
+            drawFighter(heroImg, w / 2, cy, h * 0.54, Math.sin(t * 4.2) * 0.08, squashX, stretchY, '#FF5C8A');
           } else if (mode === 'anime_slash') {
-            drawFighter(heroImg, w * 0.45, h * 0.54, h * 0.6, -0.08, 1, 1, '#00E5FF');
+            drawFighter(heroImg, w * 0.45, h * 0.54, h * 0.6, -0.08, 1, 1, '#F1F5F9');
             ctx.save();
             ctx.globalCompositeOperation = 'screen';
             const slashProgress = (t * 1.8) % 1;
@@ -283,15 +283,15 @@ export function PictureAnimatorPage({
 
       {/* Upload Custom Hero / Opponent Pictures */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <label className="cnc-recess rounded-[8px] p-3 flex items-center justify-between gap-3 border border-white/15 hover:border-[#00E5FF] cursor-pointer">
+        <label className="cnc-recess rounded-[8px] p-3 flex items-center justify-between gap-3 border border-white/15 hover:border-[#F1F5F9] cursor-pointer">
           <div className="flex items-center gap-3 min-w-0">
             <img src={heroUrl} alt="Lead Subject" className="w-12 h-12 rounded-[6px] object-cover border border-white/15 shrink-0" />
             <div className="min-w-0">
-              <span className="font-mono text-xs font-bold text-[#00E5FF] block">Lead Picture / Character</span>
+              <span className="font-mono text-xs font-bold text-[#F1F5F9] block">Lead Picture / Character</span>
               <span className="font-mono text-[11px] text-[#E6ECF5]/60 truncate block">Upload any photo or artwork…</span>
             </div>
           </div>
-          <Upload className="w-4 h-4 text-[#00E5FF] shrink-0" />
+          <Upload className="w-4 h-4 text-[#F1F5F9] shrink-0" />
           <input
             type="file"
             accept="image/*"
@@ -365,7 +365,7 @@ export function PictureAnimatorPage({
               <span>{recording ? 'Capturing 4s…' : 'Record 4s Video'}</span>
             </HardwareButton>
             <HardwareButton size="sm" tone="magenta" active disabled={packingZip} onClick={handleExportFramesZip}>
-              <Download className="w-3.5 h-3.5 text-[#FF64B8]" />
+              <Download className="w-3.5 h-3.5 text-[#FF5C8A]" />
               <span>{packingZip ? 'Packing…' : 'PNG Sequence (.ZIP)'}</span>
             </HardwareButton>
           </div>

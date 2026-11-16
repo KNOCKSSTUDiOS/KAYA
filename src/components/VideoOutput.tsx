@@ -50,7 +50,7 @@ interface VideoOutputProps {
 const logColor = (type: LogType) =>
   type === 'error' ? 'text-[#FF7088]' :
   type === 'warn' ? 'text-amber-300' :
-  type === 'success' ? 'text-[#00E5FF]' :
+  type === 'success' ? 'text-[#F1F5F9]' :
   'text-[#E6ECF5]/75';
 
 const readableError = (raw: string): string => {
@@ -266,7 +266,7 @@ export function VideoOutput({
             Realtime Preview
           </h2>
           {versionLabel ? (
-            <span className="font-mono text-xs text-[#00E5FF] tabular-nums whitespace-nowrap">
+            <span className="font-mono text-xs text-[#F1F5F9] tabular-nums whitespace-nowrap">
               {versionLabel} · {targetDuration} · {formatSpecLabel}
             </span>
           ) : (
@@ -285,7 +285,7 @@ export function VideoOutput({
               onClick={() => setExporterOpen((o) => !o)}
               title="Export high-resolution still frames or transparent PNG sequence (.zip)"
             >
-              <Camera className="w-3.5 h-3.5 text-[#00E5FF]" />
+              <Camera className="w-3.5 h-3.5 text-[#F1F5F9]" />
               <span>Frames / PNG</span>
             </HardwareButton>
           )}
@@ -320,7 +320,7 @@ export function VideoOutput({
               onClick={onToggleLoop}
               aria-label={isLooping ? 'Disable infinite loop' : 'Enable infinite loop'}
             >
-              {isLooping ? <Repeat className="w-3.5 h-3.5 text-[#E6399B]" /> : <Repeat1 className="w-3.5 h-3.5" />}
+              {isLooping ? <Repeat className="w-3.5 h-3.5 text-[#FF2E63]" /> : <Repeat1 className="w-3.5 h-3.5" />}
               <span>Loop: {isLooping ? 'ON' : 'OFF'}</span>
             </HardwareButton>
           )}
@@ -377,7 +377,7 @@ export function VideoOutput({
                 </div>
                 <div className="w-56 h-1.5 mx-auto rounded bg-[#07080C] border border-white/10 overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-[#FF1E42] via-[#E6399B] to-[#00E5FF] transition-all duration-150"
+                    className="h-full bg-gradient-to-r from-[#FF1E42] via-[#FF2E63] to-[#F1F5F9] transition-all duration-150"
                     style={{ width: `${Math.max(4, renderProgress)}%` }}
                   />
                 </div>
@@ -411,10 +411,10 @@ export function VideoOutput({
 
       {/* Frame & Transparent PNG Sequence Exporter Drawer */}
       {appState === 'VIDEO_READY' && videoUrl && exporterOpen && (
-        <div className="cnc-recess rounded-[10px] p-4 space-y-4 border border-[#00E5FF]/25">
+        <div className="cnc-recess rounded-[10px] p-4 space-y-4 border border-[#F1F5F9]/25">
           <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2 border-b border-white/10">
             <div className="flex items-center gap-2.5 min-w-0">
-              <Film className="w-4 h-4 text-[#00E5FF] shrink-0" />
+              <Film className="w-4 h-4 text-[#F1F5F9] shrink-0" />
               <h3
                 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white"
                 style={{ fontFamily: 'var(--font-display)' }}
@@ -486,7 +486,7 @@ export function VideoOutput({
                   {exportingKind === 'still' ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
-                    <ImageIcon className="w-3.5 h-3.5 text-[#00E5FF]" />
+                    <ImageIcon className="w-3.5 h-3.5 text-[#F1F5F9]" />
                   )}
                   <span>Still (.png)</span>
                 </HardwareButton>
@@ -511,7 +511,7 @@ export function VideoOutput({
                     onClick={() => handleExportStill('alpha-png')}
                     title="Export current frame subject with transparent RGBA alpha channel"
                   >
-                    <Layers className="w-3.5 h-3.5 text-[#FF64B8]" />
+                    <Layers className="w-3.5 h-3.5 text-[#FF5C8A]" />
                     <span>Alpha Cutout (.png)</span>
                   </HardwareButton>
                 )}
@@ -613,11 +613,11 @@ export function VideoOutput({
               <div className="space-y-1.5 pt-1">
                 <div className="flex items-center justify-between font-mono text-[11px] text-[#E6ECF5]/75 tabular-nums">
                   <span>Encoding frame {seqProgress.current} of {seqProgress.total}…</span>
-                  <span className="text-[#00E5FF] font-semibold">{seqProgress.percent}%</span>
+                  <span className="text-[#F1F5F9] font-semibold">{seqProgress.percent}%</span>
                 </div>
                 <div className="w-full h-2 rounded-full bg-[#050609] border border-white/10 overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-[#FF1E42] via-[#E6399B] to-[#00E5FF] transition-all duration-100"
+                    className="h-full bg-gradient-to-r from-[#FF1E42] via-[#FF2E63] to-[#F1F5F9] transition-all duration-100"
                     style={{ width: `${Math.max(3, seqProgress.percent)}%` }}
                   />
                 </div>
@@ -625,7 +625,7 @@ export function VideoOutput({
             )}
 
             {exportStatusMsg && !seqProgress && (
-              <div className="font-mono text-[11px] text-[#00E5FF] bg-[#07080C] border border-[#00E5FF]/25 rounded-[6px] px-3 py-2">
+              <div className="font-mono text-[11px] text-[#F1F5F9] bg-[#07080C] border border-[#F1F5F9]/25 rounded-[6px] px-3 py-2">
                 {exportStatusMsg}
               </div>
             )}

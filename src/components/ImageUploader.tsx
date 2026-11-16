@@ -68,7 +68,7 @@ export function ImageUploader({
 
   const isCustomUpload = selection?.source === 'upload' && selection.images.length > 0;
   const accentTone = type === 'product' ? 'cyan' : 'magenta';
-  const accentHex = type === 'product' ? '#00E5FF' : '#E6399B';
+  const accentHex = type === 'product' ? '#F1F5F9' : '#FF2E63';
 
   return (
     <PlateBezel accent={selection ? accentTone : 'neutral'} className="p-5 sm:p-6 space-y-4">
@@ -122,11 +122,11 @@ export function ImageUploader({
                 onClick={() => handleChipClick(item)}
                 disabled={disabled}
                 type="button"
-                className={`group relative flex flex-col p-[2px] rounded-[8px] bg-gradient-to-b text-left transition-all duration-150 active:translate-y-[1px] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#00E5FF] disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`group relative flex flex-col p-[2px] rounded-[8px] bg-gradient-to-b text-left transition-all duration-150 active:translate-y-[1px] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#F1F5F9] disabled:opacity-50 disabled:cursor-not-allowed ${
                   isItemActive
                     ? type === 'product'
-                      ? 'from-[#00E5FF]/80 via-[#08222B] to-[#020406] shadow-[0_0_16px_rgba(0,229,255,0.28)]'
-                      : 'from-[#E6399B]/80 via-[#280B22] to-[#040205] shadow-[0_0_16px_rgba(230,57,155,0.28)]'
+                      ? 'from-[#F1F5F9]/80 via-[#08222B] to-[#020406] shadow-[0_0_16px_rgba(255, 10, 60,0.28)]'
+                      : 'from-[#FF2E63]/80 via-[#280B22] to-[#040205] shadow-[0_0_16px_rgba(255, 46, 99,0.28)]'
                     : 'from-[#16181F] via-[#07080B] to-[#000000] hover:from-[#222631]'
                 }`}
               >
@@ -175,10 +175,10 @@ export function ImageUploader({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
               }}
-              className={`relative group flex flex-col p-[2px] rounded-[8px] bg-gradient-to-b text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[#00E5FF] ${
+              className={`relative group flex flex-col p-[2px] rounded-[8px] bg-gradient-to-b text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[#F1F5F9] ${
                 type === 'product'
-                  ? 'from-[#00E5FF]/80 via-[#08222B] to-[#020406] shadow-[0_0_16px_rgba(0,229,255,0.28)]'
-                  : 'from-[#E6399B]/80 via-[#280B22] to-[#040205] shadow-[0_0_16px_rgba(230,57,155,0.28)]'
+                  ? 'from-[#F1F5F9]/80 via-[#08222B] to-[#020406] shadow-[0_0_16px_rgba(255, 10, 60,0.28)]'
+                  : 'from-[#FF2E63]/80 via-[#280B22] to-[#040205] shadow-[0_0_16px_rgba(255, 46, 99,0.28)]'
               }`}
             >
               <div className="w-full h-full rounded-[6px] bg-[#040507] hw-glass-sheen p-2 flex flex-col">
@@ -222,10 +222,10 @@ export function ImageUploader({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
               }}
-              className={`flex flex-col items-center justify-center p-3 rounded-[8px] text-center border border-dashed transition-all cursor-pointer min-h-[112px] focus-visible:outline-2 focus-visible:outline-[#00E5FF] ${
+              className={`flex flex-col items-center justify-center p-3 rounded-[8px] text-center border border-dashed transition-all cursor-pointer min-h-[112px] focus-visible:outline-2 focus-visible:outline-[#F1F5F9] ${
                 dragging
-                  ? 'border-[#00E5FF] bg-[#00E5FF]/10 shadow-[0_0_14px_rgba(0,229,255,0.2)]'
-                  : 'border-white/20 hover:border-[#00E5FF]/60 bg-[#040507] hover:bg-[#080A0E]'
+                  ? 'border-[#F1F5F9] bg-[#F1F5F9]/10 shadow-[0_0_14px_rgba(255, 10, 60,0.2)]'
+                  : 'border-white/20 hover:border-[#F1F5F9]/60 bg-[#040507] hover:bg-[#080A0E]'
               }`}
             >
               <div className="w-8 h-8 rounded-[6px] cnc-module flex items-center justify-center mb-2 text-[#E6ECF5]/80">

@@ -14,35 +14,34 @@ export function HexScrew({ className = '' }: { className?: string }) {
       <svg viewBox="0 0 16 16" className="w-3 h-3">
         <defs>
           <radialGradient id="steelScrewCap" cx="35%" cy="28%" r="72%">
-            <stop offset="0%" stopColor="#525B73" />
-            <stop offset="48%" stopColor="#1D222E" />
+            <stop offset="0%" stopColor="#64748B" />
+            <stop offset="48%" stopColor="#1E293B" />
             <stop offset="100%" stopColor="#08090D" />
           </radialGradient>
         </defs>
         <circle cx="8" cy="8" r="6.8" fill="url(#steelScrewCap)" stroke="#050608" strokeWidth="1" />
-        {/* Precision cross / hex recess */}
         <polygon
           points="8,4.2 11.3,6.1 11.3,9.9 8,11.8 4.7,9.9 4.7,6.1"
           fill="#06070A"
-          stroke="#64748B"
+          stroke="#94A3B8"
           strokeWidth="0.65"
         />
-        <path d="M5.6 8H10.4M8 5.6V10.4" stroke="#1E293B" strokeWidth="0.8" strokeLinecap="round" />
+        <path d="M5.6 8H10.4M8 5.6V10.4" stroke="#334155" strokeWidth="0.8" strokeLinecap="round" />
       </svg>
     </span>
   );
 }
 
 /**
- * Abstract geometric unit emblem (zero company/brand marks).
+ * Pro Chrome & Candy Apple Finish geometric unit mark.
  */
 export function GeometricMark({ className = 'w-9 h-9' }: { className?: string }) {
   return (
     <div
       className={`relative inline-flex items-center justify-center rounded-[9px] p-[3px] machined-ring shrink-0 ${className}`}
     >
-      <div className="w-full h-full rounded-[6px] bg-[#090B10] hw-glass-sheen flex items-center justify-center border border-[#00E5FF]/40 shadow-[inset_0_0_12px_rgba(0,229,255,0.22)]">
-        <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#00E5FF]" fill="none">
+      <div className="w-full h-full rounded-[6px] bg-[#07080C] hw-glass-sheen flex items-center justify-center border border-[#F1F5F9]/35 shadow-[inset_0_0_12px_rgba(255,10,60,0.28)]">
+        <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#F1F5F9]" fill="none">
           <polygon
             points="12,2.5 20.5,7.5 20.5,16.5 12,21.5 3.5,16.5 3.5,7.5"
             stroke="currentColor"
@@ -54,10 +53,10 @@ export function GeometricMark({ className = 'w-9 h-9' }: { className?: string })
             width="7.5"
             height="7.5"
             rx="1.6"
-            stroke="#FF1E42"
-            strokeWidth="1.5"
+            stroke="#FF0A3C"
+            strokeWidth="1.6"
           />
-          <circle cx="12" cy="12" r="1.6" fill="#E6399B" />
+          <circle cx="12" cy="12" r="1.7" fill="#FF2E63" />
         </svg>
       </div>
     </div>
@@ -72,7 +71,7 @@ interface PlateBezelProps {
 }
 
 /**
- * Segmented CNC-machined industrial aluminum plate with deep bevels and corner steel screws.
+ * Pro Obsidian & Candy Finish machined plate with corner steel screws.
  */
 export function PlateBezel({
   children,
@@ -82,11 +81,11 @@ export function PlateBezel({
 }: PlateBezelProps) {
   const accentRim =
     accent === 'red'
-      ? 'border-[#FF1E42]/50 shadow-[0_0_20px_rgba(255,30,66,0.16)]'
+      ? 'border-[#FF0A3C]/55 shadow-[0_0_22px_rgba(255,10,60,0.2)]'
       : accent === 'cyan'
-      ? 'border-[#00E5FF]/40 shadow-[0_0_20px_rgba(0,229,255,0.12)]'
+      ? 'border-[#F1F5F9]/35 shadow-[0_0_20px_rgba(241,245,249,0.12)]'
       : accent === 'magenta'
-      ? 'border-[#E6399B]/40 shadow-[0_0_20px_rgba(230,57,155,0.12)]'
+      ? 'border-[#FF2E63]/50 shadow-[0_0_22px_rgba(255,46,99,0.18)]'
       : '';
 
   return (
@@ -121,8 +120,7 @@ interface HardwareButtonProps {
 }
 
 /**
- * Hybrid rounded-square + machined aluminum ring industrial switch with
- * illuminated glass center, RGB LED status light, and mechanical press travel.
+ * Pro & Candy Finish hardware switch with glossy clear-coat black glass center and Candy/Chrome LED.
  */
 export function HardwareButton({
   active = false,
@@ -138,31 +136,31 @@ export function HardwareButton({
 }: HardwareButtonProps) {
   const coreGlass =
     active && tone === 'red'
-      ? 'bg-gradient-to-b from-[#070709] via-[#030304] to-[#000000] text-white border-[#FF3B5C] shadow-[inset_0_0_12px_rgba(255,30,66,0.22),0_0_16px_rgba(255,30,66,0.38)]'
+      ? 'bg-gradient-to-b from-[#160509] via-[#060203] to-[#000000] text-white border-[#FF0A3C] shadow-[inset_0_0_14px_rgba(255,10,60,0.28),0_0_18px_rgba(255,10,60,0.44)]'
       : active && tone === 'magenta'
-      ? 'bg-gradient-to-b from-[#070709] via-[#030304] to-[#000000] text-white border-[#FF64B8] shadow-[inset_0_0_12px_rgba(230,57,155,0.22),0_0_16px_rgba(230,57,155,0.36)]'
+      ? 'bg-gradient-to-b from-[#16050D] via-[#060204] to-[#000000] text-white border-[#FF2E63] shadow-[inset_0_0_14px_rgba(255,46,99,0.26),0_0_18px_rgba(255,46,99,0.4)]'
       : active && tone === 'cyan'
-      ? 'bg-gradient-to-b from-[#070709] via-[#030304] to-[#000000] text-white border-[#00E5FF] shadow-[inset_0_0_12px_rgba(0,229,255,0.2),0_0_16px_rgba(0,229,255,0.36)]'
+      ? 'bg-gradient-to-b from-[#14171F] via-[#050609] to-[#000000] text-white border-[#F1F5F9] shadow-[inset_0_0_12px_rgba(241,245,249,0.2),0_0_16px_rgba(241,245,249,0.3)]'
       : active
-      ? 'bg-gradient-to-b from-[#070709] via-[#030304] to-[#000000] text-white border-white/60 shadow-[inset_0_0_10px_rgba(255,255,255,0.08),0_0_12px_rgba(255,255,255,0.16)]'
-      : 'bg-gradient-to-b from-[#060709] via-[#020203] to-[#000000] text-[#E6ECF5]/90 border-white/15 hover:text-white hover:border-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-2px_6px_rgba(0,0,0,0.9)]';
+      ? 'bg-gradient-to-b from-[#12141A] via-[#040507] to-[#000000] text-white border-white/60 shadow-[inset_0_0_10px_rgba(255,255,255,0.12),0_0_12px_rgba(255,255,255,0.18)]'
+      : 'bg-gradient-to-b from-[#07080B] via-[#020203] to-[#000000] text-[#F1F5F9]/90 border-white/15 hover:text-white hover:border-[#FF0A3C]/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-2px_6px_rgba(0,0,0,0.9)]';
 
   const hoverGlow =
     tone === 'red'
-      ? 'hover:shadow-[0_0_20px_rgba(255,30,66,0.42)]'
+      ? 'hover:shadow-[0_0_22px_rgba(255,10,60,0.46)]'
       : tone === 'magenta'
-      ? 'hover:shadow-[0_0_20px_rgba(230,57,155,0.4)]'
+      ? 'hover:shadow-[0_0_22px_rgba(255,46,99,0.42)]'
       : tone === 'cyan'
-      ? 'hover:shadow-[0_0_20px_rgba(0,229,255,0.38)]'
-      : 'hover:shadow-[0_0_14px_rgba(230,236,245,0.18)]';
+      ? 'hover:shadow-[0_0_18px_rgba(241,245,249,0.26)]'
+      : 'hover:shadow-[0_0_14px_rgba(241,245,249,0.18)]';
 
   const ledColor =
     active && tone === 'red'
-      ? 'bg-[#FF3B5C] shadow-[0_0_10px_#FF1E42]'
+      ? 'bg-[#FF0A3C] shadow-[0_0_10px_#FF0A3C]'
       : active && tone === 'magenta'
-      ? 'bg-[#FF64B8] shadow-[0_0_10px_#E6399B]'
+      ? 'bg-[#FF2E63] shadow-[0_0_10px_#FF2E63]'
       : active && tone === 'cyan'
-      ? 'bg-[#4DEBFF] shadow-[0_0_10px_#00E5FF]'
+      ? 'bg-[#F8FAFC] shadow-[0_0_10px_#FFFFFF]'
       : active
       ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]'
       : 'bg-[#08090C]';
@@ -178,7 +176,7 @@ export function HardwareButton({
     <button
       type={type}
       disabled={disabled}
-      className={`group relative inline-flex rounded-[10px] p-[3px] machined-ring transition-all duration-150 ease-out active:translate-y-[1px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-[#00E5FF] ${hoverGlow} ${
+      className={`group relative inline-flex rounded-[10px] p-[3px] machined-ring transition-all duration-150 ease-out active:translate-y-[1px] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-[#FF0A3C] ${hoverGlow} ${
         fullWidth ? 'w-full' : 'shrink-0'
       } ${className}`}
       {...props}
@@ -199,7 +197,7 @@ export function HardwareButton({
 }
 
 /**
- * Glass-lensed hardware status indicator paired with explicit label text.
+ * Candy & Pro Chrome status diode indicator paired with explicit label text.
  */
 export function LedStatusIndicator({
   label,
@@ -212,13 +210,13 @@ export function LedStatusIndicator({
 }) {
   const diodeStyle =
     tone === 'red'
-      ? 'bg-[#FF1E42] border-[#FF8599] shadow-[0_0_10px_#FF1E42]'
+      ? 'bg-[#FF0A3C] border-[#FF8FA3] shadow-[0_0_10px_#FF0A3C]'
       : tone === 'magenta'
-      ? 'bg-[#E6399B] border-[#F69BCE] shadow-[0_0_10px_#E6399B]'
+      ? 'bg-[#FF2E63] border-[#FF9EB5] shadow-[0_0_10px_#FF2E63]'
       : tone === 'emerald'
       ? 'bg-emerald-400 border-emerald-200 shadow-[0_0_10px_#34d399]'
       : tone === 'cyan'
-      ? 'bg-[#00E5FF] border-[#8CF3FF] shadow-[0_0_10px_#00E5FF]'
+      ? 'bg-[#F8FAFC] border-white shadow-[0_0_10px_rgba(248,250,252,0.85)]'
       : 'bg-[#363E52] border-white/20';
 
   return (
@@ -227,7 +225,7 @@ export function LedStatusIndicator({
         aria-hidden="true"
         className={`w-2.5 h-2.5 rounded-[3px] border ${diodeStyle} ${pulse ? 'animate-led-pulse' : ''}`}
       />
-      <span className="font-mono text-[11px] font-semibold tracking-wider text-[#E6ECF5] uppercase">
+      <span className="font-mono text-[11px] font-semibold tracking-wider text-[#F1F5F9] uppercase">
         {label}
       </span>
     </div>

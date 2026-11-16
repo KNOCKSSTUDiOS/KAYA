@@ -246,8 +246,8 @@ export function AudioStudioPage() {
         const val = dataArr[i] / 255;
         const bh = val * (h - 24);
         const grad = g.createLinearGradient(0, h - bh, 0, h);
-        grad.addColorStop(0, '#00E5FF');
-        grad.addColorStop(0.5, '#E6399B');
+        grad.addColorStop(0, '#F1F5F9');
+        grad.addColorStop(0.5, '#FF2E63');
         grad.addColorStop(1, '#FF1E42');
         g.fillStyle = grad;
         g.fillRect(i * barW + 1, h - bh, Math.max(2, barW - 2), bh);
@@ -317,7 +317,7 @@ export function AudioStudioPage() {
     <PlateBezel accent="cyan" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Volume2 className="w-4 h-4 text-[#00E5FF]" />
+          <Volume2 className="w-4 h-4 text-[#F1F5F9]" />
           <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-display)' }}>
             Audio Studio · Mastering Sound &amp; Music Editor
           </h2>
@@ -374,7 +374,7 @@ export function AudioStudioPage() {
           <div className="space-y-1">
             <div className="flex justify-between font-mono text-xs text-[#E6ECF5]/80">
               <span>Root Pitch &amp; Cutoff</span>
-              <span className="text-[#00E5FF] tabular-nums">{baseFreq} Hz · {cutoff} Hz</span>
+              <span className="text-[#F1F5F9] tabular-nums">{baseFreq} Hz · {cutoff} Hz</span>
             </div>
             <input
               type="range"
@@ -412,7 +412,7 @@ export function AudioStudioPage() {
             <div>
               <div className="flex justify-between font-mono text-[11px] text-[#E6ECF5]/70">
                 <span>High EQ</span>
-                <span className="text-[#00E5FF] tabular-nums">{highGainDb > 0 ? `+${highGainDb}` : highGainDb} dB</span>
+                <span className="text-[#F1F5F9] tabular-nums">{highGainDb > 0 ? `+${highGainDb}` : highGainDb} dB</span>
               </div>
               <input
                 type="range"
@@ -437,13 +437,13 @@ export function AudioStudioPage() {
               <span>{playing ? 'Stop Synth' : 'Audition Synth'}</span>
             </HardwareButton>
             <HardwareButton tone="magenta" active={false} onClick={handleExportWav}>
-              <Download className="w-3.5 h-3.5 text-[#FF64B8]" />
+              <Download className="w-3.5 h-3.5 text-[#FF5C8A]" />
               <span>Export WAV (5s)</span>
             </HardwareButton>
           </div>
 
           <label className="inline-flex items-center gap-2 px-3 py-2 rounded-[7px] bg-[#020203] hover:bg-[#080A0E] border border-white/20 font-mono text-xs text-[#E6ECF5] cursor-pointer">
-            <Upload className="w-3.5 h-3.5 text-[#00E5FF]" />
+            <Upload className="w-3.5 h-3.5 text-[#F1F5F9]" />
             <span className="truncate">{loadedName ? `Loaded: ${loadedName}` : 'Load Local Audio Track…'}</span>
             <input
               type="file"
@@ -515,7 +515,7 @@ export function AudioStudioPage() {
               Music Copyright © 2024–2026 Watermark &amp; Acoustic Stamp
             </span>
           </div>
-          <span className="font-mono text-[11px] text-[#00E5FF]">Registry ID: {stampCode}</span>
+          <span className="font-mono text-[11px] text-[#F1F5F9]">Registry ID: {stampCode}</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
@@ -524,7 +524,7 @@ export function AudioStudioPage() {
             value={copyrightOwner}
             onChange={(e) => setCopyrightOwner(e.target.value)}
             placeholder="Rights Holder / Label Name…"
-            className="w-full bg-[#040507] border border-white/15 rounded-[6px] px-3 py-2 font-mono text-xs text-white focus:outline-none focus:border-[#00E5FF]"
+            className="w-full bg-[#040507] border border-white/15 rounded-[6px] px-3 py-2 font-mono text-xs text-white focus:outline-none focus:border-[#F1F5F9]"
           />
           <HardwareButton
             size="sm"
@@ -547,7 +547,7 @@ export function AudioStudioPage() {
           </HardwareButton>
         </div>
         <p className="font-mono text-[11px] text-[#E6ECF5]/60">
-          Embeds binary RIFF LIST/INFO copyright metadata (<code className="text-[#00E5FF]">ICOP / IART / ISFT</code>) and subtle ultrasonic provenance pulse into every exported music track.
+          Embeds binary RIFF LIST/INFO copyright metadata (<code className="text-[#F1F5F9]">ICOP / IART / ISFT</code>) and subtle ultrasonic provenance pulse into every exported music track.
         </p>
       </div>
     </PlateBezel>
@@ -622,7 +622,7 @@ export function SoundFoleyPage() {
     <PlateBezel accent="magenta" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Waves className="w-4 h-4 text-[#FF64B8]" />
+          <Waves className="w-4 h-4 text-[#FF5C8A]" />
           <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-display)' }}>
             06. Sound Effects &amp; Foley Matrix
           </h2>
@@ -665,7 +665,7 @@ export function SoundFoleyPage() {
           active
           onClick={() => exportPadWav(lastTriggered)}
         >
-          <Download className="w-3.5 h-3.5 text-[#00E5FF]" />
+          <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
           <span>Export "{lastTriggered.label}" (.wav)</span>
         </HardwareButton>
       </div>
