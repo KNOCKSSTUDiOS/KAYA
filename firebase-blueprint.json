@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "user": {
+      "title": "User Profile",
+      "description": "User profile with preferences",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID"
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address"
+        },
+        "defaultDuration": {
+          "type": "string",
+          "description": "Default video reel duration"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "email"]
+    },
+    "videoProject": {
+      "title": "Video Project",
+      "description": "Saved cinematic reel project with prompt and video information",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner user ID"
+        },
+        "label": {
+          "type": "string",
+          "description": "Version label e.g. V1"
+        },
+        "duration": {
+          "type": "string",
+          "description": "Duration e.g. 5s, 10s, 15s"
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Cinematic prompt directive"
+        },
+        "videoUrl": {
+          "type": "string",
+          "description": "Local stream URL or file reference"
+        },
+        "driveFileId": {
+          "type": "string",
+          "description": "Google Drive file ID if exported"
+        },
+        "driveWebViewLink": {
+          "type": "string",
+          "description": "Google Drive web view link"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "label", "duration", "prompt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/user" },
+      "description": "Private user profile and preferences"
+    },
+    "/video_projects/{projectId}": {
+      "schema": { "$ref": "#/entities/videoProject" },
+      "description": "User saved video projects and reel history"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "Remix KAYA Product Studio",
+  "description": "Turn product photos into cinematic vibe reels with Gemini KAYA Flash and Nano Banana Flash Lite. ",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
