@@ -1,22 +1,34 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 1. Global Safety Net (default deny)
+    // Pillar 1: Global Default-Deny Safety Net
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Helper Primitives
+    // Health check probe doc for boot connection verification (non-PII single document get only)
+    match /test/connection {
+      allow get: if true;
+    }
+
+    // Core Identity & Validation Primitives
     function isSignedIn() {
-      return request.auth != null;
+      return request.auth != null && request.auth.token.email_verified == true;
     }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'GTamayo36@gmail.com'
+      );
+    }
+
     function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
     function incoming() {
@@ -27,53 +39,181 @@ service cloud.firestore {
       return resource.data;
     }
 
+    // Entity Validators
     function isValidUser(data) {
-      return data.userId is string && data.userId == request.auth.uid &&
+      return data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid &&
              data.email is string && data.email.size() <= 256 &&
-             (!('defaultDuration' in data) || (data.defaultDuration is string && data.defaultDuration.size() <= 10)) &&
-             (!('createdAt' in data) || data.createdAt is timestamp || data.createdAt is string);
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 120)) &&
+             (!('tier' in data) || data.tier in ['free', 'beginner', 'pro', 'ultra', 'business', 'enterprise']) &&
+             (!('billingCycle' in data) || data.billingCycle in ['monthly', 'yearly']) &&
+             (!('defaultDuration' in data) || (data.defaultDuration is string && data.defaultDuration.size() <= 16)) &&
+             (!('createdAt' in data) || data.createdAt is timestamp || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    function isValidAdminMember(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.email is string && data.email.size() <= 256 &&
+             data.role in ['admin', 'manager', 'engineer', 'instructor', 'support'] &&
+             data.active is bool &&
+             (!('grantedBy' in data) || (data.grantedBy is string && data.grantedBy.size() <= 128)) &&
+             (!('createdAt' in data) || data.createdAt is timestamp || (data.createdAt is string && data.createdAt.size() <= 64));
     }
 
     function isValidVideoProject(data) {
-      return data.userId is string && data.userId == request.auth.uid &&
-             data.label is string && data.label.size() <= 32 &&
+      return data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid &&
+             (!('studioHub' in data) || (data.studioHub is string && data.studioHub.size() <= 64)) &&
+             data.label is string && data.label.size() <= 64 &&
              data.duration is string && data.duration.size() <= 16 &&
              data.prompt is string && data.prompt.size() <= 10000 &&
              (!('videoUrl' in data) || (data.videoUrl is string && data.videoUrl.size() <= 2048)) &&
-             (!('driveFileId' in data) || (data.driveFileId is string && data.driveFileId.size() <= 256)) &&
-             (!('driveWebViewLink' in data) || (data.driveWebViewLink is string && data.driveWebViewLink.size() <= 2048)) &&
-             (!('createdAt' in data) || data.createdAt is timestamp || data.createdAt is string);
+             (!('createdAt' in data) || data.createdAt is timestamp || (data.createdAt is string && data.createdAt.size() <= 64));
     }
 
-    // Users Collection
+    function isValidArtifact(data) {
+      return data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid &&
+             data.studioHub is string && data.studioHub.size() <= 64 &&
+             data.title is string && data.title.size() <= 160 &&
+             data.kind in ['render', 'blender_scene', 'printify_mockup', 'shader', 'school_lab', 'audio_stem'] &&
+             (!('summary' in data) || (data.summary is string && data.summary.size() <= 2000)) &&
+             (!('createdAt' in data) || data.createdAt is timestamp || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    function isValidConnector(data) {
+      return data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid &&
+             data.name is string && data.name.size() <= 120 &&
+             data.connectorType in ['mcp', 'postgres', 'mysql', 'sqlite', 'firebase', 'quantum_storage', 'self_hosted_llm'] &&
+             (!('endpointUrl' in data) || (data.endpointUrl is string && data.endpointUrl.size() <= 512)) &&
+             data.status in ['verified', 'pending', 'disconnected'] &&
+             (!('createdAt' in data) || data.createdAt is timestamp || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    function isValidPrintifyItem(data) {
+      return data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid &&
+             data.title is string && data.title.size() <= 140 &&
+             data.productType is string && data.productType.size() <= 48 &&
+             data.retailPrice is number && data.retailPrice >= 0 &&
+             data.baseCost is number && data.baseCost >= 0 &&
+             (!('colorHex' in data) || (data.colorHex is string && data.colorHex.size() <= 16)) &&
+             (!('createdAt' in data) || data.createdAt is timestamp || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    function isValidBillingRecord(data) {
+      return data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid &&
+             data.tier in ['free', 'beginner', 'pro', 'ultra', 'business', 'enterprise'] &&
+             data.billingCycle in ['monthly', 'yearly'] &&
+             data.provider in ['stripe', 'infinity_billing'] &&
+             data.status in ['active', 'canceled', 'trialing'] &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    // Users Collection (PII isolated to owner or admin)
     match /users/{userId} {
-      allow get: if isOwner(userId) && isValidId(userId);
-      allow list: if false; // Users cannot list other users
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
       allow create: if isOwner(userId) && isValidId(userId) &&
                        isValidUser(incoming()) &&
                        incoming().keys().hasAll(['userId', 'email']) &&
-                       incoming().keys().hasOnly(['userId', 'email', 'defaultDuration', 'createdAt']);
-      allow update: if isOwner(userId) && isValidId(userId) &&
-                       isValidUser(incoming()) &&
+                       incoming().keys().hasOnly(['userId', 'email', 'displayName', 'tier', 'billingCycle', 'defaultDuration', 'createdAt']);
+      allow update: if isValidId(userId) && isValidUser(incoming()) &&
                        incoming().userId == existing().userId &&
-                       incoming().diff(existing()).affectedKeys().hasOnly(['defaultDuration', 'email']);
-      allow delete: if isOwner(userId) && isValidId(userId);
+                       (isOwner(userId) || isAdmin()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'defaultDuration', 'email', 'tier', 'billingCycle']);
+      allow delete: if isValidId(userId) && (isOwner(userId) || isAdmin());
     }
 
-    // Video Projects Collection
+    // Admins & Future Employee Role Registry (Strict Admin-Only Management)
+    match /admins/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(userId) &&
+                       isValidAdminMember(incoming()) &&
+                       incoming().keys().hasAll(['userId', 'email', 'role', 'active']) &&
+                       incoming().keys().hasOnly(['userId', 'email', 'role', 'active', 'grantedBy', 'createdAt']);
+      allow update: if isAdmin() && isValidId(userId) &&
+                       isValidAdminMember(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['role', 'active', 'email']);
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    // Studio Projects
     match /video_projects/{projectId} {
       allow get: if isSignedIn() && isValidId(projectId) && resource.data.userId == request.auth.uid;
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && isValidId(projectId) &&
                        isValidVideoProject(incoming()) &&
                        incoming().keys().hasAll(['userId', 'label', 'duration', 'prompt']) &&
-                       incoming().keys().hasOnly(['userId', 'label', 'duration', 'prompt', 'videoUrl', 'driveFileId', 'driveWebViewLink', 'createdAt']);
+                       incoming().keys().hasOnly(['userId', 'studioHub', 'label', 'duration', 'prompt', 'videoUrl', 'createdAt']);
       allow update: if isSignedIn() && isValidId(projectId) &&
                        existing().userId == request.auth.uid &&
                        isValidVideoProject(incoming()) &&
                        incoming().userId == existing().userId &&
-                       incoming().diff(existing()).affectedKeys().hasOnly(['driveFileId', 'driveWebViewLink', 'videoUrl', 'prompt', 'label', 'duration']);
+                       incoming().diff(existing()).affectedKeys().hasOnly(['studioHub', 'label', 'duration', 'prompt', 'videoUrl']);
       allow delete: if isSignedIn() && isValidId(projectId) && resource.data.userId == request.auth.uid;
+    }
+
+    // Studio Artifacts
+    match /artifacts/{artifactId} {
+      allow get: if isSignedIn() && isValidId(artifactId) && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(artifactId) &&
+                       isValidArtifact(incoming()) &&
+                       incoming().keys().hasAll(['userId', 'studioHub', 'title', 'kind']) &&
+                       incoming().keys().hasOnly(['userId', 'studioHub', 'title', 'kind', 'summary', 'createdAt']);
+      allow update: if isSignedIn() && isValidId(artifactId) &&
+                       existing().userId == request.auth.uid &&
+                       isValidArtifact(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['title', 'summary', 'kind', 'studioHub']);
+      allow delete: if isSignedIn() && isValidId(artifactId) && resource.data.userId == request.auth.uid;
+    }
+
+    // Self-Hosted Server / MCP / SQL Connectors
+    match /connectors/{connectorId} {
+      allow get: if isSignedIn() && isValidId(connectorId) && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(connectorId) &&
+                       isValidConnector(incoming()) &&
+                       incoming().keys().hasAll(['userId', 'name', 'connectorType', 'status']) &&
+                       incoming().keys().hasOnly(['userId', 'name', 'connectorType', 'endpointUrl', 'status', 'createdAt']);
+      allow update: if isSignedIn() && isValidId(connectorId) &&
+                       existing().userId == request.auth.uid &&
+                       isValidConnector(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['name', 'endpointUrl', 'status', 'connectorType']);
+      allow delete: if isSignedIn() && isValidId(connectorId) && resource.data.userId == request.auth.uid;
+    }
+
+    // Printify Storefront Catalog
+    match /printify_items/{itemId} {
+      allow get: if isSignedIn() && isValidId(itemId) && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(itemId) &&
+                       isValidPrintifyItem(incoming()) &&
+                       incoming().keys().hasAll(['userId', 'title', 'productType', 'retailPrice', 'baseCost']) &&
+                       incoming().keys().hasOnly(['userId', 'title', 'productType', 'retailPrice', 'baseCost', 'colorHex', 'createdAt']);
+      allow update: if isSignedIn() && isValidId(itemId) &&
+                       existing().userId == request.auth.uid &&
+                       isValidPrintifyItem(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['title', 'retailPrice', 'colorHex']);
+      allow delete: if isSignedIn() && isValidId(itemId) && resource.data.userId == request.auth.uid;
+    }
+
+    // Soul & Infinity Billing Records
+    match /billing_records/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && isValidId(userId) &&
+                       isValidBillingRecord(incoming()) &&
+                       incoming().keys().hasAll(['userId', 'tier', 'billingCycle', 'provider', 'status']) &&
+                       incoming().keys().hasOnly(['userId', 'tier', 'billingCycle', 'provider', 'status', 'updatedAt']);
+      allow update: if isOwner(userId) && isValidId(userId) &&
+                       existing().userId == request.auth.uid &&
+                       isValidBillingRecord(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['tier', 'billingCycle', 'provider', 'status', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(userId);
     }
   }
 }

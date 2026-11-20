@@ -1,13 +1,25 @@
-import React, { useState } from 'react';
-import { X, Lock, User, LogOut, CheckCircle2, ShieldAlert, Crown } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, LogOut, CheckCircle2, ShieldCheck, RefreshCw } from 'lucide-react';
 import { PlateBezel, HardwareButton } from './HardwarePrimitives.js';
+import {
+  BillingCycle,
+  StaffRole,
+  TierKey,
+  auth,
+  signInWithChromeGoogle,
+  signOutUser,
+  syncUserProfile,
+  verifyStaffAccess,
+} from '../lib/firebase.js';
 
 export interface KayaUserProfile {
+  uid?: string;
   handle: string;
   email: string;
   signedInAt: string;
-  role?: 'owner' | 'member';
-  tier?: 'free' | 'beginner' | 'ultra' | 'pro' | 'enterprise_business';
+  role?: 'member' | StaffRole;
+  tier?: TierKey;
+  billingCycle?: BillingCycle;
   token?: string;
 }
 
@@ -16,8 +28,7 @@ interface KayaAuthModalProps {
   onClose: () => void;
   user: KayaUserProfile | null;
   onAuthChange: (user: KayaUserProfile | null) => void;
-  onOpenAdminPortal?: () => void;
-  initialMode?: 'signin' | 'signup' | 'owner';
+  initialMode?: 'signin' | 'signup';
 }
 
 export function KayaAuthModal({
@@ -25,83 +36,90 @@ export function KayaAuthModal({
   onClose,
   user,
   onAuthChange,
-  onOpenAdminPortal,
   initialMode = 'signin',
 }: KayaAuthModalProps) {
-  const [mode, setMode] = useState<'signin' | 'signup' | 'owner'>(initialMode);
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [handle, setHandle] = useState('');
   const [email, setEmail] = useState('');
+  const [challengeId, setChallengeId] = useState('');
+  const [challengeQuestion, setChallengeQuestion] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  React.useEffect(() => {
+  const loadChallenge = async () => {
+    try {
+      const res = await fetch('/api/verify/challenge');
+      if (res.ok) {
+        const data = await res.json();
+        setChallengeId(data.challengeId);
+        setChallengeQuestion(data.question);
+        setCaptchaAnswer('');
+      }
+    } catch {
+      // ignore offline
+    }
+  };
+
+  useEffect(() => {
     if (isOpen) {
       setMode(initialMode);
       setError(null);
-      if (initialMode === 'owner' && !email) {
-        setEmail('GTamayo36@gmail.com');
-      }
+      loadChallenge();
     }
   }, [isOpen, initialMode]);
 
   if (!isOpen) return null;
 
-  const completeLogin = (profile: KayaUserProfile) => {
-    try {
-      localStorage.setItem('kaya_studio_user', JSON.stringify(profile));
-    } catch {
-      // Ignore storage quota errors
+  const verifyCaptcha = async (): Promise<boolean> => {
+    const res = await fetch('/api/verify/captcha', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challengeId, answer: captchaAnswer }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.verified) {
+      await loadChallenge();
+      setError(data.error || 'Complete the verification check before continuing.');
+      return false;
     }
-    onAuthChange(profile);
-    onClose();
-    if (profile.role === 'owner' && onOpenAdminPortal) {
-      onOpenAdminPortal();
-    }
+    return true;
   };
 
-  const handleQuickOwnerEnter = async () => {
+  const handleChromeGoogleSignIn = async () => {
     setError(null);
+    if (!(await verifyCaptcha())) return;
+
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/owner', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'GTamayo36@gmail.com', handle: 'KNOCKSSTUDiOS' }),
-      });
-      const data = (await res.json()) as {
-        user?: KayaUserProfile;
-        token?: string;
-        error?: string;
-      };
-      if (res.ok && data.user) {
-        completeLogin({ ...data.user, token: data.token });
-        return;
-      }
-      setError(data.error || 'Could not start owner session.');
-    } catch {
-      completeLogin({
-        handle: 'KNOCKSSTUDiOS',
-        email: 'GTamayo36@gmail.com',
-        role: 'owner',
-        tier: 'enterprise_business',
+      const fbUser = await signInWithChromeGoogle();
+      const cloudDoc = await syncUserProfile(fbUser);
+      const staff = await verifyStaffAccess(fbUser).catch(() => null);
+
+      onAuthChange({
+        uid: fbUser.uid,
+        handle: cloudDoc.displayName || fbUser.displayName || 'Vortex Creator',
+        email: fbUser.email || '',
+        role: staff?.role || 'member',
+        tier: cloudDoc.tier || 'free',
+        billingCycle: cloudDoc.billingCycle || 'monthly',
         signedInAt: new Date().toISOString(),
       });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google Chrome sign-in cancelled or failed.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleMemberSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    if (mode === 'owner') {
-      await handleQuickOwnerEnter();
-      return;
-    }
+    if (!(await verifyCaptcha())) return;
 
     const trimmedEmail = email.trim();
-    const trimmedHandle = handle.trim() || trimmedEmail.split('@')[0] || 'KAYA Creator';
+    const trimmedHandle = handle.trim() || trimmedEmail.split('@')[0] || 'Vortex Creator';
     if (!trimmedEmail || !trimmedEmail.includes('@')) {
       setError('Enter a valid email address.');
       return;
@@ -114,41 +132,33 @@ export function KayaAuthModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: trimmedEmail, handle: trimmedHandle, mode }),
       });
-      const data = (await res.json()) as {
-        user?: KayaUserProfile;
-        token?: string;
-        error?: string;
-      };
-
+      const data = await res.json();
       if (!res.ok || !data.user) {
         setError(data.error || 'Authentication failed.');
-        setLoading(false);
         return;
       }
-
-      completeLogin({
-        ...data.user,
+      onAuthChange({
+        uid: auth.currentUser?.uid,
+        handle: data.user.handle,
+        email: data.user.email,
+        role: 'member',
+        tier: data.user.tier || 'free',
+        signedInAt: new Date().toISOString(),
         token: data.token,
       });
+      onClose();
     } catch {
-      const isOwnerEmail = trimmedEmail.toLowerCase() === 'gtamayo36@gmail.com';
-      completeLogin({
-        handle: isOwnerEmail ? 'KNOCKSSTUDiOS' : trimmedHandle,
-        email: trimmedEmail,
-        role: isOwnerEmail ? 'owner' : 'member',
-        tier: isOwnerEmail ? 'enterprise_business' : 'free',
-        signedInAt: new Date().toISOString(),
-      });
+      setError('Unable to reach Vortex session server.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     try {
-      localStorage.removeItem('kaya_studio_user');
+      await signOutUser();
     } catch {
-      // Ignore
+      // ignore
     }
     onAuthChange(null);
     onClose();
@@ -156,30 +166,25 @@ export function KayaAuthModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/88 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90"
       onClick={onClose}
     >
       <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        <PlateBezel accent="red" className="p-5 sm:p-6 space-y-5 bg-[#020203]">
-          {/* Header */}
-          <div className="flex items-center justify-between gap-3 pb-3 border-b border-white/15">
+        <PlateBezel accent="red" className="p-5 sm:p-6 space-y-5">
+          <div className="flex items-center justify-between gap-3">
             <div className="space-y-0.5">
               <h2
-                className="text-base sm:text-lg font-bold uppercase tracking-[0.26em] text-white"
+                className="text-base sm:text-lg font-bold uppercase tracking-[0.22em] text-[#F5E9EA]"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
-                KAYA
+                VORTEX · KAYA
               </h2>
-              <p className="font-mono text-[11px] uppercase tracking-widest text-[#E6ECF5]/60">
+              <p className="font-mono text-[11px] uppercase tracking-widest text-[#F5E9EA]/60">
                 {user
-                  ? user.role === 'owner'
-                    ? 'Owner Authenticated Session'
-                    : 'Studio Member Session'
-                  : mode === 'owner'
-                  ? 'Owner Admin Access · KNOCKSSTUDiOS'
+                  ? 'Verified Studio Session'
                   : mode === 'signin'
-                  ? 'Sign In (Zero Passwords)'
-                  : 'Create Studio Account'}
+                  ? 'Chrome & Firebase Sign In'
+                  : 'Create Verified Studio Profile'}
               </p>
             </div>
             <HardwareButton
@@ -195,58 +200,27 @@ export function KayaAuthModal({
 
           {user ? (
             <div className="space-y-4">
-              <div className="cnc-recess rounded-[8px] p-4 flex items-center gap-3 border border-white/15">
-                <div className="w-10 h-10 rounded-[8px] bg-[#020203] border border-[#FF0A3C]/60 flex items-center justify-center shrink-0">
-                  {user.role === 'owner' ? (
-                    <ShieldAlert className="w-5 h-5 text-[#FF0A3C]" />
-                  ) : (
-                    <CheckCircle2 className="w-5 h-5 text-[#F1F5F9]" />
-                  )}
-                </div>
+              <div className="candy-trace-tile p-4 flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-mono text-sm font-bold text-white truncate">{user.handle}</p>
-                    {user.role === 'owner' && (
-                      <span className="px-1.5 py-0.5 rounded bg-[#FF0A3C]/20 border border-[#FF0A3C]/60 font-mono text-[9px] text-[#FF4D6D] uppercase">
-                        Owner
-                      </span>
-                    )}
-                  </div>
-                  <p className="font-mono text-xs text-[#E6ECF5]/65 truncate">{user.email}</p>
+                  <p className="font-mono text-sm font-bold text-[#F5E9EA] truncate">{user.handle}</p>
+                  <p className="font-mono text-xs text-[#F5E9EA]/65 truncate">{user.email}</p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                {user.role === 'owner' && onOpenAdminPortal && (
-                  <HardwareButton
-                    size="sm"
-                    tone="red"
-                    active
-                    onClick={() => {
-                      onClose();
-                      onOpenAdminPortal();
-                    }}
-                  >
-                    <ShieldAlert className="w-3.5 h-3.5 text-[#FF3B5C]" />
-                    <span>Open Admin Portal</span>
-                  </HardwareButton>
-                )}
-
-                <div className="flex items-center gap-2 ml-auto">
-                  <HardwareButton size="sm" tone="neutral" ledIndicator={false} onClick={onClose}>
-                    <span>Continue</span>
-                  </HardwareButton>
-                  <HardwareButton size="sm" tone="red" active onClick={handleSignOut}>
-                    <LogOut className="w-3.5 h-3.5 text-[#FF3B5C]" />
-                    <span>Sign Out</span>
-                  </HardwareButton>
-                </div>
+              <div className="flex items-center justify-end gap-2">
+                <HardwareButton size="sm" tone="neutral" ledIndicator={false} onClick={onClose}>
+                  <span>Continue</span>
+                </HardwareButton>
+                <HardwareButton size="sm" tone="red" active onClick={handleSignOut}>
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out</span>
+                </HardwareButton>
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Mode Toggle */}
-              <div className="grid grid-cols-3 gap-1.5">
+            <form onSubmit={handleMemberSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
                 <HardwareButton
                   size="sm"
                   fullWidth
@@ -257,7 +231,6 @@ export function KayaAuthModal({
                     setError(null);
                   }}
                 >
-                  <Lock className="w-3.5 h-3.5 text-[#F1F5F9]" />
                   <span>Sign In</span>
                 </HardwareButton>
                 <HardwareButton
@@ -270,118 +243,76 @@ export function KayaAuthModal({
                     setError(null);
                   }}
                 >
-                  <User className="w-3.5 h-3.5 text-[#FF5C8A]" />
-                  <span>Sign Up</span>
-                </HardwareButton>
-                <HardwareButton
-                  size="sm"
-                  fullWidth
-                  tone="red"
-                  active={mode === 'owner'}
-                  onClick={() => {
-                    setMode('owner');
-                    setEmail('GTamayo36@gmail.com');
-                    setError(null);
-                  }}
-                >
-                  <Crown className="w-3.5 h-3.5 text-[#FF3B5C]" />
-                  <span>Owner</span>
+                  <span>Create Profile</span>
                 </HardwareButton>
               </div>
 
-              {mode === 'owner' ? (
-                <div className="cnc-recess rounded-[8px] p-4 border border-[#FF0A3C]/45 space-y-3">
-                  <div className="font-mono text-xs text-white font-semibold">
-                    Owner Direct Entry · GTamayo36@gmail.com
-                  </div>
-                  <p className="font-mono text-[11px] text-[#F1F5F9]/75 leading-relaxed">
-                    No key or passcode needed. Click below to open your Owner Admin Portal and studio controls directly.
-                  </p>
-                  <HardwareButton
+              {/* Captcha Verification */}
+              <div className="candy-trace-tile p-3.5 space-y-2">
+                <div className="flex items-center justify-between gap-2 font-mono text-[11px] text-[#FF8C66]">
+                  <span className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    {challengeQuestion || 'Loading security verification…'}
+                  </span>
+                  <button
                     type="button"
-                    size="md"
-                    fullWidth
-                    tone="red"
-                    active
-                    disabled={loading}
-                    onClick={handleQuickOwnerEnter}
+                    onClick={loadChallenge}
+                    className="text-[#F5E9EA]/60 hover:text-white cursor-pointer"
+                    aria-label="Refresh verification challenge"
                   >
-                    <ShieldAlert className="w-4 h-4 text-white" />
-                    <span>{loading ? 'Opening…' : 'Enter as Owner (KNOCKSSTUDiOS)'}</span>
-                  </HardwareButton>
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-              ) : (
-                <>
-                  {mode === 'signup' && (
-                    <div className="space-y-1.5">
-                      <label className="font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/70 block">
-                        Studio Name / Handle
-                      </label>
-                      <input
-                        type="text"
-                        value={handle}
-                        onChange={(e) => setHandle(e.target.value)}
-                        placeholder="KAYA Creator"
-                        className="w-full bg-[#020203] border border-white/20 rounded-[6px] px-3 py-2 font-mono text-xs text-white placeholder-[#E6ECF5]/35 focus:outline-none focus:border-[#F1F5F9]"
-                      />
-                    </div>
-                  )}
+                <input
+                  type="text"
+                  required
+                  value={captchaAnswer}
+                  onChange={(e) => setCaptchaAnswer(e.target.value)}
+                  placeholder="Enter verification answer"
+                  className="w-full rounded-full bg-[#070304] px-4 py-2 font-mono text-xs text-[#F5E9EA] focus:outline-none"
+                />
+              </div>
 
-                  <div className="space-y-1.5">
-                    <label className="font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/70 block">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="GTamayo36@gmail.com"
-                      required
-                      className="w-full bg-[#020203] border border-white/20 rounded-[6px] px-3 py-2 font-mono text-xs text-white placeholder-[#E6ECF5]/35 focus:outline-none focus:border-[#F1F5F9]"
-                    />
-                  </div>
-                </>
+              <HardwareButton
+                type="button"
+                size="md"
+                fullWidth
+                tone="red"
+                active
+                disabled={loading}
+                onClick={handleChromeGoogleSignIn}
+              >
+                <span>{loading ? 'Connecting Chrome Account…' : 'Continue with Google Chrome / Firebase'}</span>
+              </HardwareButton>
+
+              {mode === 'signup' && (
+                <input
+                  type="text"
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                  placeholder="Studio Display Name"
+                  className="w-full rounded-full bg-[#070304] px-4 py-2 font-mono text-xs text-[#F5E9EA] focus:outline-none"
+                />
               )}
 
-              {error && (
-                <p className="font-mono text-xs text-[#FF4A68] bg-[#020203] border border-[#FF0A3C]/45 rounded-[6px] px-3 py-2">
-                  {error}
-                </p>
-              )}
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Member email address"
+                className="w-full rounded-full bg-[#070304] px-4 py-2 font-mono text-xs text-[#F5E9EA] focus:outline-none"
+              />
 
-              {mode !== 'owner' && (
-                <div className="flex items-center justify-between gap-2 pt-1">
-                  <HardwareButton
-                    type="button"
-                    size="sm"
-                    tone="red"
-                    onClick={handleQuickOwnerEnter}
-                  >
-                    <Crown className="w-3.5 h-3.5 text-[#FF3B5C]" />
-                    <span>Owner 1-Click</span>
-                  </HardwareButton>
-                  <div className="flex items-center gap-2">
-                    <HardwareButton size="sm" tone="neutral" ledIndicator={false} onClick={onClose}>
-                      <span>Cancel</span>
-                    </HardwareButton>
-                    <HardwareButton
-                      type="submit"
-                      size="sm"
-                      disabled={loading}
-                      tone={mode === 'signin' ? 'cyan' : 'magenta'}
-                      active
-                    >
-                      <span>
-                        {loading
-                          ? 'Entering…'
-                          : mode === 'signin'
-                          ? 'Enter KAYA Studio'
-                          : 'Create Account'}
-                      </span>
-                    </HardwareButton>
-                  </div>
-                </div>
-              )}
+              {error && <p className="font-mono text-xs text-[#FF4D6D]">{error}</p>}
+
+              <div className="flex items-center justify-end gap-2">
+                <HardwareButton size="sm" tone="neutral" ledIndicator={false} onClick={onClose}>
+                  <span>Cancel</span>
+                </HardwareButton>
+                <HardwareButton type="submit" size="sm" tone="magenta" active disabled={loading}>
+                  <span>{loading ? 'Verifying…' : 'Continue with Email'}</span>
+                </HardwareButton>
+              </div>
             </form>
           )}
         </PlateBezel>

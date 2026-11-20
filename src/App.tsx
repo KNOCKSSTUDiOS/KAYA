@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import {
   LayoutGrid,
   Box,
@@ -18,7 +18,6 @@ import {
   Gauge,
   Palette,
   Compass,
-  DoorOpen,
   User,
   Cable,
   Swords,
@@ -28,11 +27,18 @@ import {
   ShoppingBag,
   Camera,
   ShieldCheck,
-  ShieldAlert,
   Clapperboard,
   Wifi,
   WifiOff,
   RefreshCw,
+  Search,
+  Menu,
+  ChevronDown,
+  Phone,
+  Mail,
+  Orbit,
+  Snowflake,
+  Database,
 } from 'lucide-react';
 import { PRODUCTS, ATMOSPHERES, MediaSelection } from './data.js';
 import { ImageUploader } from './components/ImageUploader.js';
@@ -43,7 +49,7 @@ import { usePWAInstall } from './hooks/usePWAInstall.js';
 import { MasterControlDeck } from './components/MasterControlDeck.js';
 import { HeroVideoCubeStage } from './components/HeroVideoCubeStage.js';
 import { KayaAuthModal, KayaUserProfile } from './components/KayaAuthModal.js';
-import { AdminPortalModal } from './components/AdminPortalModal.js';
+import { ProtectedAdminModal } from './components/ProtectedAdminModal.js';
 import { LocalSuiteBridgePage } from './components/LocalSuiteBridgePage.js';
 import { PictureAnimatorPage } from './components/PictureAnimatorPage.js';
 import { AirRadioPage, CodingRenderingSchoolPage } from './components/AirRadioSchoolPage.js';
@@ -63,8 +69,8 @@ import { AudioStudioPage, SoundFoleyPage } from './components/AudioSoundPages.js
 import { PictureStudioPage, VfxStudioPage } from './components/PictureVfxPages.js';
 import { LipSyncPage, EditorPage, IntelCodePage } from './components/LipSyncEditorIntelPages.js';
 import { StoryboardLogoPage } from './components/StoryboardLogoPage.js';
+import { VortexHubModules } from './components/VortexHubModules.js';
 import {
-  HexScrew,
   GeometricMark,
   PlateBezel,
   HardwareButton,
@@ -84,6 +90,22 @@ import {
   CameraMotionKey,
   CompositionConfig,
 } from './lib/studioRenderer.js';
+import {
+  StudioArtifactDoc,
+  StudioConnectorDoc,
+  StudioProjectDoc,
+  fetchBillingRecord,
+  fetchConnectors,
+  fetchStudioArtifacts,
+  fetchStudioProjects,
+  fetchUserProfile,
+  saveStudioArtifact,
+  saveStudioProject,
+  subscribeAuth,
+  testFirestoreConnection,
+  verifyStaffAccess,
+} from './lib/firebase.js';
+import { UNIFIED_WATERMARK_TEXT } from './lib/watermarkEngine.js';
 
 type LogType = 'info' | 'success' | 'warn' | 'error';
 type AppState = 'IDLE' | 'GENERATING_VIDEO' | 'VIDEO_READY';
@@ -112,23 +134,62 @@ const WORKBENCH_TOOLS: {
   tone: 'red' | 'cyan' | 'magenta' | 'neutral';
   icon: React.ReactNode;
 }[] = [
-  { key: 'video', label: 'Video Tools', tone: 'red', icon: <Film className="w-3.5 h-3.5 text-[#FF3B5C]" /> },
-  { key: 'picture', label: 'Picture Tools', tone: 'cyan', icon: <ImageIcon className="w-3.5 h-3.5 text-[#F1F5F9]" /> },
-  { key: 'cube', label: '360° Video Cube', tone: 'red', icon: <Box className="w-3.5 h-3.5 text-[#FF3B5C]" /> },
-  { key: 'storyboard', label: '3D Storyboard', tone: 'magenta', icon: <Clapperboard className="w-3.5 h-3.5 text-[#FF5C8A]" /> },
-  { key: 'editor', label: 'Timeline Tools', tone: 'magenta', icon: <Scissors className="w-3.5 h-3.5 text-[#FF5C8A]" /> },
-  { key: 'intel', label: 'AI Tools & Code', tone: 'cyan', icon: <Cpu className="w-3.5 h-3.5 text-[#F1F5F9]" /> },
-  { key: 'audio', label: 'Audio Studio', tone: 'cyan', icon: <Volume2 className="w-3.5 h-3.5 text-[#F1F5F9]" /> },
-  { key: 'vfx', label: 'VFX Shaders', tone: 'magenta', icon: <Sparkles className="w-3.5 h-3.5 text-[#FF5C8A]" /> },
-  { key: 'sound', label: 'Sound Foley', tone: 'cyan', icon: <Waves className="w-3.5 h-3.5 text-[#F1F5F9]" /> },
-  { key: 'lipsync', label: 'Lip Sync Rig', tone: 'magenta', icon: <Mic className="w-3.5 h-3.5 text-[#FF5C8A]" /> },
-  { key: 'animator', label: 'Action Animator', tone: 'red', icon: <Swords className="w-3.5 h-3.5 text-[#FF3B5C]" /> },
-  { key: 'airradio', label: 'AirRadio FM', tone: 'cyan', icon: <Radio className="w-3.5 h-3.5 text-[#F1F5F9]" /> },
-  { key: 'school', label: 'Code & Render School', tone: 'magenta', icon: <GraduationCap className="w-3.5 h-3.5 text-[#FF5C8A]" /> },
-  { key: 'merch', label: 'Merch & Print', tone: 'red', icon: <ShoppingBag className="w-3.5 h-3.5 text-[#FF3B5C]" /> },
-  { key: 'live', label: 'Live Cam & Stream', tone: 'cyan', icon: <Camera className="w-3.5 h-3.5 text-[#F1F5F9]" /> },
-  { key: 'bridge', label: 'Desktop Bridge', tone: 'cyan', icon: <Cable className="w-3.5 h-3.5 text-[#F1F5F9]" /> },
+  { key: 'video', label: 'KAYA Cinema', tone: 'red', icon: <Film className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
+  { key: 'picture', label: 'Picture Suite', tone: 'cyan', icon: <ImageIcon className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
+  { key: 'cube', label: '360° Video Cube', tone: 'red', icon: <Box className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
+  { key: 'storyboard', label: '3D Storyboard', tone: 'magenta', icon: <Clapperboard className="w-3.5 h-3.5 text-[#E06844]" /> },
+  { key: 'editor', label: 'Timeline Tools', tone: 'magenta', icon: <Scissors className="w-3.5 h-3.5 text-[#E06844]" /> },
+  { key: 'intel', label: 'Vortex Vision', tone: 'cyan', icon: <Cpu className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
+  { key: 'audio', label: 'Audio Studio', tone: 'cyan', icon: <Volume2 className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
+  { key: 'vfx', label: 'VFX Shaders', tone: 'magenta', icon: <Sparkles className="w-3.5 h-3.5 text-[#E06844]" /> },
+  { key: 'sound', label: 'Sound Foley', tone: 'cyan', icon: <Waves className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
+  { key: 'lipsync', label: 'Lip Sync Rig', tone: 'magenta', icon: <Mic className="w-3.5 h-3.5 text-[#E06844]" /> },
+  { key: 'animator', label: 'Action Animator', tone: 'red', icon: <Swords className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
+  { key: 'airradio', label: 'AirRadio FM', tone: 'cyan', icon: <Radio className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
+  { key: 'school', label: 'Infinity School', tone: 'magenta', icon: <GraduationCap className="w-3.5 h-3.5 text-[#E06844]" /> },
+  { key: 'merch', label: 'Printify Studio', tone: 'red', icon: <ShoppingBag className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
+  { key: 'live', label: 'Live Stream', tone: 'cyan', icon: <Camera className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
+  { key: 'bridge', label: 'Suite Bridge', tone: 'cyan', icon: <Cable className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
 ];
+
+const SUITE_MENU_ENTRIES: {
+  id: string;
+  label: string;
+  category: string;
+  targetType: 'section' | 'tool';
+  target: string;
+}[] = [
+  { id: 'vortex', label: 'Vortex Main Hub Lineup', category: 'Hub', targetType: 'section', target: 'vortex-hub' },
+  { id: 'blender', label: 'Blender 3D Pipeline & Shaders', category: '3D Suite', targetType: 'section', target: 'vortex-blender' },
+  { id: 'infinity', label: 'Infinity · Valerius (V) Sentinel of Ten Galaxies', category: 'Core', targetType: 'section', target: 'vortex-infinity' },
+  { id: 'soul', label: 'Soul · Cooling Forge Opus 4.7 & Billing', category: 'Cooling', targetType: 'section', target: 'vortex-soul' },
+  { id: 'connectors', label: 'MCP Skills, SQL, Search & Artifacts', category: 'Backend', targetType: 'section', target: 'vortex-connectors' },
+  { id: 'gates', label: 'KAYA Studio Gates & Lineup', category: 'Gallery', targetType: 'section', target: 'page-gates' },
+  ...WORKBENCH_TOOLS.map((t) => ({
+    id: `tool-${t.key}`,
+    label: t.label,
+    category: 'Workbench',
+    targetType: 'tool' as const,
+    target: t.key,
+  })),
+];
+
+function formatTierLabel(tier: StudioSubscriptionState['tier']): string {
+  switch (tier) {
+    case 'enterprise':
+      return 'Enterprise';
+    case 'business':
+      return 'Business';
+    case 'ultra':
+      return 'Ultra';
+    case 'pro':
+      return 'Pro';
+    case 'beginner':
+      return 'Beginner';
+    default:
+      return 'Free Tier';
+  }
+}
 
 export default function App() {
   const [activeTool, setActiveTool] = useState<StudioPageKey>('video');
@@ -157,33 +218,34 @@ export default function App() {
   const [videoTime, setVideoTime] = useState<number>(0);
   const [videoDuration, setVideoDuration] = useState<number>(0);
   const [seekToTime, setSeekToTime] = useState<number | null>(null);
+
   const { isInstalled } = usePWAInstall();
-  const [installModalOpen, setInstallModalOpen] = useState<boolean>(() => {
-    try {
-      const standalone =
-        typeof window !== 'undefined' &&
-        (window.matchMedia('(display-mode: standalone)').matches ||
-          (window.navigator as any).standalone === true);
-      if (standalone) return false;
-      return !sessionStorage.getItem('kaya_install_prompt_closed');
-    } catch {
-      return true;
-    }
-  });
+  // Never auto-popup install modal on Screen 1
+  const [installModalOpen, setInstallModalOpen] = useState<boolean>(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authInitialMode, setAuthInitialMode] = useState<'signin' | 'signup' | 'owner'>('signin');
+  const [authInitialMode, setAuthInitialMode] = useState<'signin' | 'signup'>('signin');
   const [adminPortalOpen, setAdminPortalOpen] = useState(false);
   const [plansModalOpen, setPlansModalOpen] = useState(false);
   const [legalModalOpen, setLegalModalOpen] = useState(false);
   const [legalInitialTab, setLegalInitialTab] = useState<LegalTabKey>('brand');
-  const [kayaUser, setKayaUser] = useState<KayaUserProfile | null>(() => {
-    try {
-      const saved = localStorage.getItem('kaya_studio_user');
-      return saved ? (JSON.parse(saved) as KayaUserProfile) : null;
-    } catch {
-      return null;
-    }
+
+  // Navigation bar Search & Dropdown Menu state
+  const [suiteSearch, setSuiteSearch] = useState('');
+  const [suiteMenuOpen, setSuiteMenuOpen] = useState(false);
+
+  // Firebase Auth & Dedicated Cloud Workspace State (Zero localStorage)
+  const [kayaUser, setKayaUser] = useState<KayaUserProfile | null>(null);
+  const [cloudProjects, setCloudProjects] = useState<StudioProjectDoc[]>([]);
+  const [cloudArtifacts, setCloudArtifacts] = useState<StudioArtifactDoc[]>([]);
+  const [cloudConnectors, setCloudConnectors] = useState<StudioConnectorDoc[]>([]);
+
+  const [studioPlan, setStudioPlan] = useState<StudioSubscriptionState>({
+    tier: 'free',
+    billingCycle: 'monthly',
+    provider: 'stripe',
+    addons: [],
   });
+
   const [voiceActive, setVoiceActive] = useState(false);
   const [isOnline, setIsOnline] = useState(() =>
     typeof navigator !== 'undefined' ? navigator.onLine : true
@@ -196,14 +258,87 @@ export default function App() {
     cameraTip?: string;
   } | null>(null);
 
+  const [versions, setVersions] = useState<VideoVersion[]>([]);
+  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const versionCount = useRef(0);
+  const [uploadedCubeAssets, setUploadedCubeAssets] = useState<WorkspaceMediaAsset[]>([]);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editText, setEditText] = useState('');
+  const [downloading, setDownloading] = useState(false);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+
+  const addLog = useCallback((message: string, type: LogType = 'info', image?: string) => {
+    setLogs((prev) => [
+      ...prev,
+      {
+        id: Math.random().toString(36).substring(7),
+        message,
+        type,
+        image,
+      },
+    ]);
+  }, []);
+
+  const hydrateCloudWorkspace = useCallback(async (uid: string) => {
+    try {
+      const [profile, projects, artifacts, connectors, billing] = await Promise.all([
+        fetchUserProfile(uid),
+        fetchStudioProjects(uid),
+        fetchStudioArtifacts(uid),
+        fetchConnectors(uid),
+        fetchBillingRecord(uid),
+      ]);
+      setCloudProjects(projects);
+      setCloudArtifacts(artifacts);
+      setCloudConnectors(connectors);
+      if (billing || profile) {
+        setStudioPlan((prev) => ({
+          ...prev,
+          tier: billing?.tier || profile?.tier || prev.tier,
+          billingCycle: billing?.billingCycle || profile?.billingCycle || prev.billingCycle,
+          provider: billing?.provider || prev.provider,
+        }));
+      }
+    } catch {
+      // Cloud read fallback stays silent without creating device copies
+    }
+  }, []);
+
+  // Verify Firestore connection and subscribe to Chrome Google Firebase Auth on boot
+  useEffect(() => {
+    testFirestoreConnection().catch(() => false);
+    const unsub = subscribeAuth(async (fbUser) => {
+      if (!fbUser) {
+        setKayaUser(null);
+        setCloudProjects([]);
+        setCloudArtifacts([]);
+        setCloudConnectors([]);
+        return;
+      }
+      const staff = await verifyStaffAccess(fbUser).catch(() => null);
+      const profile = await fetchUserProfile(fbUser.uid).catch(() => null);
+      setKayaUser({
+        uid: fbUser.uid,
+        handle: profile?.displayName || fbUser.displayName || fbUser.email?.split('@')[0] || 'Creator',
+        email: fbUser.email || '',
+        signedInAt: new Date().toISOString(),
+        role: staff?.role || 'member',
+        tier: profile?.tier || 'free',
+        billingCycle: profile?.billingCycle || 'monthly',
+      });
+      await hydrateCloudWorkspace(fbUser.uid);
+    });
+    return () => unsub();
+  }, [hydrateCloudWorkspace]);
+
   useEffect(() => {
     if (isInstalled) setInstallModalOpen(false);
   }, [isInstalled]);
 
-  // Secret Owner Portal keyboard trigger: Ctrl+Shift+K or Alt+K
+  // Discreet protected Staff Portal keyboard shortcut: Ctrl+Shift+K
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'k') || (e.altKey && e.key.toLowerCase() === 'k')) {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setAdminPortalOpen(true);
       }
@@ -215,11 +350,11 @@ export default function App() {
   useEffect(() => {
     const onOnline = () => {
       setIsOnline(true);
-      addLog('Connection restored — Auto-Sync & runtime check active.', 'success');
+      addLog('Connection active — Firebase workspace sync online.', 'success');
     };
     const onOffline = () => {
       setIsOnline(false);
-      addLog('Offline mode active — running 100% on local cached workstation engine.', 'warn');
+      addLog('Network offline — local studio workstation operational.', 'warn');
     };
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
@@ -227,35 +362,26 @@ export default function App() {
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
     };
-  }, []);
+  }, [addLog]);
 
   const handleManualAutoSync = async () => {
     if (!navigator.onLine) {
       setIsOnline(false);
-      addLog('Offline — local cached workstation remains fully operational.', 'info');
+      addLog('Offline — local studio workstation operational.', 'info');
       return;
     }
     setSyncingApp(true);
     try {
-      if ('serviceWorker' in navigator) {
-        const reg = await navigator.serviceWorker.getRegistration();
-        if (reg) {
-          await reg.update();
-          if (reg.waiting) {
-            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-            addLog('New update synced — refreshing runtime…', 'success');
-            setTimeout(() => window.location.reload(), 500);
-            return;
-          }
-        }
-      }
       const res = await fetch('/api/app-version', { cache: 'no-store' });
       if (res.ok) {
         const data = (await res.json()) as { version?: string };
-        addLog(`Auto-Sync verified latest build (#${(data.version || 'live').slice(-6)}).`, 'success');
+        addLog(`Workspace synchronized (#${(data.version || 'vortex').slice(-6)}).`, 'success');
+      }
+      if (kayaUser?.uid) {
+        await hydrateCloudWorkspace(kayaUser.uid);
       }
     } catch {
-      addLog('Sync unreachable — continuing in Offline Local Ready mode.', 'warn');
+      addLog('Sync check skipped — local studio active.', 'warn');
     } finally {
       setSyncingApp(false);
     }
@@ -265,10 +391,11 @@ export default function App() {
     if (aiEnhancing) return;
     setAiEnhancing(true);
     try {
-      const res = await fetch('/api/ai/prompt-enhance', {
+      const res = await fetch('/api/vortex/infer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          mode: 'prompt_enhance',
           prompt: editText.trim(),
           subject: product ? describe(product) : 'Studio Subject',
           environment: atmosphere ? describe(atmosphere) : 'Obsidian Studio',
@@ -284,75 +411,31 @@ export default function App() {
         cameraTip?: string;
         error?: string;
       };
-      if (!res.ok) {
-        addLog(data.error || 'AI Prompt Enhancer unavailable.', 'warn');
-        return;
-      }
       if (data.enhancedPrompt) setEditText(data.enhancedPrompt);
       setAiDirectorMeta({
         directorNotes: data.directorNotes,
         lightingCue: data.lightingCue,
         cameraTip: data.cameraTip,
       });
-      addLog('KAYA AI enhanced scene prompt & lighting cues.', 'success');
+      addLog('Vortex self-hosted director enhanced scene prompt & lighting cues.', 'success');
     } catch {
       const subj = product ? describe(product) : 'Hero Subject';
       const env = atmosphere ? describe(atmosphere) : 'Obsidian Studio Stage';
       const base = editText.trim();
       setEditText(
         base
-          ? `${base} — ${subj} inside ${env}, Obsidian Matte (#050608), Platinum Chrome rim & Candy Apple Red (#FF0A3C) flare at ${fps}fps.`
-          : `Anamorphic ${fps}fps ${cameraMotion} hero reel of ${subj} inside ${env}, Obsidian Matte depth & Candy Apple Red accent flare.`
+          ? `${base} — ${subj} inside ${env}, Candy-Gloss (#FF0A3C) specular clearcoat & Burnished Rust (#B84323) rim at ${fps}fps.`
+          : `Anamorphic ${fps}fps ${cameraMotion} hero reel of ${subj} inside ${env}, Candy-Gloss & Burnished Rust optical contrast.`
       );
       setAiDirectorMeta({
-        directorNotes: 'Local KAYA Native AI Engine applied 60-144fps framing.',
-        lightingCue: 'Platinum Chrome top-rim + Candy Apple Red side key.',
-        cameraTip: `Locked ${cameraMotion} inertia curve.`,
+        directorNotes: `Self-hosted director locked ${fps}fps cinematic curve.`,
+        lightingCue: 'Burnished Rust side fill + Candy-Gloss primary rim.',
+        cameraTip: `Smooth ${cameraMotion} sweep.`,
       });
-      addLog('KAYA Offline Native AI enhanced scene prompt.', 'success');
+      addLog('Vortex local scene director updated prompt cues.', 'success');
     } finally {
       setAiEnhancing(false);
     }
-  };
-  const [studioPlan, setStudioPlan] = useState<StudioSubscriptionState>(() => {
-    try {
-      const saved = localStorage.getItem('kaya_studio_plan');
-      if (saved) {
-        const parsed = JSON.parse(saved) as Partial<StudioSubscriptionState>;
-        const validTiers = ['free', 'beginner', 'ultra', 'pro', 'enterprise_business'];
-        const tier = parsed.tier && validTiers.includes(parsed.tier) ? parsed.tier : 'free';
-        return {
-          tier,
-          billingCycle: parsed.billingCycle === 'yearly' ? 'yearly' : 'monthly',
-          addons: Array.isArray(parsed.addons) ? parsed.addons : [],
-        };
-      }
-      return { tier: 'free', billingCycle: 'monthly', addons: [] };
-    } catch {
-      return { tier: 'free', billingCycle: 'monthly', addons: [] };
-    }
-  });
-
-  const [versions, setVersions] = useState<VideoVersion[]>([]);
-  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
-  const versionCount = useRef(0);
-
-  const [uploadedCubeAssets, setUploadedCubeAssets] = useState<WorkspaceMediaAsset[]>([]);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editText, setEditText] = useState('');
-  const [downloading, setDownloading] = useState(false);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-
-  const addLog = (message: string, type: LogType = 'info', image?: string) => {
-    setLogs((prev) => [
-      ...prev,
-      {
-        id: Math.random().toString(36).substring(7),
-        message,
-        type,
-        image,
-      },
-    ]);
   };
 
   const describe = (sel: MediaSelection) =>
@@ -360,8 +443,6 @@ export default function App() {
 
   const activeResSpec =
     RESOLUTION_PRESETS.find((r) => r.key === resolution) ?? RESOLUTION_PRESETS[3];
-  const activeHdrSpec =
-    HDR_GRADE_PRESETS.find((g) => g.key === hdrGrade) ?? HDR_GRADE_PRESETS[2];
   const activeStyleSpec =
     RENDER_STYLE_PRESETS.find((s) => s.key === renderStyle) ?? RENDER_STYLE_PRESETS[0];
   const currentFormatLabel = `${activeResSpec.tag} · ${fps}fps · ${activeStyleSpec.label}`;
@@ -376,7 +457,6 @@ export default function App() {
   const selectedAtmosphereUrl = atmosphere?.images[0] || ATMOSPHERES[0].image;
   const selectedProductTransparentUrl = PRODUCTS.find((p) => `preset-${p.id}` === product?.id)?.transparentImage;
 
-  // Aggregate EVERY workspace photo, user upload, and rendered reel into the 3D Rubik's Video Cube
   const workspaceMedia = useMemo<WorkspaceMediaAsset[]>(() => {
     const baseImages: WorkspaceMediaAsset[] = [
       ...PRODUCTS.map((p) => ({
@@ -427,9 +507,7 @@ export default function App() {
 
   const handleJumpSection = (sectionId: string, tool: StudioPageKey = 'video') => {
     setActiveTool(tool);
-    if (tool === 'video') {
-      setActiveModule('all');
-    }
+    if (tool === 'video') setActiveModule('all');
     setTimeout(() => {
       const el = document.getElementById(sectionId);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -438,14 +516,21 @@ export default function App() {
 
   const handleSelectToolFromGalleryOrNav = (tool: StudioPageKey) => {
     setActiveTool(tool);
+    setSuiteMenuOpen(false);
     scrollToSection('page-tools');
   };
 
+  const handleOpenBillingFromHub = (provider: 'stripe' | 'infinity_billing') => {
+    setStudioPlan((prev) => ({ ...prev, provider }));
+    setPlansModalOpen(true);
+  };
+
+  // Real-Time Voice Command -> Executes actual studio/render/navigation actions
   const triggerGlobalSmartVoice = () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
       handleSelectToolFromGalleryOrNav('intel');
-      addLog('Opened Smart Voice & AI Console (Web Speech requires supported browser).', 'info');
+      addLog('Opened Vortex Vision & Voice Console (browser SpeechRecognition needed for mic capture).', 'info');
       return;
     }
     if (voiceActive) return;
@@ -453,13 +538,38 @@ export default function App() {
     rec.lang = 'en-US';
     rec.interimResults = false;
     setVoiceActive(true);
-    addLog('Smart Voice Trigger listening (say Video, AirRadio, School, Merch, Live, Fight)...', 'info');
+    addLog('Voice action listener active (say "Render", "Blender", "Infinity", "Cooling", "School", "Printify", "Radio")…', 'info');
     rec.onresult = (ev: any) => {
       const phrase = String(ev.results?.[0]?.[0]?.transcript || '').toLowerCase();
+      if (phrase.includes('render') || phrase.includes('action') || phrase.includes('shoot')) {
+        handleSubmit();
+        return;
+      }
+      if (phrase.includes('blender')) {
+        scrollToSection('vortex-blender');
+        addLog(`Voice jumped to Blender Pipeline from "${phrase}".`, 'success');
+        return;
+      }
+      if (phrase.includes('infinity') || phrase.includes('valerius') || phrase.includes('galaxy')) {
+        scrollToSection('vortex-infinity');
+        addLog(`Voice jumped to Infinity · Valerius (V) from "${phrase}".`, 'success');
+        return;
+      }
+      if (phrase.includes('cool') || phrase.includes('soul') || phrase.includes('opus')) {
+        scrollToSection('vortex-soul');
+        addLog(`Voice jumped to Soul · Cooling Forge Opus 4.7 from "${phrase}".`, 'success');
+        return;
+      }
+      if (phrase.includes('connector') || phrase.includes('database') || phrase.includes('sql') || phrase.includes('search')) {
+        scrollToSection('vortex-connectors');
+        addLog(`Voice jumped to Connectors & Databases from "${phrase}".`, 'success');
+        return;
+      }
       const map: [string, StudioPageKey][] = [
         ['radio', 'airradio'],
         ['school', 'school'],
         ['coding', 'school'],
+        ['printify', 'merch'],
         ['merch', 'merch'],
         ['print', 'merch'],
         ['live', 'live'],
@@ -476,15 +586,17 @@ export default function App() {
         ['sound', 'sound'],
         ['lip', 'lipsync'],
         ['editor', 'editor'],
+        ['storyboard', 'storyboard'],
       ];
       for (const [kw, key] of map) {
         if (phrase.includes(kw)) {
           handleSelectToolFromGalleryOrNav(key);
-          addLog(`Smart Voice Trigger launched "${key.toUpperCase()}" from "${phrase}".`, 'success');
+          addLog(`Voice launched "${key.toUpperCase()}" from "${phrase}".`, 'success');
           return;
         }
       }
-      addLog(`Voice recognized: "${phrase}".`, 'info');
+      setEditText((prev) => (prev.trim() ? `${prev.trim()} — ${phrase}` : phrase));
+      addLog(`Voice injected scene instruction: "${phrase}"`, 'info');
     };
     rec.onend = () => setVoiceActive(false);
     rec.onerror = () => setVoiceActive(false);
@@ -516,6 +628,7 @@ export default function App() {
     ]);
     setSelectedLabel(label);
   };
+
   const handleSubmit = async () => {
     if (!product || !atmosphere) {
       addLog('Select both a Subject and an Environment before rendering.', 'error');
@@ -535,8 +648,6 @@ export default function App() {
       `Initializing ${activeResSpec.label} (${fps}fps · ${activeStyleSpec.label} · ${cameraMotion}) · ${duration}…`,
       'info'
     );
-    addLog(`Subject: ${describe(product)}`, 'info');
-    addLog(`Environment: ${describe(atmosphere)}`, 'info');
 
     try {
       const durSec = parseInt(duration, 10) || 10;
@@ -573,7 +684,7 @@ export default function App() {
         ? `${promptInstructions} · ${activeResSpec.label} · ${fps}fps`
         : `${activeResSpec.label} · ${fps}fps · ${activeStyleSpec.label} · ${duration}`;
       addVersion(
-        `local-${Date.now()}`,
+        `render-${Date.now()}`,
         result.videoUrl,
         result.mimeType,
         currentFormatLabel,
@@ -584,6 +695,27 @@ export default function App() {
       setRenderProgress(100);
       setAppState('VIDEO_READY');
       addLog(`${activeResSpec.label} master complete (${result.width}×${result.height} @ ${fps}fps).`, 'success');
+
+      // Persist directly to dedicated Firebase workspace when signed in
+      if (kayaUser?.uid) {
+        await Promise.all([
+          saveStudioProject({
+            userId: kayaUser.uid,
+            studioHub: 'VORTEX · KAYA',
+            label: `${activeResSpec.tag} Master (${fps}fps)`,
+            duration,
+            prompt: promptText,
+          }),
+          saveStudioArtifact({
+            userId: kayaUser.uid,
+            studioHub: 'KAYA Cinema',
+            title: `${activeResSpec.label} · ${activeStyleSpec.label}`,
+            kind: 'render',
+            summary: `${result.width}×${result.height} @ ${fps}fps`,
+          }),
+        ]);
+        hydrateCloudWorkspace(kayaUser.uid);
+      }
     } catch (e: any) {
       setAppState('IDLE');
       setRenderProgress(0);
@@ -663,33 +795,36 @@ export default function App() {
       const ext = version.mimeType.includes('mp4') ? 'mp4' : 'webm';
       const a = document.createElement('a');
       a.href = version.videoUrl;
-      a.download = `kaya-cinemax-4k-${version.label.toLowerCase().replace(/\s+/g, '-')}.${ext}`;
+      a.download = `vortex-kaya-4k-${version.label.toLowerCase().replace(/\s+/g, '-')}.${ext}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      addLog(`Saved ${version.label} (.${ext}) media file.`, 'success');
+      addLog(`Exported ${version.label} (.${ext}).`, 'success');
     } catch (e: any) {
-      addLog(`Download failed: ${e.message}`, 'error');
+      addLog(`Export failed: ${e.message}`, 'error');
     } finally {
       setDownloading(false);
     }
   };
+
+  const matchingSuiteEntries = useMemo(() => {
+    const q = suiteSearch.trim().toLowerCase();
+    if (!q) return [];
+    return SUITE_MENU_ENTRIES.filter(
+      (entry) =>
+        entry.label.toLowerCase().includes(q) || entry.category.toLowerCase().includes(q)
+    ).slice(0, 8);
+  }, [suiteSearch]);
 
   const showSubject = activeModule === 'all' || activeModule === 'subject';
   const showEnvironment = activeModule === 'all' || activeModule === 'environment';
   const showOptics = activeModule === 'all' || activeModule === 'optics';
 
   return (
-    <div className="min-h-screen w-full bg-[#030406] text-[#E6ECF5] p-0">
-      {/* OUTER GRADE-7 OBSIDIAN TITANIUM WORKSTATION CHASSIS WITH NEON RED PERIMETER LED */}
-      <div className="relative w-full mx-auto cnc-chassis rounded-[16px] p-0 flex flex-col">
-        <HexScrew className="absolute top-2.5 left-2.5 z-10 pointer-events-none" />
-        <HexScrew className="absolute top-2.5 right-2.5 z-10 pointer-events-none" />
-        <HexScrew className="absolute bottom-2.5 left-2.5 z-20 pointer-events-none" />
-        <HexScrew className="absolute bottom-2.5 right-2.5 z-20 pointer-events-none" />
-
+    <div className="min-h-screen w-full bg-[#050304] text-[#F5E9EA] p-0">
+      <div className="relative w-full mx-auto candy-chassis flex flex-col">
         {/* ====================================================================
-            PAGE 01: PURE FULL-VIEWPORT PROJECTOR VIDEO -> RUBIK'S CUBE STAGE
+            SCREEN 1: UNTOUCHED THREE.JS FLIPPING RUBIK'S CUBES STAGE
             ==================================================================== */}
         <HeroVideoCubeStage
           workspaceMedia={workspaceMedia}
@@ -698,7 +833,6 @@ export default function App() {
           isOnline={isOnline}
           isAppInstalled={isInstalled}
           onOpenInstall={() => setInstallModalOpen(true)}
-          onOpenAdmin={() => setAdminPortalOpen(true)}
           onOpenAuth={() => setAuthModalOpen(true)}
           onNavigateTool={handleSelectToolFromGalleryOrNav}
           onNavigateGates={() => scrollToSection('page-gates')}
@@ -707,840 +841,919 @@ export default function App() {
           onJumpSection={handleJumpSection}
         />
 
-        {/* LOWER WORKSTATION DECK (RESPONSIVE FOR TABLET, PHONE & DESKTOP) */}
-        <div className="w-full max-w-[1440px] mx-auto p-3 sm:p-5 flex flex-col gap-5">
-        {/* HARDWARE BAR POSITIONED UNDERNEATH PAGE 01 */}
-        <header className="sticky top-2 z-40 cnc-plate rounded-[11px] px-3 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-2.5">
-          <div
-            className="flex items-center gap-3 min-w-0 cursor-pointer select-none"
-            onDoubleClick={() => setAdminPortalOpen(true)}
-            title="KAYA · Double-click or press Ctrl+Shift+K for Secret Owner Portal"
-          >
-            <GeometricMark />
-            <div className="flex items-baseline gap-2.5 min-w-0">
-              <h1
-                className="text-base sm:text-lg font-bold uppercase tracking-[0.22em] text-white whitespace-nowrap"
-                style={{ fontFamily: 'var(--font-display)' }}
-              >
-                KAYA
-              </h1>
-              <span className="hidden lg:inline font-mono text-[10px] uppercase tracking-widest text-[#E6ECF5]/55 whitespace-nowrap">
-                Pro &amp; Candy Finish
-              </span>
-            </div>
-          </div>
+        {/* CONTINUOUS EDGE-TO-EDGE ENDLESS SCROLL SUITE BELOW SCREEN 1 */}
+        <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-6 py-4 flex flex-col gap-5">
+          {/* TOP CONTROL BAR: Search & Menu Left/Center · Prominent VORTEX · KAYA Branding Top Right */}
+          <header className="sticky top-2 z-40 candy-surface rounded-2xl px-3.5 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-3">
+            {/* Search & Dropdown Menu Left/Center */}
+            <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
+              {/* Accessible Suite Dropdown Menu */}
+              <div className="relative">
+                <HardwareButton
+                  size="sm"
+                  tone="red"
+                  active={suiteMenuOpen}
+                  onClick={() => setSuiteMenuOpen((o) => !o)}
+                  aria-expanded={suiteMenuOpen}
+                  aria-label="Open VORTEX · KAYA Suite Navigation Menu"
+                >
+                  <Menu className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                  <span>Suite Menu</span>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </HardwareButton>
 
-          {/* 3-Page Vertical Navigation Controls */}
-          <div className="flex flex-wrap items-center gap-2">
-            <HardwareButton size="sm" tone="red" active onClick={() => scrollToSection('page-cube')}>
-              <Box className="w-3.5 h-3.5 text-[#FF3B5C]" />
-              <span>1. Video Cube Stage</span>
-            </HardwareButton>
-            <HardwareButton size="sm" tone="cyan" active={false} onClick={() => scrollToSection('page-gates')}>
-              <DoorOpen className="w-3.5 h-3.5 text-[#F1F5F9]" />
-              <span>2. Gates &amp; 4-Tile Gallery</span>
-            </HardwareButton>
-            <HardwareButton size="sm" tone="magenta" active={false} onClick={() => scrollToSection('page-tools')}>
-              <Sliders className="w-3.5 h-3.5 text-[#FF5C8A]" />
-              <span>3. Tools Suite</span>
-            </HardwareButton>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <HardwareButton
-              size="sm"
-              tone={voiceActive ? 'red' : 'cyan'}
-              active={voiceActive}
-              onClick={triggerGlobalSmartVoice}
-              title="Smart Voice Trigger: speak any tool name"
-            >
-              <Mic className="w-3.5 h-3.5 text-[#F1F5F9]" />
-              <span className="hidden sm:inline">{voiceActive ? 'Listening…' : 'Voice'}</span>
-            </HardwareButton>
-            <HardwareButton
-              size="sm"
-              tone="magenta"
-              active={plansModalOpen}
-              onClick={() => setPlansModalOpen(true)}
-              title="Membership Tiers (Free, Beginner, Ultra, Pro, Enterprise Business)"
-            >
-              <Crown className="w-3.5 h-3.5 text-[#FF5C8A]" />
-              <span>
-                {studioPlan.tier === 'enterprise_business'
-                  ? 'Enterprise'
-                  : studioPlan.tier === 'pro'
-                  ? 'Pro'
-                  : studioPlan.tier === 'ultra'
-                  ? 'Ultra'
-                  : studioPlan.tier === 'beginner'
-                  ? 'Beginner'
-                  : 'Free Tier'}
-              </span>
-            </HardwareButton>
-            {kayaUser?.role === 'owner' && (
-              <HardwareButton
-                size="sm"
-                tone="red"
-                active={adminPortalOpen}
-                onClick={() => setAdminPortalOpen(true)}
-                title="Secret Owner & Admin Portal (Ctrl+Shift+K)"
-              >
-                <ShieldAlert className="w-3.5 h-3.5 text-[#FF0A3C]" />
-                <span>Admin Portal</span>
-              </HardwareButton>
-            )}
-            <HardwareButton
-              size="sm"
-              tone="cyan"
-              active={!!kayaUser}
-              onClick={() => {
-                setAuthInitialMode('signin');
-                setAuthModalOpen(true);
-              }}
-            >
-              <User className="w-3.5 h-3.5 text-[#F1F5F9]" />
-              <span>{kayaUser ? kayaUser.handle : 'Sign In'}</span>
-            </HardwareButton>
-            <HardwareButton
-              size="sm"
-              tone={isOnline ? 'cyan' : 'red'}
-              active={!isOnline || syncingApp}
-              onClick={handleManualAutoSync}
-              title={
-                isOnline
-                  ? 'Online · Click to check & sync runtime updates now'
-                  : 'Offline Mode · Local studio engine cached and ready'
-              }
-            >
-              {syncingApp ? (
-                <RefreshCw className="w-3.5 h-3.5 text-[#F1F5F9] animate-spin" />
-              ) : isOnline ? (
-                <Wifi className="w-3.5 h-3.5 text-[#F1F5F9]" />
-              ) : (
-                <WifiOff className="w-3.5 h-3.5 text-[#FF0A3C]" />
-              )}
-              <span className={isOnline ? 'text-[#F1F5F9]' : 'text-[#FF2E63]'}>
-                {syncingApp ? 'Syncing…' : isOnline ? 'Online · Sync' : 'Offline Ready'}
-              </span>
-            </HardwareButton>
-            <PWAInstallButton
-              externalOpen={installModalOpen}
-              onExternalOpenChange={setInstallModalOpen}
-            />
-            <HardwareButton
-              size="sm"
-              tone="red"
-              active={legalModalOpen}
-              onClick={() => {
-                setLegalInitialTab('brand');
-                setLegalModalOpen(true);
-              }}
-              title="KAYA™ Brand, Policies, Protections, Terms & GPU 120fps Menu"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#FF3B5C]" />
-              <span className="hidden md:inline">Policies &amp; ™</span>
-            </HardwareButton>
-          </div>
-        </header>
-
-        {/* ====================================================================
-            PAGE 02: OPENING STUDIO GATES + LEFT/RIGHT 4-TILE STUDIO GALLERY
-            ==================================================================== */}
-        <StudioGatesGallery
-          activeTool={activeTool}
-          subjectImage={selectedProductUrl}
-          environmentImage={selectedAtmosphereUrl}
-          formatSummary={currentFormatLabel}
-          cutsCount={versions.length}
-          onSelectTool={handleSelectToolFromGalleryOrNav}
-        />
-
-        {/* ====================================================================
-            PAGE 03: FULL ACTIVE KAYA TOOLS WORKBENCH (ALL STUDIO TOOLS)
-            ==================================================================== */}
-        <section id="page-tools" className="space-y-4">
-          <PlateBezel screws={false} accent="cyan" className="px-4 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-2.5">
-              <span
-                className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#E6ECF5]/70"
-                style={{ fontFamily: 'var(--font-display)' }}
-              >
-                Page 03 · Complete KAYA Tool Workbench
-              </span>
-              <nav aria-label="Workbench tool selector" className="flex flex-wrap items-center gap-2">
-                {WORKBENCH_TOOLS.map((tool) => (
-                  <HardwareButton
-                    key={tool.key}
-                    size="sm"
-                    tone={tool.tone}
-                    active={activeTool === tool.key}
-                    onClick={() => setActiveTool(tool.key)}
-                  >
-                    {tool.icon}
-                    <span>{tool.label}</span>
-                  </HardwareButton>
-                ))}
-              </nav>
-            </div>
-          </PlateBezel>
-
-          {/* TOOL 1: VIDEO TOOLS (4K HDR 60FPS CINEMA STUDIO) */}
-          {activeTool === 'video' && (
-            <>
-              <PlateBezel screws={false} className="px-4 py-2.5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <HardwareButton
-                      size="sm"
-                      tone="cyan"
-                      active={activeModule === 'all'}
-                      onClick={() => setActiveModule('all')}
-                    >
-                      <LayoutGrid className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                      <span>All Video Tools</span>
-                    </HardwareButton>
-                    <HardwareButton
-                      size="sm"
-                      tone="cyan"
-                      active={activeModule === 'subject'}
-                      onClick={() => setActiveModule('subject')}
-                    >
-                      <Box className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                      <span>Subject Input</span>
-                    </HardwareButton>
-                    <HardwareButton
-                      size="sm"
-                      tone="magenta"
-                      active={activeModule === 'environment'}
-                      onClick={() => setActiveModule('environment')}
-                    >
-                      <Layers className="w-3.5 h-3.5 text-[#FF5C8A]" />
-                      <span>Employee Environment</span>
-                    </HardwareButton>
-                    <HardwareButton
-                      size="sm"
-                      tone="red"
-                      active={activeModule === 'optics'}
-                      onClick={() => setActiveModule('optics')}
-                    >
-                      <Sliders className="w-3.5 h-3.5 text-[#FF3B5C]" />
-                      <span>Optics, 60fps &amp; Styles</span>
-                    </HardwareButton>
+                {suiteMenuOpen && (
+                  <div className="absolute left-0 mt-2 w-72 max-h-96 overflow-y-auto candy-chassis rounded-2xl p-2 z-50 space-y-1 shadow-[0_18px_40px_rgba(0,0,0,0.85)]">
+                    {SUITE_MENU_ENTRIES.map((entry) => (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        onClick={() => {
+                          setSuiteMenuOpen(false);
+                          if (entry.targetType === 'section') {
+                            scrollToSection(entry.target);
+                          } else {
+                            handleSelectToolFromGalleryOrNav(entry.target as StudioPageKey);
+                          }
+                        }}
+                        className="w-full candy-trace-tile rounded-xl px-3 py-2 text-left flex items-center justify-between gap-2 cursor-pointer"
+                      >
+                        <span className="font-mono text-xs text-white truncate">{entry.label}</span>
+                        <span className="font-mono text-[10px] text-[#E06844] shrink-0">{entry.category}</span>
+                      </button>
+                    ))}
                   </div>
-
-                  {/* Direct Section Jump: Display · Prompt Window · Timeline */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <HardwareButton
-                      size="sm"
-                      tone="red"
-                      active={false}
-                      onClick={() => handleJumpSection('studio-display', 'video')}
-                    >
-                      <MonitorPlay className="w-3.5 h-3.5 text-[#FF3B5C]" />
-                      <span>Display</span>
-                    </HardwareButton>
-                    <HardwareButton
-                      size="sm"
-                      tone="magenta"
-                      active={false}
-                      onClick={() => handleJumpSection('studio-prompt', 'video')}
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-[#FF5C8A]" />
-                      <span>Prompt Window</span>
-                    </HardwareButton>
-                    <HardwareButton
-                      size="sm"
-                      tone="cyan"
-                      active={false}
-                      onClick={() => handleJumpSection('studio-timeline', 'video')}
-                    >
-                      <Scissors className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                      <span>Timeline</span>
-                    </HardwareButton>
-                  </div>
-                </div>
-              </PlateBezel>
-
-              <div id="studio-display" className="scroll-mt-20">
-                <VideoOutput
-                  appState={appState}
-                  videoUrl={selected?.videoUrl ?? null}
-                  logs={logs}
-                  isLooping={isLooping}
-                  onToggleLoop={() => setIsLooping((l) => !l)}
-                  onDownload={selected ? () => downloadVideo(selected) : undefined}
-                  onToggleEdit={() => {
-                    setEditOpen((o) => !o);
-                    scrollToSection('studio-prompt');
-                  }}
-                  editOpen={editOpen}
-                  downloading={downloading}
-                  versionLabel={selected?.label}
-                  targetDuration={selected?.duration || duration}
-                  formatSpecLabel={selected?.specLabel || currentFormatLabel}
-                  renderProgress={renderProgress}
-                  onVideoTimeUpdate={(cur, dur) => {
-                    setVideoTime(cur);
-                    setVideoDuration(dur);
-                  }}
-                  seekToTime={seekToTime}
-                  composition={selected?.composition}
-                  onLog={addLog}
-                />
+                )}
               </div>
 
-              {/* ALWAYS-VISIBLE PROMPT WINDOW */}
-              <div id="studio-prompt" className="scroll-mt-20">
-                <PlateBezel accent="magenta" className="p-5 sm:p-6 space-y-3.5">
-                  <div className="flex flex-wrap items-center justify-between gap-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <Sparkles className="w-4 h-4 text-[#FF2E63]" />
-                      <h3
-                        className="text-sm font-bold uppercase tracking-wider text-white"
-                        style={{ fontFamily: 'var(--font-display)' }}
-                      >
-                        Prompt Window · Scene Direction &amp; Cut Adjustments
-                      </h3>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {[
-                        'Candy Apple Red Studio Rim',
-                        'Fast 360 Orbit',
-                        'Dramatic Optical Contrast',
-                        'Warm Golden Flare',
-                      ].map((preset) => (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() =>
-                            setEditText((prev) =>
-                              prev.trim() ? `${prev.trim()}, ${preset.toLowerCase()}` : preset
-                            )
+              {/* Quick Suite Search Input */}
+              <div className="relative flex-1 max-w-xs min-w-[180px]">
+                <Search className="w-3.5 h-3.5 text-[#E6ECF5]/50 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={suiteSearch}
+                  onChange={(e) => setSuiteSearch(e.target.value)}
+                  placeholder="Search studios, Blender, Infinity…"
+                  className="w-full bg-[#050304] border border-[#B84323]/30 rounded-full pl-8 pr-3 py-1.5 font-mono text-xs text-white focus:outline-none focus:border-[#FF0A3C]"
+                />
+                {matchingSuiteEntries.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-1.5 candy-chassis rounded-2xl p-2 z-50 space-y-1 shadow-[0_16px_36px_rgba(0,0,0,0.9)]">
+                    {matchingSuiteEntries.map((entry) => (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        onClick={() => {
+                          setSuiteSearch('');
+                          if (entry.targetType === 'section') {
+                            scrollToSection(entry.target);
+                          } else {
+                            handleSelectToolFromGalleryOrNav(entry.target as StudioPageKey);
                           }
-                          className="px-2.5 py-1 rounded-[6px] bg-[#040507] border border-white/15 hover:border-[#FF2E63] font-mono text-[10px] text-[#F1F5F9]/80 hover:text-white transition-colors cursor-pointer"
-                        >
-                          + {preset}
-                        </button>
-                      ))}
-                    </div>
+                        }}
+                        className="w-full candy-trace-tile rounded-xl px-3 py-1.5 text-left flex items-center justify-between gap-2 cursor-pointer"
+                      >
+                        <span className="font-mono text-xs text-white truncate">{entry.label}</span>
+                        <span className="font-mono text-[10px] text-[#FF0A3C]">{entry.category}</span>
+                      </button>
+                    ))}
                   </div>
-                  <textarea
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    placeholder={
-                      selected
-                        ? `Enter scene prompt or lighting/camera adjustments for ${selected.label}…`
-                        : 'Type your scene prompt, lighting mood, or camera direction before pressing Render Reel…'
-                    }
-                    className="w-full bg-[#040507] border border-white/15 text-[#E6ECF5] p-3.5 font-mono text-xs leading-relaxed focus:outline-none focus:border-[#FF0A3C] rounded-[7px] resize-y min-h-[84px]"
-                  />
-                  {aiDirectorMeta && (
-                    <div className="cnc-recess rounded-[6px] p-2.5 border border-[#FF0A3C]/35 grid grid-cols-1 md:grid-cols-3 gap-2 font-mono text-[11px]">
-                      {aiDirectorMeta.directorNotes && (
-                        <div className="text-[#F1F5F9]/85">
-                          <span className="text-[#FF2E63] uppercase">Director: </span>
-                          {aiDirectorMeta.directorNotes}
-                        </div>
-                      )}
-                      {aiDirectorMeta.lightingCue && (
-                        <div className="text-[#F1F5F9]/85">
-                          <span className="text-[#FF0A3C] uppercase">Lighting: </span>
-                          {aiDirectorMeta.lightingCue}
-                        </div>
-                      )}
-                      {aiDirectorMeta.cameraTip && (
-                        <div className="text-[#F1F5F9]/85">
-                          <span className="text-white uppercase">Rig: </span>
-                          {aiDirectorMeta.cameraTip}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <div className="flex flex-wrap items-center justify-between gap-2.5">
-                    <span className="font-mono text-[11px] text-[#E6ECF5]/50">
-                      KAYA AI Prompt Enhancer + direct Render Reel scene control.
-                    </span>
+                )}
+              </div>
+
+              {/* Action Controls */}
+              <HardwareButton
+                size="sm"
+                tone={voiceActive ? 'red' : 'cyan'}
+                active={voiceActive}
+                onClick={triggerGlobalSmartVoice}
+                title="Voice Command: executes studio navigation or rendering directly"
+              >
+                <Mic className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                <span className="hidden sm:inline">{voiceActive ? 'Listening…' : 'Voice'}</span>
+              </HardwareButton>
+
+              <HardwareButton
+                size="sm"
+                tone="magenta"
+                active={plansModalOpen}
+                onClick={() => setPlansModalOpen(true)}
+                title="Membership Tiers (Free, Beginner, Pro, Ultra, Business, Enterprise)"
+              >
+                <Crown className="w-3.5 h-3.5 text-[#FF5C8A]" />
+                <span>{formatTierLabel(studioPlan.tier)}</span>
+              </HardwareButton>
+
+              <HardwareButton
+                size="sm"
+                tone="cyan"
+                active={!!kayaUser}
+                onClick={() => {
+                  setAuthInitialMode('signin');
+                  setAuthModalOpen(true);
+                }}
+              >
+                <User className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                <span>{kayaUser ? kayaUser.handle : 'Sign In'}</span>
+              </HardwareButton>
+
+              <HardwareButton
+                size="sm"
+                tone={isOnline ? 'cyan' : 'red'}
+                active={!isOnline || syncingApp}
+                onClick={handleManualAutoSync}
+              >
+                {syncingApp ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : isOnline ? (
+                  <Wifi className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                ) : (
+                  <WifiOff className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                )}
+                <span className="hidden md:inline">
+                  {syncingApp ? 'Syncing…' : isOnline ? 'Cloud Sync' : 'Offline Ready'}
+                </span>
+              </HardwareButton>
+
+              <PWAInstallButton
+                externalOpen={installModalOpen}
+                onExternalOpenChange={setInstallModalOpen}
+              />
+            </div>
+
+            {/* PROMINENT TOP-RIGHT STUDIO BRANDING */}
+            <div className="flex items-center gap-3 shrink-0 ml-auto">
+              <div className="text-right leading-tight">
+                <h1
+                  className="text-base sm:text-xl font-bold uppercase tracking-[0.22em] text-white whitespace-nowrap"
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  VORTEX · KAYA
+                </h1>
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#E06844] block whitespace-nowrap">
+                  Chrome-Ready Suite · Candy-Gloss &amp; Rust
+                </span>
+              </div>
+              <GeometricMark />
+            </div>
+          </header>
+
+          {/* SECTION NAVIGATION STRIP */}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <HardwareButton size="sm" tone="red" active onClick={() => scrollToSection('vortex-hub')}>
+                <Layers className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                <span>Vortex Hub</span>
+              </HardwareButton>
+              <HardwareButton size="sm" tone="cyan" active={false} onClick={() => scrollToSection('vortex-blender')}>
+                <Box className="w-3.5 h-3.5 text-[#E06844]" />
+                <span>Blender Pipeline</span>
+              </HardwareButton>
+              <HardwareButton size="sm" tone="red" active={false} onClick={() => scrollToSection('vortex-infinity')}>
+                <Orbit className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                <span>Infinity · Valerius (V)</span>
+              </HardwareButton>
+              <HardwareButton size="sm" tone="cyan" active={false} onClick={() => scrollToSection('vortex-soul')}>
+                <Snowflake className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                <span>Soul Cooling Opus 4.7</span>
+              </HardwareButton>
+              <HardwareButton size="sm" tone="magenta" active={false} onClick={() => scrollToSection('vortex-connectors')}>
+                <Database className="w-3.5 h-3.5 text-[#E06844]" />
+                <span>MCP &amp; Databases</span>
+              </HardwareButton>
+              <HardwareButton size="sm" tone="neutral" active={false} onClick={() => scrollToSection('page-tools')}>
+                <Sliders className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                <span>Workbench</span>
+              </HardwareButton>
+            </div>
+            <span className="font-mono text-[10px] text-[#E06844]/85 uppercase tracking-widest">
+              {UNIFIED_WATERMARK_TEXT}
+            </span>
+          </div>
+
+          {/* ====================================================================
+              VORTEX MAIN HUB: BLENDER, INFINITY (VALERIUS V), SOUL COOLING, CONNECTORS
+              ==================================================================== */}
+          <VortexHubModules
+            activeTool={activeTool}
+            userId={kayaUser?.uid}
+            userEmail={kayaUser?.email}
+            projects={cloudProjects}
+            artifacts={cloudArtifacts}
+            connectors={cloudConnectors}
+            onRefreshCloudData={() => kayaUser?.uid && hydrateCloudWorkspace(kayaUser.uid)}
+            onSelectTool={handleSelectToolFromGalleryOrNav}
+            onOpenBilling={handleOpenBillingFromHub}
+            onJumpSection={scrollToSection}
+          />
+
+          {/* ====================================================================
+              KAYA STUDIO GATES & SEAMLESS LINEUP GALLERY
+              ==================================================================== */}
+          <StudioGatesGallery
+            activeTool={activeTool}
+            subjectImage={selectedProductUrl}
+            environmentImage={selectedAtmosphereUrl}
+            formatSummary={currentFormatLabel}
+            cutsCount={versions.length}
+            onSelectTool={handleSelectToolFromGalleryOrNav}
+          />
+
+          {/* ====================================================================
+              COMPLETE ACTIVE STUDIO WORKBENCH (ALL CONNECTED STUDIOS & SHADERS)
+              ==================================================================== */}
+          <section id="page-tools" className="space-y-4">
+            <PlateBezel screws={false} accent="cyan" className="px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2.5">
+                <span
+                  className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#E6ECF5]/75"
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  Active Studio &amp; Shader Workbench
+                </span>
+                <nav aria-label="Workbench tool selector" className="flex flex-wrap items-center gap-2">
+                  {WORKBENCH_TOOLS.map((tool) => (
+                    <HardwareButton
+                      key={tool.key}
+                      size="sm"
+                      tone={tool.tone}
+                      active={activeTool === tool.key}
+                      onClick={() => setActiveTool(tool.key)}
+                    >
+                      {tool.icon}
+                      <span>{tool.label}</span>
+                    </HardwareButton>
+                  ))}
+                </nav>
+              </div>
+            </PlateBezel>
+
+            {activeTool === 'video' && (
+              <>
+                <PlateBezel screws={false} className="px-4 py-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <HardwareButton
                         size="sm"
                         tone="cyan"
-                        active={aiEnhancing}
-                        disabled={aiEnhancing || isGenerating}
-                        onClick={handleEnhancePromptWithAI}
+                        active={activeModule === 'all'}
+                        onClick={() => setActiveModule('all')}
                       >
-                        {aiEnhancing ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Cpu className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                        )}
-                        <span>{aiEnhancing ? 'Enhancing…' : 'AI Enhance Prompt'}</span>
+                        <LayoutGrid className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                        <span>All Modules</span>
                       </HardwareButton>
-                      {selected && (
-                        <HardwareButton
-                          size="sm"
-                          tone="magenta"
-                          active={!!editText.trim()}
-                          disabled={!editText.trim() || isGenerating}
-                          onClick={handleEdit}
-                        >
-                          {isGenerating ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              <span>Applying…</span>
-                            </>
-                          ) : (
-                            <span>Apply Cut Adjustment</span>
-                          )}
-                        </HardwareButton>
-                      )}
+                      <HardwareButton
+                        size="sm"
+                        tone="cyan"
+                        active={activeModule === 'subject'}
+                        onClick={() => setActiveModule('subject')}
+                      >
+                        <Box className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                        <span>Subject Input</span>
+                      </HardwareButton>
+                      <HardwareButton
+                        size="sm"
+                        tone="magenta"
+                        active={activeModule === 'environment'}
+                        onClick={() => setActiveModule('environment')}
+                      >
+                        <Layers className="w-3.5 h-3.5 text-[#FF5C8A]" />
+                        <span>Environment</span>
+                      </HardwareButton>
                       <HardwareButton
                         size="sm"
                         tone="red"
-                        active={canSubmit}
-                        disabled={!canSubmit}
-                        onClick={handleSubmit}
+                        active={activeModule === 'optics'}
+                        onClick={() => setActiveModule('optics')}
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-[#FF3B5C]" />
-                        <span>Render Reel with Prompt</span>
+                        <Sliders className="w-3.5 h-3.5 text-[#FF3B5C]" />
+                        <span>Optics &amp; Shaders</span>
+                      </HardwareButton>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <HardwareButton
+                        size="sm"
+                        tone="red"
+                        active={false}
+                        onClick={() => handleJumpSection('studio-display', 'video')}
+                      >
+                        <MonitorPlay className="w-3.5 h-3.5 text-[#FF3B5C]" />
+                        <span>Display</span>
+                      </HardwareButton>
+                      <HardwareButton
+                        size="sm"
+                        tone="magenta"
+                        active={false}
+                        onClick={() => handleJumpSection('studio-prompt', 'video')}
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-[#FF5C8A]" />
+                        <span>Prompt Window</span>
+                      </HardwareButton>
+                      <HardwareButton
+                        size="sm"
+                        tone="cyan"
+                        active={false}
+                        onClick={() => handleJumpSection('studio-timeline', 'video')}
+                      >
+                        <Scissors className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                        <span>Timeline</span>
                       </HardwareButton>
                     </div>
                   </div>
                 </PlateBezel>
-              </div>
 
-              {showSubject && (
-                <ImageUploader
-                  indexLabel="01."
-                  title="Enterprise Subject Input"
-                  type="product"
-                  suggestions={PRODUCTS}
-                  selection={product}
-                  onSelect={setProduct}
-                  disabled={isGenerating}
-                />
-              )}
+                <div id="studio-display" className="scroll-mt-20">
+                  <VideoOutput
+                    appState={appState}
+                    videoUrl={selected?.videoUrl ?? null}
+                    logs={logs}
+                    isLooping={isLooping}
+                    onToggleLoop={() => setIsLooping((l) => !l)}
+                    onDownload={selected ? () => downloadVideo(selected) : undefined}
+                    onToggleEdit={() => {
+                      setEditOpen((o) => !o);
+                      scrollToSection('studio-prompt');
+                    }}
+                    editOpen={editOpen}
+                    downloading={downloading}
+                    versionLabel={selected?.label}
+                    targetDuration={selected?.duration || duration}
+                    formatSpecLabel={selected?.specLabel || currentFormatLabel}
+                    renderProgress={renderProgress}
+                    onVideoTimeUpdate={(cur, dur) => {
+                      setVideoTime(cur);
+                      setVideoDuration(dur);
+                    }}
+                    seekToTime={seekToTime}
+                    composition={selected?.composition}
+                    onLog={addLog}
+                  />
+                </div>
 
-              {showEnvironment && (
-                <ImageUploader
-                  indexLabel="02."
-                  title="Employee &amp; Enterprise Environment"
-                  type="atmosphere"
-                  suggestions={ATMOSPHERES}
-                  selection={atmosphere}
-                  onSelect={setAtmosphere}
-                  disabled={isGenerating}
-                />
-              )}
-
-              {showOptics && (
-                <PlateBezel
-                  accent={editOpen ? 'magenta' : 'cyan'}
-                  className="p-5 sm:p-6 space-y-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-                    <div className="flex items-baseline gap-2.5">
-                      <span className="font-mono text-xs font-bold tracking-widest text-[#FF1E42] tabular-nums">
-                        03.
-                      </span>
-                      <h3
-                        className="text-sm sm:text-base font-bold tracking-wide text-[#E6ECF5] uppercase"
-                        style={{ fontFamily: 'var(--font-display)' }}
-                      >
-                        Video Tools · Resolution, 60fps, Camera Rig &amp; Render Styles
-                      </h3>
-                    </div>
-                    <LedStatusIndicator
-                      label={`${activeResSpec.label} · ${fps}fps · ${activeStyleSpec.label}`}
-                      tone="cyan"
-                    />
-                  </div>
-
-                  {/* Resolution & Aspect Format Matrix */}
-                  <div className="cnc-recess rounded-[8px] p-3.5 space-y-3">
-                    <div className="flex items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
-                      <span className="flex items-center gap-2">
-                        <MonitorPlay className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                        <span>Master Video Resolution &amp; Frame Type</span>
-                      </span>
-                      <span className="text-[#F1F5F9] tabular-nums">
-                        {activeResSpec.tag} · {activeResSpec.aspectDesc}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-                      {RESOLUTION_PRESETS.map((r) => (
-                        <HardwareButton
-                          key={r.key}
-                          fullWidth
-                          tone={r.key === 'cinemax_4k' ? 'red' : 'cyan'}
-                          active={resolution === r.key}
-                          disabled={isGenerating}
-                          onClick={() => setResolution(r.key)}
+                {/* PROMPT WINDOW */}
+                <div id="studio-prompt" className="scroll-mt-20">
+                  <PlateBezel accent="magenta" className="p-5 sm:p-6 space-y-3.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <Sparkles className="w-4 h-4 text-[#FF0A3C]" />
+                        <h3
+                          className="text-sm font-bold uppercase tracking-wider text-white"
+                          style={{ fontFamily: 'var(--font-display)' }}
                         >
-                          <span className="font-bold">{r.label}</span>
-                          <span className="text-[11px] text-[#E6ECF5]/65 tabular-nums hidden sm:inline">
-                            {r.tag}
-                          </span>
+                          Prompt Window · Self-Hosted Scene Director
+                        </h3>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {[
+                          'Candy-Gloss Specular Rim',
+                          'Burnished Rust Volumetrics',
+                          'Fast 360 Orbit',
+                          'Dramatic Optical Contrast',
+                        ].map((preset) => (
+                          <HardwareButton
+                            key={preset}
+                            size="sm"
+                            tone="neutral"
+                            ledIndicator={false}
+                            onClick={() =>
+                              setEditText((prev) =>
+                                prev.trim() ? `${prev.trim()}, ${preset.toLowerCase()}` : preset
+                              )
+                            }
+                          >
+                            <span>+ {preset}</span>
+                          </HardwareButton>
+                        ))}
+                      </div>
+                    </div>
+                    <textarea
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      placeholder={
+                        selected
+                          ? `Enter scene prompt or lighting/camera adjustments for ${selected.label}…`
+                          : 'Enter scene direction, shader cues, or camera rig motion before pressing Render Reel…'
+                      }
+                      className="w-full bg-[#050304] border border-[#B84323]/30 text-[#F5E9EA] p-3.5 font-mono text-xs leading-relaxed focus:outline-none focus:border-[#FF0A3C] rounded-xl resize-y min-h-[84px]"
+                    />
+                    {aiDirectorMeta && (
+                      <div className="candy-surface rounded-xl p-3 grid grid-cols-1 md:grid-cols-3 gap-2 font-mono text-[11px]">
+                        {aiDirectorMeta.directorNotes && (
+                          <div className="text-[#F5E9EA]/85">
+                            <span className="text-[#FF0A3C] uppercase">Director: </span>
+                            {aiDirectorMeta.directorNotes}
+                          </div>
+                        )}
+                        {aiDirectorMeta.lightingCue && (
+                          <div className="text-[#F5E9EA]/85">
+                            <span className="text-[#E06844] uppercase">Lighting: </span>
+                            {aiDirectorMeta.lightingCue}
+                          </div>
+                        )}
+                        {aiDirectorMeta.cameraTip && (
+                          <div className="text-[#F5E9EA]/85">
+                            <span className="text-white uppercase">Rig: </span>
+                            {aiDirectorMeta.cameraTip}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap items-center justify-between gap-2.5">
+                      <span className="font-mono text-[11px] text-[#E6ECF5]/55">
+                        Routed through self-hosted Vortex director server (zero external API keys).
+                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <HardwareButton
+                          size="sm"
+                          tone="cyan"
+                          active={aiEnhancing}
+                          disabled={aiEnhancing || isGenerating}
+                          onClick={handleEnhancePromptWithAI}
+                        >
+                          {aiEnhancing ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Cpu className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                          )}
+                          <span>{aiEnhancing ? 'Enhancing…' : 'Enhance Scene Prompt'}</span>
                         </HardwareButton>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Frame Rate + HDR Grade */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="cnc-recess rounded-[8px] p-3.5 space-y-3">
-                      <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
-                        <Gauge className="w-3.5 h-3.5 text-[#FF3B5C]" />
-                        <span>Frame Rate (24 / 30 / 60 / 90 / 120 / 144 fps)</span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {FPS_PRESETS.map((f) => (
+                        {selected && (
                           <HardwareButton
-                            key={f.key}
-                            fullWidth
-                            tone={f.key >= 90 ? 'red' : 'cyan'}
-                            active={fps === f.key}
-                            disabled={isGenerating}
-                            onClick={() => setFps(f.key)}
-                          >
-                            <span className="font-bold tabular-nums">{f.label}</span>
-                            <span className="text-[11px] text-[#E6ECF5]/65 hidden sm:inline">{f.desc}</span>
-                          </HardwareButton>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="cnc-recess rounded-[8px] p-3.5 space-y-3">
-                      <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
-                        <Sparkles className="w-3.5 h-3.5 text-[#FF2E63]" />
-                        <span>HDR Dynamic Range Grade</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        {HDR_GRADE_PRESETS.map((g) => (
-                          <HardwareButton
-                            key={g.key}
-                            fullWidth
+                            size="sm"
                             tone="magenta"
-                            active={hdrGrade === g.key}
-                            disabled={isGenerating}
-                            onClick={() => setHdrGrade(g.key)}
+                            active={!!editText.trim()}
+                            disabled={!editText.trim() || isGenerating}
+                            onClick={handleEdit}
                           >
-                            <span className="font-semibold truncate">{g.label}</span>
+                            {isGenerating ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Applying…</span>
+                              </>
+                            ) : (
+                              <span>Apply Cut Adjustment</span>
+                            )}
+                          </HardwareButton>
+                        )}
+                        <HardwareButton
+                          size="sm"
+                          tone="red"
+                          active={canSubmit}
+                          disabled={!canSubmit}
+                          onClick={handleSubmit}
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-[#FF3B5C]" />
+                          <span>Render Reel</span>
+                        </HardwareButton>
+                      </div>
+                    </div>
+                  </PlateBezel>
+                </div>
+
+                {showSubject && (
+                  <ImageUploader
+                    indexLabel="01."
+                    title="Subject Input"
+                    type="product"
+                    suggestions={PRODUCTS}
+                    selection={product}
+                    onSelect={setProduct}
+                    disabled={isGenerating}
+                  />
+                )}
+
+                {showEnvironment && (
+                  <ImageUploader
+                    indexLabel="02."
+                    title="Environment & Stage"
+                    type="atmosphere"
+                    suggestions={ATMOSPHERES}
+                    selection={atmosphere}
+                    onSelect={setAtmosphere}
+                    disabled={isGenerating}
+                  />
+                )}
+
+                {showOptics && (
+                  <PlateBezel accent={editOpen ? 'magenta' : 'cyan'} className="p-5 sm:p-6 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+                      <div className="flex items-baseline gap-2.5">
+                        <span className="font-mono text-xs font-bold tracking-widest text-[#FF0A3C] tabular-nums">
+                          03.
+                        </span>
+                        <h3
+                          className="text-sm sm:text-base font-bold tracking-wide text-[#F5E9EA] uppercase"
+                          style={{ fontFamily: 'var(--font-display)' }}
+                        >
+                          Optics, Frame Rate, Camera Rig &amp; Render Shaders
+                        </h3>
+                      </div>
+                      <LedStatusIndicator
+                        label={`${activeResSpec.label} · ${fps}fps · ${activeStyleSpec.label}`}
+                        tone="cyan"
+                      />
+                    </div>
+
+                    <div className="candy-surface rounded-xl p-3.5 space-y-3">
+                      <div className="flex items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
+                        <span className="flex items-center gap-2">
+                          <MonitorPlay className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                          <span>Master Video Resolution</span>
+                        </span>
+                        <span className="text-[#F1F5F9] tabular-nums">
+                          {activeResSpec.tag} · {activeResSpec.aspectDesc}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                        {RESOLUTION_PRESETS.map((r) => (
+                          <HardwareButton
+                            key={r.key}
+                            fullWidth
+                            tone={r.key === 'cinemax_4k' ? 'red' : 'cyan'}
+                            active={resolution === r.key}
+                            disabled={isGenerating}
+                            onClick={() => setResolution(r.key)}
+                          >
+                            <span className="font-bold">{r.label}</span>
+                            <span className="text-[11px] text-[#E6ECF5]/65 tabular-nums hidden sm:inline">
+                              {r.tag}
+                            </span>
                           </HardwareButton>
                         ))}
                       </div>
                     </div>
-                  </div>
 
-                  {/* Camera Rig Motion + Sequence Duration */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div className="cnc-recess rounded-[8px] p-3.5 space-y-3">
-                      <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
-                        <Compass className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                        <span>Camera Rig Motion</span>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                      <div className="candy-surface rounded-xl p-3.5 space-y-3">
+                        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
+                          <Gauge className="w-3.5 h-3.5 text-[#FF3B5C]" />
+                          <span>Frame Rate (24–144 fps)</span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {FPS_PRESETS.map((f) => (
+                            <HardwareButton
+                              key={f.key}
+                              fullWidth
+                              tone={f.key >= 90 ? 'red' : 'cyan'}
+                              active={fps === f.key}
+                              disabled={isGenerating}
+                              onClick={() => setFps(f.key)}
+                            >
+                              <span className="font-bold tabular-nums">{f.label}</span>
+                              <span className="text-[11px] text-[#E6ECF5]/65 hidden sm:inline">{f.desc}</span>
+                            </HardwareButton>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="candy-surface rounded-xl p-3.5 space-y-3">
+                        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
+                          <Sparkles className="w-3.5 h-3.5 text-[#FF2E63]" />
+                          <span>HDR Dynamic Range Grade</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {HDR_GRADE_PRESETS.map((g) => (
+                            <HardwareButton
+                              key={g.key}
+                              fullWidth
+                              tone="magenta"
+                              active={hdrGrade === g.key}
+                              disabled={isGenerating}
+                              onClick={() => setHdrGrade(g.key)}
+                            >
+                              <span className="font-semibold truncate">{g.label}</span>
+                            </HardwareButton>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                      <div className="candy-surface rounded-xl p-3.5 space-y-3">
+                        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
+                          <Compass className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                          <span>Camera Rig Motion</span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {CAMERA_MOTION_PRESETS.map((cm) => (
+                            <HardwareButton
+                              key={cm.key}
+                              size="sm"
+                              fullWidth
+                              tone="cyan"
+                              active={cameraMotion === cm.key}
+                              disabled={isGenerating}
+                              onClick={() => setCameraMotion(cm.key)}
+                            >
+                              <span>{cm.label}</span>
+                            </HardwareButton>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="candy-surface rounded-xl p-3.5 space-y-3">
+                        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
+                          <Clock className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                          <span>Sequence Duration</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {DURATION_PRESETS.map((p) => (
+                            <HardwareButton
+                              key={p.value}
+                              fullWidth
+                              tone="cyan"
+                              active={duration === p.value}
+                              disabled={isGenerating}
+                              onClick={() => setDuration(p.value)}
+                            >
+                              <span className="font-bold tabular-nums">{p.time}</span>
+                              <span className="text-[11px] text-[#E6ECF5]/65 hidden sm:inline">{p.desc}</span>
+                            </HardwareButton>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="candy-surface rounded-xl p-3.5 space-y-3">
+                      <div className="flex items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
+                        <span className="flex items-center gap-2">
+                          <Palette className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                          <span>Visual Render Style (19 Engines &amp; Shaders)</span>
+                        </span>
+                        <span className="text-[#F1F5F9] normal-case">{activeStyleSpec.desc}</span>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {CAMERA_MOTION_PRESETS.map((cm) => (
+                        {RENDER_STYLE_PRESETS.map((s) => (
                           <HardwareButton
-                            key={cm.key}
+                            key={s.key}
                             size="sm"
                             fullWidth
-                            tone="cyan"
-                            active={cameraMotion === cm.key}
+                            tone={
+                              s.key.includes('cyberpunk') || s.key === 'animorph' || s.key === 'cartoon_3d'
+                                ? 'magenta'
+                                : s.key === 'mesh_3d' || s.key === 'real_3d'
+                                ? 'red'
+                                : 'cyan'
+                            }
+                            active={renderStyle === s.key}
                             disabled={isGenerating}
-                            onClick={() => setCameraMotion(cm.key)}
+                            onClick={() => setRenderStyle(s.key)}
                           >
-                            <span>{cm.label}</span>
+                            <span className="truncate">{s.label}</span>
                           </HardwareButton>
                         ))}
                       </div>
                     </div>
 
-                    <div className="cnc-recess rounded-[8px] p-3.5 space-y-3">
-                      <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
-                        <Clock className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                        <span>Sequence Duration</span>
+                    {otherVersions.length > 0 && (
+                      <div className="candy-surface rounded-xl p-3.5 space-y-2.5">
+                        <span className="text-[11px] font-mono uppercase tracking-wider text-[#E6ECF5]/60 block">
+                          Recorded Cuts
+                        </span>
+                        <ScrollRow className="w-full" rowClassName="gap-3" deps={[otherVersions.length]}>
+                          {otherVersions.map((v) => (
+                            <button
+                              key={v.label}
+                              type="button"
+                              onClick={() => selectVersion(v.label)}
+                              className="group flex-none text-left p-2 candy-trace-tile rounded-xl cursor-pointer"
+                            >
+                              <div className="flex items-center justify-between gap-2 font-mono text-xs text-[#E6ECF5] mb-1.5 tabular-nums">
+                                <span className="font-bold">{v.label}</span>
+                                <span className="text-[10px] text-[#FF0A3C]">{v.duration || '10s'}</span>
+                              </div>
+                              <video
+                                src={v.videoUrl}
+                                muted
+                                playsInline
+                                preload="metadata"
+                                className="w-32 aspect-video object-cover rounded-lg bg-[#050304] opacity-85 group-hover:opacity-100 transition-opacity"
+                              />
+                            </button>
+                          ))}
+                        </ScrollRow>
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        {DURATION_PRESETS.map((p) => (
-                          <HardwareButton
-                            key={p.value}
-                            fullWidth
-                            tone="cyan"
-                            active={duration === p.value}
-                            disabled={isGenerating}
-                            onClick={() => setDuration(p.value)}
-                          >
-                            <span className="font-bold tabular-nums">{p.time}</span>
-                            <span className="text-[11px] text-[#E6ECF5]/65 hidden sm:inline">{p.desc}</span>
-                          </HardwareButton>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                    )}
+                  </PlateBezel>
+                )}
 
-                  {/* 19 Render Styles & Engines Matrix */}
-                  <div className="cnc-recess rounded-[8px] p-3.5 space-y-3">
-                    <div className="flex items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
-                      <span className="flex items-center gap-2">
-                        <Palette className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                        <span>Visual Render Style (19 Engines: 3D, Mesh, Rust, Telemetry &amp; 2D)</span>
-                      </span>
-                      <span className="text-[#F1F5F9] normal-case">{activeStyleSpec.desc}</span>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {RENDER_STYLE_PRESETS.map((s) => (
-                        <HardwareButton
-                          key={s.key}
-                          size="sm"
-                          fullWidth
-                          tone={
-                            s.key.includes('cyberpunk') || s.key === 'animorph' || s.key === 'cartoon_3d'
-                              ? 'magenta'
-                              : s.key === 'mesh_3d' || s.key === 'real_3d'
-                              ? 'red'
-                              : 'cyan'
-                          }
-                          active={renderStyle === s.key}
-                          disabled={isGenerating}
-                          onClick={() => setRenderStyle(s.key)}
-                        >
-                          <span className="truncate">{s.label}</span>
-                        </HardwareButton>
-                      ))}
-                    </div>
-                  </div>
+                <MasterControlDeck
+                  appState={appState}
+                  renderProgress={renderProgress}
+                  currentTime={videoTime}
+                  videoDuration={videoDuration}
+                  targetDuration={duration}
+                  onSelectDuration={setDuration}
+                  onSeek={(t) => {
+                    setVideoTime(t);
+                    setSeekToTime(t);
+                  }}
+                  isLooping={isLooping}
+                  onToggleLoop={() => setIsLooping((l) => !l)}
+                  canSubmit={canSubmit}
+                  onLaunchRender={handleSubmit}
+                  onSaveVideo={() => selected && downloadVideo(selected)}
+                  hasReadyVideo={appState === 'VIDEO_READY' && !!selected}
+                  downloading={downloading}
+                  logs={logs}
+                  activeStyleLabel={activeStyleSpec.label}
+                  activeFps={fps}
+                  onOpenFullTimeline={() => {
+                    setActiveTool('editor');
+                    scrollToSection('page-tools');
+                  }}
+                />
+              </>
+            )}
 
-                  {otherVersions.length > 0 && (
-                    <div className="cnc-recess rounded-[8px] p-3.5 space-y-2.5">
-                      <span className="text-[11px] font-mono uppercase tracking-wider text-[#E6ECF5]/60 block">
-                        Recorded Cuts
-                      </span>
-                      <ScrollRow className="w-full" rowClassName="gap-3" deps={[otherVersions.length]}>
-                        {otherVersions.map((v) => (
-                          <button
-                            key={v.label}
-                            type="button"
-                            onClick={() => selectVersion(v.label)}
-                            className="group flex-none text-left p-2 cnc-module hover:border-[#F1F5F9]/60 rounded-[8px] transition-colors cursor-pointer"
-                          >
-                            <div className="flex items-center justify-between gap-2 font-mono text-xs text-[#E6ECF5] mb-1.5 tabular-nums">
-                              <span className="font-bold">{v.label}</span>
-                              <span className="text-[10px] text-[#F1F5F9]">{v.duration || '10s'}</span>
-                            </div>
-                            <video
-                              src={v.videoUrl}
-                              muted
-                              playsInline
-                              preload="metadata"
-                              className="w-32 aspect-video object-cover rounded-[4px] bg-black opacity-85 group-hover:opacity-100 transition-opacity"
-                            />
-                          </button>
-                        ))}
-                      </ScrollRow>
-                    </div>
-                  )}
-                </PlateBezel>
-              )}
-
-              <MasterControlDeck
-                appState={appState}
-                renderProgress={renderProgress}
-                currentTime={videoTime}
-                videoDuration={videoDuration}
-                targetDuration={duration}
-                onSelectDuration={setDuration}
-                onSeek={(t) => {
-                  setVideoTime(t);
-                  setSeekToTime(t);
-                }}
-                isLooping={isLooping}
-                onToggleLoop={() => setIsLooping((l) => !l)}
-                canSubmit={canSubmit}
-                onLaunchRender={handleSubmit}
-                onSaveVideo={() => selected && downloadVideo(selected)}
-                hasReadyVideo={appState === 'VIDEO_READY' && !!selected}
-                downloading={downloading}
-                logs={logs}
-                activeStyleLabel={activeStyleSpec.label}
-                activeFps={fps}
-                onOpenFullTimeline={() => {
-                  setActiveTool('editor');
-                  scrollToSection('page-tools');
-                }}
+            {activeTool === 'picture' && (
+              <PictureStudioPage
+                productUrl={selectedProductUrl}
+                transparentProductUrl={selectedProductTransparentUrl}
+                atmosphereUrl={selectedAtmosphereUrl}
               />
-            </>
-          )}
+            )}
 
-          {activeTool === 'picture' && (
-            <PictureStudioPage
-              productUrl={selectedProductUrl}
-              transparentProductUrl={selectedProductTransparentUrl}
-              atmosphereUrl={selectedAtmosphereUrl}
-            />
-          )}
+            {activeTool === 'cube' && (
+              <RubiksCubeHubPage
+                workspaceMedia={workspaceMedia}
+                latestVideoUrl={selected?.videoUrl ?? null}
+                onAddWorkspaceMedia={(asset) => setUploadedCubeAssets((prev) => [asset, ...prev])}
+                onEnterGates={() => scrollToSection('page-gates')}
+              />
+            )}
 
-          {activeTool === 'cube' && (
-            <RubiksCubeHubPage
-              workspaceMedia={workspaceMedia}
-              latestVideoUrl={selected?.videoUrl ?? null}
-              onAddWorkspaceMedia={(asset) => setUploadedCubeAssets((prev) => [asset, ...prev])}
-              onEnterGates={() => scrollToSection('page-gates')}
-            />
-          )}
+            {activeTool === 'editor' && (
+              <EditorPage
+                versions={versions}
+                selectedLabel={selectedLabel}
+                onSelectVersion={selectVersion}
+                onDownloadVersion={downloadVideo}
+                onGoToVideo={() => setActiveTool('video')}
+              />
+            )}
 
-          {activeTool === 'editor' && (
-            <EditorPage
-              versions={versions}
-              selectedLabel={selectedLabel}
-              onSelectVersion={selectVersion}
-              onDownloadVersion={downloadVideo}
-              onGoToVideo={() => setActiveTool('video')}
-            />
-          )}
+            {activeTool === 'intel' && (
+              <IntelCodePage
+                productUrl={selectedProductUrl}
+                onNavigatePage={handleSelectToolFromGalleryOrNav}
+              />
+            )}
 
-          {activeTool === 'intel' && (
-            <IntelCodePage
-              productUrl={selectedProductUrl}
-              onNavigatePage={handleSelectToolFromGalleryOrNav}
-            />
-          )}
+            {activeTool === 'audio' && <AudioStudioPage />}
 
-          {activeTool === 'audio' && <AudioStudioPage />}
+            {activeTool === 'vfx' && (
+              <VfxStudioPage
+                productUrl={selectedProductUrl}
+                atmosphereUrl={selectedAtmosphereUrl}
+              />
+            )}
 
-          {activeTool === 'vfx' && (
-            <VfxStudioPage
-              productUrl={selectedProductUrl}
-              atmosphereUrl={selectedAtmosphereUrl}
-            />
-          )}
+            {activeTool === 'sound' && <SoundFoleyPage />}
 
-          {activeTool === 'sound' && <SoundFoleyPage />}
+            {activeTool === 'lipsync' && <LipSyncPage />}
 
-          {activeTool === 'lipsync' && <LipSyncPage />}
+            {activeTool === 'animator' && (
+              <PictureAnimatorPage
+                defaultHeroUrl={selectedProductUrl}
+                defaultChallengerUrl={selectedAtmosphereUrl}
+                atmosphereUrl={selectedAtmosphereUrl}
+              />
+            )}
 
-          {activeTool === 'animator' && (
-            <PictureAnimatorPage
-              defaultHeroUrl={selectedProductUrl}
-              defaultChallengerUrl={selectedAtmosphereUrl}
-              atmosphereUrl={selectedAtmosphereUrl}
-            />
-          )}
+            {activeTool === 'airradio' && <AirRadioPage />}
 
-          {activeTool === 'airradio' && <AirRadioPage />}
+            {activeTool === 'school' && <CodingRenderingSchoolPage />}
 
-          {activeTool === 'school' && <CodingRenderingSchoolPage />}
+            {activeTool === 'merch' && (
+              <MerchPrintPage defaultArtworkUrl={selectedProductUrl} userId={kayaUser?.uid} />
+            )}
 
-          {activeTool === 'merch' && <MerchPrintPage defaultArtworkUrl={selectedProductUrl} />}
+            {activeTool === 'live' && <LiveBroadcastStreamPage fallbackBackdropUrl={selectedAtmosphereUrl} />}
 
-          {activeTool === 'live' && <LiveBroadcastStreamPage fallbackBackdropUrl={selectedAtmosphereUrl} />}
+            {activeTool === 'bridge' && (
+              <LocalSuiteBridgePage
+                productUrl={selectedProductUrl}
+                transparentProductUrl={selectedProductTransparentUrl}
+                atmosphereUrl={selectedAtmosphereUrl}
+              />
+            )}
 
-          {activeTool === 'bridge' && (
-            <LocalSuiteBridgePage
-              productUrl={selectedProductUrl}
-              transparentProductUrl={selectedProductTransparentUrl}
-              atmosphereUrl={selectedAtmosphereUrl}
-            />
-          )}
+            {activeTool === 'storyboard' && (
+              <StoryboardLogoPage
+                subjectUrl={selectedProductUrl}
+                environmentUrl={selectedAtmosphereUrl}
+                formatSummary={currentFormatLabel}
+              />
+            )}
+          </section>
 
-          {activeTool === 'storyboard' && (
-            <StoryboardLogoPage
-              subjectUrl={selectedProductUrl}
-              environmentUrl={selectedAtmosphereUrl}
-              formatSummary={currentFormatLabel}
-            />
-          )}
-        </section>
+          {/* FOOTER: CONTACT INFO, PHONE NUMBERS, UNIFIED WATERMARK, POLICIES & DISCREET STAFF ACCESS */}
+          <footer className="candy-surface rounded-2xl px-5 py-5 space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 font-mono text-xs text-white font-semibold">
+                  <ShieldCheck className="w-4 h-4 text-[#FF0A3C] shrink-0" />
+                  <span>{UNIFIED_WATERMARK_TEXT} · Chrome &amp; Firebase Studio Cloud</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-4 font-mono text-[11px] text-[#F5E9EA]/75">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-[#E06844]" />
+                    <span>Studio Desk: +1 (415) 890-4720</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                    <span>Enterprise Line: +1 (415) 890-4729</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                    <span>GTamayo36@gmail.com</span>
+                  </span>
+                </div>
+              </div>
 
-        {/* WORKSTATION GOVERNANCE, BRAND™ & PROTECTION BAR */}
-        <footer className="cnc-plate rounded-[11px] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 font-mono text-[11px] text-[#E6ECF5]/65">
-            <ShieldCheck className="w-4 h-4 text-[#F1F5F9] shrink-0" />
-            <span>
-              © 2024–2026 KAYA™ Music &amp; Pro &amp; Candy Finish · 24–144fps · Protected Runtime
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {(
-              [
-                ['brand', 'Brand™ & IP'],
-                ['security', 'Protections'],
-                ['policies', 'Policies'],
-                ['terms', 'Terms & Privacy'],
-                ['gpu', 'GPU & 120fps+'],
-              ] as [LegalTabKey, string][]
-            ).map(([key, label]) => (
-              <HardwareButton
-                key={key}
-                size="sm"
-                tone={key === 'brand' || key === 'gpu' ? 'red' : key === 'policies' ? 'magenta' : 'cyan'}
-                active={legalModalOpen && legalInitialTab === key}
-                onClick={() => {
-                  setLegalInitialTab(key);
-                  setLegalModalOpen(true);
-                }}
+              <div className="flex flex-wrap items-center gap-2">
+                {(
+                  [
+                    ['brand', 'Brand™ & IP'],
+                    ['security', 'Protections'],
+                    ['policies', 'Policies'],
+                    ['terms', 'Terms & Privacy'],
+                    ['gpu', 'Cooling & GPU'],
+                  ] as [LegalTabKey, string][]
+                ).map(([key, label]) => (
+                  <HardwareButton
+                    key={key}
+                    size="sm"
+                    tone={key === 'brand' || key === 'gpu' ? 'red' : key === 'policies' ? 'magenta' : 'cyan'}
+                    active={legalModalOpen && legalInitialTab === key}
+                    onClick={() => {
+                      setLegalInitialTab(key);
+                      setLegalModalOpen(true);
+                    }}
+                  >
+                    <span>{label}</span>
+                  </HardwareButton>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 font-mono text-[10px] text-[#E6ECF5]/45">
+              <span>
+                Dedicated Cloud Persistence Active · Self-Hosted MCP &amp; Inference Routing · Zero Local/SD Copies
+              </span>
+              <button
+                type="button"
+                onClick={() => setAdminPortalOpen(true)}
+                className="text-[#E6ECF5]/35 hover:text-[#E06844] transition-colors cursor-pointer"
+                title="Staff & Administrator Portal (Ctrl+Shift+K)"
               >
-                <span>{label}</span>
-              </HardwareButton>
-            ))}
-          </div>
-        </footer>
+                Staff Portal
+              </button>
+            </div>
+          </footer>
         </div>
       </div>
 
-      {/* KAYA MEMBER & OWNER AUTHENTICATION MODAL */}
+      {/* MEMBER AUTH MODAL (Chrome Google Sign-In + Server Captcha Verification) */}
       <KayaAuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         user={kayaUser}
-        onAuthChange={setKayaUser}
+        onAuthChange={(nextUser) => {
+          setKayaUser(nextUser);
+          if (nextUser?.uid) hydrateCloudWorkspace(nextUser.uid);
+        }}
         initialMode={authInitialMode}
-        onOpenAdminPortal={() => setAdminPortalOpen(true)}
       />
 
-      {/* SECRET OWNER & ADMIN PORTAL */}
-      <AdminPortalModal
+      {/* DISCREET PROTECTED STAFF & ADMIN PORTAL (Firebase Verified Roles + Captcha) */}
+      <ProtectedAdminModal
         isOpen={adminPortalOpen}
         onClose={() => setAdminPortalOpen(false)}
         user={kayaUser}
-        onAuthChange={setKayaUser}
-        onRequestOwnerLogin={() => {
-          setAuthInitialMode('owner');
-          setAuthModalOpen(true);
+        onAuthChange={(nextUser) => {
+          setKayaUser(nextUser);
+          if (nextUser.uid) hydrateCloudWorkspace(nextUser.uid);
         }}
       />
 
-      {/* STUDIO MEMBERSHIP TIERS & OPTIONAL PRO MODULES MODAL */}
+      {/* 6-TIER MEMBERSHIP MODAL (Stripe + Infinity Billing, Monthly & Yearly) */}
       <StudioMembershipModal
         isOpen={plansModalOpen}
         onClose={() => setPlansModalOpen(false)}
+        userId={kayaUser?.uid}
         subscription={studioPlan}
-        onUpdateSubscription={(next) => {
-          setStudioPlan(next);
-          try {
-            localStorage.setItem('kaya_studio_plan', JSON.stringify(next));
-          } catch {
-            // ignore storage quota errors
-          }
-        }}
+        onUpdateSubscription={setStudioPlan}
       />
 
-      {/* STUDIO POLICIES, BRAND™ & PROTECTIONS MODAL */}
+      {/* STUDIO POLICIES, BRAND™, WATERMARK & PROTECTION MODAL */}
       <StudioLegalModal
         isOpen={legalModalOpen}
         initialTab={legalInitialTab}
         onClose={() => setLegalModalOpen(false)}
         activeFps={fps}
-        activeTierLabel={
-          studioPlan.tier === 'enterprise_business'
-            ? 'Enterprise Business'
-            : studioPlan.tier === 'pro'
-            ? 'Pro'
-            : studioPlan.tier === 'ultra'
-            ? 'Ultra'
-            : studioPlan.tier === 'beginner'
-            ? 'Beginner'
-            : 'Free Tier'
-        }
+        activeTierLabel={formatTierLabel(studioPlan.tier)}
       />
     </div>
   );

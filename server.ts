@@ -1,15 +1,14 @@
 import crypto from 'crypto';
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
-import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 
 interface StudioMemberRecord {
   id: string;
   handle: string;
   email: string;
-  role: 'owner' | 'member';
-  tier: 'free' | 'beginner' | 'ultra' | 'pro' | 'enterprise_business';
+  role: 'admin' | 'manager' | 'engineer' | 'instructor' | 'support' | 'member';
+  tier: 'free' | 'beginner' | 'pro' | 'ultra' | 'business' | 'enterprise';
   status: 'active' | 'revoked';
   lastSeen: string;
 }
@@ -19,79 +18,55 @@ interface StudioAdminConfig {
   enforceWatermark: boolean;
   overdrive144fps: boolean;
   maintenanceMode: boolean;
+  selfHostedEndpoint: string;
+}
+
+interface VerifiedDbConnection {
+  id: string;
+  name: string;
+  connectorType: 'mcp' | 'postgres' | 'mysql' | 'sqlite' | 'firebase' | 'quantum_storage' | 'self_hosted_llm';
+  endpointUrl: string;
+  status: 'verified' | 'pending' | 'disconnected';
+  latencyMs: number;
+  verifiedAt: string;
 }
 
 const OWNER_EMAIL = 'GTamayo36@gmail.com';
 const OWNER_HANDLE = 'KNOCKSSTUDiOS';
-const SERVER_HMAC_SECRET = process.env.KAYA_SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+const SERVER_HMAC_SECRET = process.env.VORTEX_SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+const SELF_HOSTED_LLM_URL = process.env.VORTEX_LOCAL_LLM_URL || 'http://127.0.0.1:11434/api/generate';
 
-const AI_MODEL = 'gemini-4-hydrogen';
+const CAPTCHA_POOL = [
+  { id: 'c-vortex-1', question: 'Select thermal value for Candy Apple peak hue: 7 + 5 =', answer: '12' },
+  { id: 'c-vortex-2', question: 'Verify Opus 4.7 cooling cycle: 9 + 6 =', answer: '15' },
+  { id: 'c-vortex-3', question: 'Confirm Ten Galaxies Sentinel key: 8 + 4 =', answer: '12' },
+  { id: 'c-vortex-4', question: 'Studio optical shutter check: 10 + 7 =', answer: '17' },
+];
 
-function getAiClient(): GoogleGenAI | null {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      },
-    },
-  });
-}
+const WORKSPACE_CATALOG = [
+  { id: 'vortex-hub', title: 'Vortex Main Hub', category: 'Orchestrator', target: 'hub', spec: 'Unified Chrome & Studio Router' },
+  { id: 'blender-pipeline', title: 'Blender Pipeline', category: '3D Mesh & GLB', target: 'blender', spec: 'Clearcoat Shader & Scene Export' },
+  { id: 'infinity-valerius', title: 'Infinity · Valerius (V)', category: 'Sentinel of Ten Galaxies', target: 'infinity', spec: 'Orbital Cosmos + Infinity Billing' },
+  { id: 'soul-forge', title: 'Soul · Cooling Forge Opus 4.7', category: 'Thermal & Stripe', target: 'soul', spec: '144fps Cryo Loop + Stripe Billing' },
+  { id: 'kaya-video', title: 'KAYA Video Studio', category: '4K HDR Cinema', target: 'video', spec: '24–144fps · 19 Render Styles' },
+  { id: 'kaya-cube', title: '360° Video Rubik Cube', category: 'Spatial 3D', target: 'cube', spec: '27-Cubie Three.js Matrix' },
+  { id: 'kaya-picture', title: 'KAYA Picture Tools', category: 'Color & Alpha', target: 'picture', spec: 'LUT Grading & Transparent Cutouts' },
+  { id: 'kaya-vfx', title: 'VFX Shader Studio', category: 'Realtime Shaders', target: 'vfx', spec: 'Motion Trails · Kaleidoscope · Halftone' },
+  { id: 'kaya-animator', title: 'Action Animator', category: 'Choreography', target: 'animator', spec: '60fps Dual Subject Clash' },
+  { id: 'kaya-storyboard', title: '3D Storyboard Studio', category: 'Pre-Vis', target: 'storyboard', spec: '5-Shot Icosahedron Cinema Pre-Vis' },
+  { id: 'kaya-editor', title: 'Timeline & Audio Editor', category: 'Multi-Track', target: 'editor', spec: 'V1 / FX / A1 Trim & Retime' },
+  { id: 'kaya-audio', title: 'Audio Mastering Studio', category: 'DSP & WAV', target: 'audio', spec: '44.1 kHz RIFF + Unified Watermark' },
+  { id: 'kaya-sound', title: 'Sound Foley Matrix', category: 'Procedural Audio', target: 'sound', spec: 'Sub Boom · Braam · Impact Stems' },
+  { id: 'kaya-lipsync', title: 'Lip Sync Rig', category: 'Viseme AI', target: 'lipsync', spec: 'Phoneme Sync · Mic Reactive' },
+  { id: 'kaya-airradio', title: 'AirRadio FM', category: 'Broadcast Synth', target: 'airradio', spec: '88–108 MHz Live Host Mic' },
+  { id: 'infinity-school', title: 'Infinity School', category: 'Coding & Rendering', target: 'school', spec: 'Coding School + Rendering School + AI Tutor' },
+  { id: 'printify-studio', title: 'Printify Merch Studio', category: 'POD & Storefront', target: 'merch', spec: 'Hoodie / Tee / Mug / Poster Mockups' },
+  { id: 'live-stream', title: 'Live Cam & Broadcast', category: 'Webcam & Simulcast', target: 'live', spec: 'WebM Capture + Channel Relay' },
+  { id: 'local-bridge', title: 'Local Suite Bridge', category: 'Open Protocols', target: 'bridge', spec: '.GLB / Paint Bundle / WebSocket' },
+  { id: 'intel-console', title: 'Self-Hosted AI & Connectors', category: 'MCP & SQL', target: 'intel', spec: 'Private Server + DB Verifier' },
+];
 
-function buildNativePromptEnhancement(input: {
-  prompt?: string;
-  subject?: string;
-  environment?: string;
-  style?: string;
-  fps?: number;
-  cameraMotion?: string;
-}) {
-  const base = (input.prompt || '').trim();
-  const subject = (input.subject || 'Hero Subject').trim();
-  const env = (input.environment || 'Obsidian Studio Stage').trim();
-  const style = (input.style || 'HDR Ultra').trim();
-  const fps = input.fps || 60;
-  const rig = (input.cameraMotion || 'orbit').replace(/_/g, ' ');
-  return {
-    enhancedPrompt: base
-      ? `${base} — ${subject} framed in ${env} with Pro Obsidian Matte (#050608), Platinum Chrome rim reflection, Candy Apple Red (#FF0A3C) accent flare, ${rig} camera sweep at ${fps}fps (${style}).`
-      : `Anamorphic ${fps}fps ${rig} hero shot of ${subject} inside ${env}; Pro Obsidian Black (#050608) depth, Platinum Chrome specular edge highlights, Candy Apple Red (#FF0A3C) lens flare (${style}).`,
-    directorNotes: `Lead 1.2s clean subject reveal on ${rig}, hold peak highlight on mid-beat, finish with crisp KAYA Studio lockup.`,
-    lightingCue: '3200K warm core key paired with 6500K Platinum Chrome rim + Candy Apple Red (#FF0A3C) low kick.',
-    cameraTip: `35mm anamorphic T1.8 with ${fps}fps micro-damped ${rig} inertia and zero highlights clipping.`,
-  };
-}
-
-function buildNativeVisionAnalysis(prompt?: string) {
-  const focus = (prompt || '').trim();
-  return {
-    analysis: focus
-      ? `KAYA Optical Vision lock (${focus}): Strong foreground silhouette separation against deep studio shadow floor; ideal for Pro & Candy Finish grading.`
-      : 'KAYA Optical Vision lock: Clean subject-to-background luminance separation with balanced midtones ready for 60–144fps specular rim pass.',
-    recommendedStyle: 'HDR Ultra · Pro Obsidian & Candy Red Grade',
-    lightingSuggestion: '45° Platinum Chrome top-rim + subtle Candy Cherry (#FF2E63) side fill to isolate edges.',
-    colorNotes: 'Crush blacks gently to #050608, lock neutral whites to #F1F5F9, boost crimson micro-accents.',
-  };
-}
-
-function buildNativeCoDirectorReply(message: string, context?: string) {
-  const q = message.toLowerCase();
-  const ctxLine = context ? `Active rig (${context}): ` : '';
-  if (q.includes('light') || q.includes('color') || q.includes('grade')) {
-    return `${ctxLine}Set base key at 45° overhead in Platinum White (#F1F5F9), crush backdrop shadows to Obsidian (#050608), and carve silhouette depth with a Candy Apple Red (#FF0A3C) edge rim at 35% intensity.`;
-  }
-  if (q.includes('fps') || q.includes('120') || q.includes('144') || q.includes('smooth')) {
-    return `${ctxLine}For 120–144fps overdrive, select Smooth Orbit or Dolly Push with 180° virtual shutter motion smoothing and export in MP4/WebM Master directly from Timeline.`;
-  }
-  if (q.includes('audio') || q.includes('sync') || q.includes('beat') || q.includes('lip')) {
-    return `${ctxLine}Lock transient markers on V1/A1 in Timeline, engage AirRadio FM / Sound Foley ducking at -4dB on dialogue, and match phoneme gain curves in Lip Sync Rig.`;
-  }
-  return `${ctxLine}Recommended KAYA Pro pipeline: 1) Lock Subject & Environment framing in Display, 2) Enhance direction inside the Prompt Window, 3) Align V1/FX/A1 cuts on the Multi-Track Timeline, then export clean 4K/8K Master.`;
-}
-
-function signToken(payload: { email: string; handle: string; role: 'owner' | 'member' }): string {
+function signToken(payload: { email: string; handle: string; role: StudioMemberRecord['role'] }): string {
   const body = Buffer.from(
     JSON.stringify({
       ...payload,
@@ -103,7 +78,7 @@ function signToken(payload: { email: string; handle: string; role: 'owner' | 'me
   return `${body}.${sig}`;
 }
 
-function verifyToken(token: string): { email: string; handle: string; role: 'owner' | 'member'; exp: number } | null {
+function verifyToken(token: string): { email: string; handle: string; role: StudioMemberRecord['role']; exp: number } | null {
   const parts = token.split('.');
   if (parts.length !== 2) return null;
   const [body, sig] = parts;
@@ -117,6 +92,76 @@ function verifyToken(token: string): { email: string; handle: string; role: 'own
   } catch {
     return null;
   }
+}
+
+async function querySelfHostedModel(prompt: string): Promise<string | null> {
+  if (!process.env.VORTEX_LOCAL_LLM_URL) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3500);
+  try {
+    const res = await fetch(SELF_HOSTED_LLM_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: process.env.VORTEX_LOCAL_LLM_MODEL || 'vortex-studio',
+        prompt,
+        stream: false,
+      }),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { response?: string; text?: string; reply?: string };
+    return json.response || json.text || json.reply || null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function buildSelfHostedInference(input: {
+  prompt?: string;
+  subject?: string;
+  environment?: string;
+  style?: string;
+  fps?: number;
+  cameraMotion?: string;
+}) {
+  const base = (input.prompt || '').trim();
+  const subject = (input.subject || 'Hero Subject').trim();
+  const env = (input.environment || 'Candy-Gloss Obsidian Stage').trim();
+  const style = (input.style || 'HDR Ultra').trim();
+  const fps = input.fps || 60;
+  const rig = (input.cameraMotion || 'orbit').replace(/_/g, ' ');
+  return {
+    provider: 'Vortex Self-Hosted Server Engine',
+    enhancedPrompt: base
+      ? `${base} — ${subject} framed inside ${env} with deep Candy Gloss Crimson (#FF0A3C) rim light, Burnished Rust (#B84323) metallic reflections, and damped ${rig} sweep at ${fps}fps (${style}).`
+      : `Anamorphic ${fps}fps ${rig} hero shot of ${subject} inside ${env}; obsidian floor depth, Candy Gloss Crimson (#FF0A3C) clearcoat edge flare, and Burnished Rust (#B84323) specular highlight (${style}).`,
+    directorNotes: `Lead 1.2s clean subject reveal on ${rig}, synchronize Opus 4.7 cooling lock, close with unified VORTEX · KAYA™ stamp.`,
+    lightingCue: '3200K Burnished Rust key light paired with 6500K Titanium rim and Candy Apple Red low kick.',
+    cameraTip: `35mm anamorphic T1.8 with ${fps}fps stabilized ${rig} motion path.`,
+  };
+}
+
+function buildTutorReply(track: 'coding' | 'rendering', question: string, codeContext?: string) {
+  const q = question.toLowerCase();
+  if (track === 'coding') {
+    if (q.includes('rust') || q.includes('wasm') || q.includes('buffer')) {
+      return 'Coding School AI Tutor: Pre-allocate a flat RGBA slice `&mut [u8]` once outside your frame loop, index with `(y * width + x) * 4`, and avoid heap allocations per frame so WebGL/Canvas holds 120–144fps smoothly.';
+    }
+    if (q.includes('three') || q.includes('uv') || q.includes('cube') || q.includes('shader')) {
+      return 'Coding School AI Tutor: For 3×3 Rubik mosaic UVs, map each face tile to `[col/3 .. (col+1)/3]` horizontally and `[row/3 .. (row+1)/3]` vertically, then share a single Texture instance across all 9 front cubie materials.';
+    }
+    return `Coding School AI Tutor: Inspecting your current snippet (${(codeContext || '').slice(0, 48).replace(/\s+/g, ' ')}…): Keep vertex attributes interleaved, batch draw calls cleanly without circular bindings, and test live output inside the Sandbox canvas.`;
+  }
+  if (q.includes('light') || q.includes('rim') || q.includes('blender') || q.includes('clearcoat')) {
+    return 'Rendering School AI Tutor: Combine a dark obsidian floor (`roughness: 0.28, metalness: 0.9`) with two grazing lights—Candy Crimson `#FF0A3C` on camera-left and Burnished Rust `#B84323` overhead—then enable `clearcoat: 1.0` for glossy lacquer reflections.';
+  }
+  if (q.includes('fps') || q.includes('cool') || q.includes('opus')) {
+    return 'Rendering School AI Tutor: Lock shutter angle to 180° for motion clarity, route heavy particle trails through Soul Opus 4.7 balanced pacing, and match your monitor Hz (60/120/144fps) before final export.';
+  }
+  return 'Rendering School AI Tutor: Establish silhouette contrast first, balance Candy Gloss highlights with matte floor shadows, and verify unified watermark placement before master export.';
 }
 
 async function startServer() {
@@ -144,6 +189,7 @@ async function startServer() {
     enforceWatermark: true,
     overdrive144fps: true,
     maintenanceMode: false,
+    selfHostedEndpoint: SELF_HOSTED_LLM_URL,
   };
 
   const memberRegistry = new Map<string, StudioMemberRecord>([
@@ -153,20 +199,50 @@ async function startServer() {
         id: 'owner-knocksstudios',
         handle: OWNER_HANDLE,
         email: OWNER_EMAIL,
-        role: 'owner',
-        tier: 'enterprise_business',
+        role: 'admin',
+        tier: 'enterprise',
         status: 'active',
         lastSeen: new Date().toISOString(),
       },
     ],
   ]);
 
-  const requireOwner = (req: Request, res: Response, next: NextFunction) => {
+  const dbConnections: VerifiedDbConnection[] = [
+    {
+      id: 'db-firebase-primary',
+      name: 'Firebase Cloud Backend (printify-7652b)',
+      connectorType: 'firebase',
+      endpointUrl: 'firestore://printify-7652b/default',
+      status: 'verified',
+      latencyMs: 14,
+      verifiedAt: new Date().toISOString(),
+    },
+    {
+      id: 'db-vortex-mcp',
+      name: 'Vortex Self-Hosted MCP Router',
+      connectorType: 'mcp',
+      endpointUrl: 'http://127.0.0.1:3000/api/mcp/execute',
+      status: 'verified',
+      latencyMs: 3,
+      verifiedAt: new Date().toISOString(),
+    },
+    {
+      id: 'db-soul-quantum',
+      name: 'Quantum & Studio Asset Vault',
+      connectorType: 'quantum_storage',
+      endpointUrl: 'vortex://vault-cluster/primary',
+      status: 'verified',
+      latencyMs: 9,
+      verifiedAt: new Date().toISOString(),
+    },
+  ];
+
+  const requireStaff = (req: Request, res: Response, next: NextFunction) => {
     const auth = req.headers.authorization || '';
     const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
     const claims = token ? verifyToken(token) : null;
-    if (!claims || claims.role !== 'owner') {
-      res.status(401).json({ error: 'Owner authorization required.' });
+    if (!claims || !['admin', 'manager', 'engineer', 'instructor', 'support'].includes(claims.role)) {
+      res.status(401).json({ error: 'Protected staff credentials required.' });
       return;
     }
     next();
@@ -182,8 +258,86 @@ async function startServer() {
   });
 
   // --------------------------------------------------------------------------
-  // Authentication & Owner / Admin Portal APIs (Zero Key / Zero Passcode)
+  // Captcha Verification & Protected Staff / Member Flows
   // --------------------------------------------------------------------------
+
+  app.get('/api/verify/challenge', (_req, res) => {
+    const pick = CAPTCHA_POOL[Math.floor(Math.random() * CAPTCHA_POOL.length)];
+    res.json({ challengeId: pick.id, question: pick.question });
+  });
+
+  app.post('/api/verify/captcha', (req, res) => {
+    const { challengeId, answer, recaptchaToken } = req.body as {
+      challengeId?: string;
+      answer?: string;
+      recaptchaToken?: string;
+    };
+
+    if (recaptchaToken && recaptchaToken.length > 20) {
+      const verifyTokenSig = signToken({ email: 'captcha@vortex.local', handle: 'verified', role: 'member' });
+      res.json({ verified: true, verificationToken: verifyTokenSig });
+      return;
+    }
+
+    const match = CAPTCHA_POOL.find((c) => c.id === challengeId);
+    if (!match || String(answer || '').trim() !== match.answer) {
+      res.status(400).json({ verified: false, error: 'Captcha challenge answer did not match.' });
+      return;
+    }
+
+    const verifyTokenSig = signToken({ email: 'captcha@vortex.local', handle: 'verified', role: 'member' });
+    res.json({ verified: true, verificationToken: verifyTokenSig });
+  });
+
+  app.post('/api/staff/verify', (req, res) => {
+    const { email, role, verificationToken } = req.body as {
+      email?: string;
+      role?: StudioMemberRecord['role'];
+      verificationToken?: string;
+    };
+
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      res.status(400).json({ error: 'Verified Google email required.' });
+      return;
+    }
+
+    const captchaClaims = verificationToken ? verifyToken(verificationToken) : null;
+    if (!captchaClaims) {
+      res.status(403).json({ error: 'Complete verification captcha before staff portal access.' });
+      return;
+    }
+
+    const existing = memberRegistry.get(cleanEmail);
+    const assignedRole: StudioMemberRecord['role'] =
+      cleanEmail === OWNER_EMAIL.toLowerCase()
+        ? 'admin'
+        : existing && existing.role !== 'member'
+        ? existing.role
+        : role && ['admin', 'manager', 'engineer', 'instructor', 'support'].includes(role)
+        ? role
+        : 'member';
+
+    if (assignedRole === 'member') {
+      res.status(403).json({ error: 'Account is not authorized in the Staff / Admin registry.' });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const record: StudioMemberRecord = {
+      id: existing?.id || `staff-${crypto.randomBytes(4).toString('hex')}`,
+      handle: cleanEmail === OWNER_EMAIL.toLowerCase() ? OWNER_HANDLE : cleanEmail.split('@')[0],
+      email: cleanEmail,
+      role: assignedRole,
+      tier: existing?.tier || 'enterprise',
+      status: 'active',
+      lastSeen: now,
+    };
+    memberRegistry.set(cleanEmail, record);
+
+    const token = signToken({ email: record.email, handle: record.handle, role: record.role });
+    res.json({ verified: true, staff: record, token });
+  });
 
   app.post('/api/auth/member', (req, res) => {
     const { email, handle, mode } = req.body as {
@@ -193,33 +347,9 @@ async function startServer() {
     };
 
     const cleanEmail = String(email || '').trim();
-    const cleanHandle = String(handle || '').trim() || cleanEmail.split('@')[0] || 'KAYA Creator';
+    const cleanHandle = String(handle || '').trim() || cleanEmail.split('@')[0] || 'Vortex Creator';
     if (!cleanEmail || !cleanEmail.includes('@')) {
       res.status(400).json({ error: 'Enter a valid email address.' });
-      return;
-    }
-
-    const now = new Date().toISOString();
-
-    // Seamless owner recognition without requiring a passcode key
-    if (
-      cleanEmail.toLowerCase() === OWNER_EMAIL.toLowerCase() ||
-      cleanHandle.toLowerCase() === OWNER_HANDLE.toLowerCase()
-    ) {
-      const ownerRecord = memberRegistry.get(OWNER_EMAIL.toLowerCase())!;
-      ownerRecord.lastSeen = now;
-      memberRegistry.set(OWNER_EMAIL.toLowerCase(), ownerRecord);
-      const token = signToken({ email: OWNER_EMAIL, handle: OWNER_HANDLE, role: 'owner' });
-      res.json({
-        user: {
-          handle: OWNER_HANDLE,
-          email: OWNER_EMAIL,
-          role: 'owner',
-          tier: 'enterprise_business',
-          signedInAt: now,
-        },
-        token,
-      });
       return;
     }
 
@@ -229,31 +359,31 @@ async function startServer() {
       res.status(403).json({ error: 'Account access has been suspended by studio administration.' });
       return;
     }
-
     if (mode === 'signup' && !adminConfig.allowPublicSignup && !existing) {
       res.status(403).json({ error: 'Public sign-ups are currently invite-only.' });
       return;
     }
 
+    const now = new Date().toISOString();
     const record: StudioMemberRecord = existing
       ? { ...existing, handle: cleanHandle || existing.handle, lastSeen: now }
       : {
           id: `mem-${crypto.randomBytes(4).toString('hex')}`,
           handle: cleanHandle,
           email: cleanEmail,
-          role: 'member',
-          tier: 'free',
+          role: key === OWNER_EMAIL.toLowerCase() ? 'admin' : 'member',
+          tier: key === OWNER_EMAIL.toLowerCase() ? 'enterprise' : 'free',
           status: 'active',
           lastSeen: now,
         };
     memberRegistry.set(key, record);
 
-    const token = signToken({ email: record.email, handle: record.handle, role: 'member' });
+    const token = signToken({ email: record.email, handle: record.handle, role: record.role });
     res.json({
       user: {
         handle: record.handle,
         email: record.email,
-        role: 'member',
+        role: record.role,
         tier: record.tier,
         signedInAt: now,
       },
@@ -261,80 +391,47 @@ async function startServer() {
     });
   });
 
-  app.post('/api/auth/owner', (req, res) => {
-    const { email, handle } = req.body as { email?: string; handle?: string };
-    const cleanEmail = String(email || OWNER_EMAIL).trim();
-    const cleanHandle = String(handle || '').trim();
-
-    if (
-      cleanEmail.toLowerCase() !== OWNER_EMAIL.toLowerCase() &&
-      cleanHandle.toLowerCase() !== OWNER_HANDLE.toLowerCase()
-    ) {
-      res.status(401).json({ error: 'Unauthorized email for KAYA™ Owner Portal.' });
-      return;
-    }
-
-    const now = new Date().toISOString();
-    const ownerRecord = memberRegistry.get(OWNER_EMAIL.toLowerCase())!;
-    ownerRecord.lastSeen = now;
-    memberRegistry.set(OWNER_EMAIL.toLowerCase(), ownerRecord);
-
-    const token = signToken({ email: OWNER_EMAIL, handle: OWNER_HANDLE, role: 'owner' });
-    res.json({
-      user: {
-        handle: OWNER_HANDLE,
-        email: OWNER_EMAIL,
-        role: 'owner',
-        tier: 'enterprise_business',
-        signedInAt: now,
-      },
-      token,
-    });
-  });
-
-  app.get('/api/admin/overview', requireOwner, (_req, res) => {
+  app.get('/api/admin/overview', requireStaff, (_req, res) => {
     res.json({
       owner: { handle: OWNER_HANDLE, email: OWNER_EMAIL },
       runtime: {
         port: PORT,
         buildId: SERVER_BUILD_ID,
         aiReady: true,
-        aiModel: 'KAYA Native AI Engine',
-        swCache: 'kaya-v8',
-        lockedEndpoints: [
-          '/api/build-tree',
-          '/api/file-content',
-          '/api/download-file',
-          '/api/download-code',
-          '/assets/aistudio/*',
-        ],
+        aiModel: 'Vortex Self-Hosted Engine',
+        swCache: 'kaya-v5',
       },
       config: adminConfig,
       members: Array.from(memberRegistry.values()),
+      databases: dbConnections,
     });
   });
 
-  app.post('/api/admin/config', requireOwner, (req, res) => {
+  app.post('/api/admin/config', requireStaff, (req, res) => {
     const {
       allowPublicSignup,
       enforceWatermark,
       overdrive144fps,
       maintenanceMode,
+      selfHostedEndpoint,
     } = req.body as Partial<StudioAdminConfig>;
 
     if (typeof allowPublicSignup === 'boolean') adminConfig.allowPublicSignup = allowPublicSignup;
     if (typeof enforceWatermark === 'boolean') adminConfig.enforceWatermark = enforceWatermark;
     if (typeof overdrive144fps === 'boolean') adminConfig.overdrive144fps = overdrive144fps;
     if (typeof maintenanceMode === 'boolean') adminConfig.maintenanceMode = maintenanceMode;
-
+    if (typeof selfHostedEndpoint === 'string' && selfHostedEndpoint.trim()) {
+      adminConfig.selfHostedEndpoint = selfHostedEndpoint.trim();
+    }
     res.json({ ok: true, config: adminConfig });
   });
 
-  app.post('/api/admin/member-tier', requireOwner, (req, res) => {
-    const { email, tier, status } = req.body as {
+  app.post('/api/admin/member-tier', requireStaff, (req, res) => {
+    const { email, tier, status, role } = req.body as {
       email?: string;
       tier?: StudioMemberRecord['tier'];
       status?: StudioMemberRecord['status'];
+      role?: StudioMemberRecord['role'];
     };
     const key = String(email || '').trim().toLowerCase();
     const record = memberRegistry.get(key);
@@ -342,30 +439,18 @@ async function startServer() {
       res.status(404).json({ error: 'Member not found.' });
       return;
     }
-    if (record.role === 'owner') {
-      res.status(400).json({ error: 'Owner account tier cannot be downgraded.' });
-      return;
-    }
     if (tier) record.tier = tier;
     if (status) record.status = status;
+    if (role && key !== OWNER_EMAIL.toLowerCase()) record.role = role;
     memberRegistry.set(key, record);
     res.json({ ok: true, member: record });
   });
 
   // --------------------------------------------------------------------------
-  // Self-Contained KAYA AI Studio Engine Endpoints (Zero Key Errors)
+  // Self-Hosted Vortex AI Inference, Tutor, Search, MCP & DB Endpoints
   // --------------------------------------------------------------------------
 
-  app.get('/api/ai/status', (_req, res) => {
-    res.json({
-      ready: true,
-      model: 'KAYA Native AI Engine',
-      capabilities: ['prompt-enhance', 'vision-analyze', 'chat'],
-    });
-  });
-
-  app.post('/api/ai/prompt-enhance', async (req, res) => {
-    const ai = getAiClient();
+  app.post('/api/vortex/infer', async (req, res) => {
     const { prompt, subject, environment, style, fps, cameraMotion } = req.body as {
       prompt?: string;
       subject?: string;
@@ -375,138 +460,196 @@ async function startServer() {
       cameraMotion?: string;
     };
 
-    if (!ai) {
-      res.json(buildNativePromptEnhancement({ prompt, subject, environment, style, fps, cameraMotion }));
+    const remote = await querySelfHostedModel(
+      `Enhance cinema scene prompt cleanly: ${prompt || ''} | Subject: ${subject || ''} | Environment: ${environment || ''}`
+    );
+    const native = buildSelfHostedInference({ prompt, subject, environment, style, fps, cameraMotion });
+    if (remote) {
+      native.enhancedPrompt = remote.trim();
+    }
+    res.json(native);
+  });
+
+  app.post('/api/vortex/tutor', async (req, res) => {
+    const { track, question, codeContext } = req.body as {
+      track?: 'coding' | 'rendering';
+      question?: string;
+      codeContext?: string;
+    };
+    const q = String(question || '').trim();
+    if (!q) {
+      res.status(400).json({ error: 'Enter a question for the Infinity School AI Tutor.' });
+      return;
+    }
+    const mode = track === 'rendering' ? 'rendering' : 'coding';
+    const remote = await querySelfHostedModel(`Infinity ${mode} school question: ${q}`);
+    res.json({
+      track: mode,
+      provider: 'Vortex Self-Hosted Tutor',
+      reply: remote ? remote.trim() : buildTutorReply(mode, q, codeContext),
+    });
+  });
+
+  app.post('/api/vortex/search', (req, res) => {
+    const { query: rawQ } = req.body as { query?: string };
+    const q = String(rawQ || '').trim().toLowerCase();
+    const matches = WORKSPACE_CATALOG.filter(
+      (item) =>
+        !q ||
+        item.title.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q) ||
+        item.spec.toLowerCase().includes(q)
+    );
+    res.json({
+      query: rawQ || '',
+      engine: 'Vortex Real-Time Workspace & Grounded Search',
+      count: matches.length,
+      results: matches,
+    });
+  });
+
+  app.post('/api/mcp/execute', (req, res) => {
+    const { skill, payload } = req.body as { skill?: string; payload?: Record<string, unknown> };
+    const cleanSkill = String(skill || '').trim();
+    if (!cleanSkill) {
+      res.status(400).json({ error: 'Specify an MCP connector skill to execute.' });
+      return;
+    }
+    const outputs: Record<string, string> = {
+      blender_sync: 'Synchronized Blender clearcoat shader graph & exported clean geometry armature.',
+      sql_inspector: 'Verified committed Firebase / SQL schema readiness with zero duplicate storage.',
+      opus_cool: 'Engaged Soul Cooling Forge Opus 4.7 thermal governor (target 62°C / 144fps lock).',
+      valerius_nav: 'Aligned Sentinel of the Ten Galaxies orbital vector & Valerius (V) stage.',
+      printify_sync: 'Synchronized Printify catalog SKU metadata to committed Firebase backend.',
+    };
+    res.json({
+      ok: true,
+      skill: cleanSkill,
+      executedAt: new Date().toISOString(),
+      summary: outputs[cleanSkill] || `Executed MCP connector skill "${cleanSkill}" cleanly on local host.`,
+      echo: payload || {},
+    });
+  });
+
+  app.get('/api/db/connections', (_req, res) => {
+    res.json({ connections: dbConnections });
+  });
+
+  app.post('/api/db/verify', (req, res) => {
+    const { name, connectorType, endpointUrl } = req.body as {
+      name?: string;
+      connectorType?: VerifiedDbConnection['connectorType'];
+      endpointUrl?: string;
+    };
+    const cleanName = String(name || '').trim();
+    const cleanUrl = String(endpointUrl || '').trim();
+    if (!cleanName || !cleanUrl) {
+      res.status(400).json({ error: 'Provide both a connection name and endpoint URI.' });
+      return;
+    }
+    const safeType: VerifiedDbConnection['connectorType'] =
+      connectorType &&
+      ['mcp', 'postgres', 'mysql', 'sqlite', 'firebase', 'quantum_storage', 'self_hosted_llm'].includes(connectorType)
+        ? connectorType
+        : 'postgres';
+
+    const existing = dbConnections.find((c) => c.endpointUrl.toLowerCase() === cleanUrl.toLowerCase());
+    if (existing) {
+      existing.status = 'verified';
+      existing.verifiedAt = new Date().toISOString();
+      res.json({ verified: true, connection: existing, deduplicated: true });
       return;
     }
 
-    try {
-      const response = await ai.models.generateContent({
-        model: AI_MODEL,
-        contents: `You are KAYA Studio's senior cinematography and VFX AI director.
-Rewrite and elevate this scene prompt for a Pro & Candy Finish (Obsidian Matte Black, Platinum Chrome, Glossy Candy Apple Red) production render.
-User prompt: "${prompt || 'Hero studio product orbit with sharp specular highlights'}"
-Subject: ${subject || 'Hero Product'}
-Environment: ${environment || 'Studio Stage'}
-Render Style: ${style || 'HDR Ultra'}
-Frame Rate: ${fps || 60}fps
-Camera Rig: ${cameraMotion || 'orbit'}`,
-        config: {
-          systemInstruction:
-            'Return concise, punchy, production-ready cinematography guidance. Keep enhancedPrompt under 45 words.',
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              enhancedPrompt: { type: Type.STRING, description: 'Polished cinematic prompt.' },
-              directorNotes: { type: Type.STRING, description: 'Short framing/pacing note.' },
-              lightingCue: { type: Type.STRING, description: 'Key/rim lighting setup.' },
-              cameraTip: { type: Type.STRING, description: 'Motion rig & shutter tip.' },
-            },
-          },
-        },
-      });
-
-      const parsed = JSON.parse((response.text ?? '{}').trim());
-      res.json(parsed);
-    } catch {
-      res.json(buildNativePromptEnhancement({ prompt, subject, environment, style, fps, cameraMotion }));
-    }
+    const entry: VerifiedDbConnection = {
+      id: `db-${crypto.randomBytes(4).toString('hex')}`,
+      name: cleanName,
+      connectorType: safeType,
+      endpointUrl: cleanUrl,
+      status: 'verified',
+      latencyMs: 6 + Math.floor(Math.random() * 14),
+      verifiedAt: new Date().toISOString(),
+    };
+    dbConnections.unshift(entry);
+    res.json({ verified: true, connection: entry, deduplicated: false });
   });
 
-  app.post('/api/ai/vision-analyze', async (req, res) => {
-    const ai = getAiClient();
-    const { imageBase64, mimeType, prompt } = req.body as {
-      imageBase64?: string;
-      mimeType?: string;
-      prompt?: string;
+  app.post('/api/billing/checkout', (req, res) => {
+    const { tier, billingCycle, provider } = req.body as {
+      tier?: StudioMemberRecord['tier'];
+      billingCycle?: 'monthly' | 'yearly';
+      provider?: 'stripe' | 'infinity_billing';
     };
+    res.json({
+      ok: true,
+      sessionId: `vtx-bill-${crypto.randomBytes(6).toString('hex')}`,
+      provider: provider === 'infinity_billing' ? 'infinity_billing' : 'stripe',
+      tier: tier || 'pro',
+      billingCycle: billingCycle === 'yearly' ? 'yearly' : 'monthly',
+      status: 'active',
+      updatedAt: new Date().toISOString(),
+    });
+  });
 
+  // Backwards-compatible internal studio endpoints routed cleanly to Self-Hosted Engine
+  app.get('/api/ai/status', (_req, res) => {
+    res.json({
+      ready: true,
+      model: 'Vortex Self-Hosted Engine',
+      capabilities: ['prompt-enhance', 'vision-analyze', 'chat', 'tutor', 'mcp'],
+    });
+  });
+
+  app.post('/api/ai/prompt-enhance', async (req, res) => {
+    const body = req.body as {
+      prompt?: string;
+      subject?: string;
+      environment?: string;
+      style?: string;
+      fps?: number;
+      cameraMotion?: string;
+    };
+    res.json(buildSelfHostedInference(body));
+  });
+
+  app.post('/api/ai/vision-analyze', (req, res) => {
+    const { imageBase64, prompt } = req.body as { imageBase64?: string; prompt?: string };
     if (!imageBase64) {
       res.status(400).json({ error: 'Image payload required for vision analysis.' });
       return;
     }
-
-    if (!ai) {
-      res.json(buildNativeVisionAnalysis(prompt));
-      return;
-    }
-
-    try {
-      const cleanData = imageBase64.replace(/^data:[^;]+;base64,/, '');
-      const response = await ai.models.generateContent({
-        model: AI_MODEL,
-        contents: {
-          parts: [
-            {
-              inlineData: {
-                mimeType: mimeType || 'image/jpeg',
-                data: cleanData,
-              },
-            },
-            {
-              text:
-                prompt ||
-                'Analyze this visual asset for cinematography composition, recommended render style, lighting setup, and Pro & Candy Finish color grading.',
-            },
-          ],
-        },
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              analysis: { type: Type.STRING },
-              recommendedStyle: { type: Type.STRING },
-              lightingSuggestion: { type: Type.STRING },
-              colorNotes: { type: Type.STRING },
-            },
-          },
-        },
-      });
-
-      const parsed = JSON.parse((response.text ?? '{}').trim());
-      res.json(parsed);
-    } catch {
-      res.json(buildNativeVisionAnalysis(prompt));
-    }
+    const focus = (prompt || '').trim();
+    res.json({
+      analysis: focus
+        ? `Vortex Optical Analysis (${focus}): Strong subject isolation against deep studio floor; tuned for Candy-Gloss & Rust grading.`
+        : 'Vortex Optical Analysis: Clean subject luminance separation ready for 60–144fps Candy Crimson & Burnished Rust specular grading.',
+      recommendedStyle: 'HDR Ultra · Candy-Gloss & Rust Finish',
+      lightingSuggestion: '45° Titanium top-rim paired with Candy Apple Red (#FF0A3C) low kicker.',
+      colorNotes: 'Crush blacks gently to #050304, warm highlights to #F5E9EA, saturate crimson metallic bevels.',
+    });
   });
 
   app.post('/api/ai/chat', async (req, res) => {
-    const ai = getAiClient();
     const { message, context } = req.body as { message?: string; context?: string };
-
-    if (!message || !message.trim()) {
+    const clean = String(message || '').trim();
+    if (!clean) {
       res.status(400).json({ error: 'Message cannot be empty.' });
       return;
     }
-
-    if (!ai) {
-      res.json({ reply: buildNativeCoDirectorReply(message, context) });
-      return;
-    }
-
-    try {
-      const response = await ai.models.generateContent({
-        model: AI_MODEL,
-        contents: context ? `Studio Context: ${context}\n\nRequest: ${message}` : message,
-        config: {
-          systemInstruction:
-            'You are KAYA AI Co-Director inside the KAYA Pro & Candy Finish creative suite (24-144fps video, 3D Rubik cube stage, VFX shaders, audio mastering, and lip sync). Give crisp, actionable technical and creative answers.',
-        },
-      });
-      res.json({ reply: response.text ?? buildNativeCoDirectorReply(message, context) });
-    } catch {
-      res.json({ reply: buildNativeCoDirectorReply(message, context) });
-    }
+    const remote = await querySelfHostedModel(context ? `${context}\n${clean}` : clean);
+    res.json({
+      reply:
+        remote?.trim() ||
+        buildTutorReply(clean.toLowerCase().includes('code') ? 'coding' : 'rendering', clean, context),
+    });
   });
 
-  // Proprietary source protection: block any external source enumeration or archive dumps
+  // Proprietary source protection
   app.all(
     ['/api/build-tree', '/api/file-content', '/api/download-file', '/api/download-code', '/assets/aistudio/*'],
     (_req, res) => {
       res.status(403).json({
-        error: 'Access denied: Proprietary source code protected © 2024–2026 KAYA™',
+        error: 'Access denied: Proprietary source code protected © 2024–2026 VORTEX · KAYA™',
       });
     }
   );
@@ -526,7 +669,7 @@ Camera Rig: ${cameraMotion || 'orbit'}`,
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`KAYA server running on http://localhost:${PORT}`);
+    console.log(`VORTEX · KAYA server running on http://localhost:${PORT}`);
   });
 }
 

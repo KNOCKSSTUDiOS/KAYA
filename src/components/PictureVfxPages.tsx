@@ -122,7 +122,7 @@ export function PictureStudioPage({
           </h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="px-2 py-1 rounded bg-[#050609] border border-white/10 font-mono text-[10px] text-[#E6ECF5]/80 tabular-nums">
+          <span className="px-2.5 py-1 rounded-full bg-[#090405] font-mono text-[10px] text-[#E6ECF5]/80 tabular-nums">
             {activeRes.tag} · {activeRes.aspectDesc} · {transparentCutout ? 'RGBA Alpha' : '24-Bit RGB'}
           </span>
           <LedStatusIndicator label={activeStyleObj.label} tone="cyan" />
@@ -130,8 +130,8 @@ export function PictureStudioPage({
       </div>
 
       {/* Preview Viewport */}
-      <div className="cnc-recess rounded-[10px] p-2">
-        <div className="relative w-full aspect-video max-h-[420px] rounded-[7px] overflow-hidden border border-white/10 optical-glass flex items-center justify-center">
+      <div className="candy-surface rounded-xl p-2">
+        <div className="relative w-full aspect-video max-h-[420px] rounded-lg overflow-hidden optical-glass flex items-center justify-center">
           {previewUrl ? (
             <img
               src={previewUrl}
@@ -505,12 +505,12 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
         </div>
       </div>
 
-      <div className="cnc-recess rounded-[10px] p-2">
+      <div className="candy-surface rounded-xl p-2">
         <canvas
           ref={canvasRef}
           width={960}
           height={540}
-          className="w-full aspect-video max-h-[420px] rounded-[7px] bg-black border border-white/10"
+          className="w-full aspect-video max-h-[420px] rounded-lg bg-[#050304]"
         />
       </div>
 

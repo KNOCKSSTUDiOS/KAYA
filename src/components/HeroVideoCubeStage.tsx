@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { ChevronUp, ChevronDown, DownloadCloud, ShieldAlert, User, Wifi, WifiOff } from 'lucide-react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import type { StudioPageKey, WorkspaceMediaAsset } from './RubiksCubeHubPage.js';
 import type { KayaUserProfile } from './KayaAuthModal.js';
 import { HERO_SHOWCASE_REELS, renderAnimatedReelFrame } from '../lib/heroVideoReels.js';
@@ -640,79 +640,11 @@ export function HeroVideoCubeStage({
     <section
       id="page-cube"
       onClick={onOpenAuth}
-      className="relative z-20 w-full h-[calc(100vh-4px)] min-h-[560px] rounded-t-[14px] overflow-hidden bg-[#020203]/92 cursor-pointer select-none"
+      className="relative z-20 w-full h-[calc(100vh-4px)] min-h-[560px] overflow-hidden bg-[#020203]/95 cursor-pointer select-none"
       aria-label="KAYA Full-Screen Video Rubik's Cube Stage"
     >
-      {/* Pure Edge-to-Edge Projector Full-Page Three.js Video->Cube Stage (Touches Red Edge & Projects Over Corner Screws) */}
+      {/* Pure Edge-to-Edge Full-Page Three.js Video->Cube Stage */}
       <div ref={mountRef} className="w-full h-full opacity-95" />
-
-      {/* Top Quick-Action HUD Bar: Always Visible Above The Fold */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="absolute top-3 inset-x-3 sm:inset-x-6 z-30 flex flex-wrap items-center justify-between gap-2 pointer-events-auto"
-      >
-        <div
-          onDoubleClick={onOpenAdmin}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[8px] bg-[#040507]/90 border border-white/15 shadow-[0_4px_18px_rgba(0,0,0,0.8)] backdrop-blur-sm"
-        >
-          <img
-            src="/pwa-192x192.png"
-            alt="KAYA"
-            className="w-5 h-5 rounded-[4px] border border-[#FF0A3C]/60 object-cover"
-          />
-          <span
-            className="text-xs font-bold uppercase tracking-[0.24em] text-white"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            KAYA
-          </span>
-          <span className="hidden sm:inline-flex items-center gap-1 pl-2 ml-1 border-l border-white/15 font-mono text-[10px] uppercase tracking-wider">
-            {isOnline ? (
-              <>
-                <Wifi className="w-3 h-3 text-[#F1F5F9]" />
-                <span className="text-[#F1F5F9]/85">Online</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="w-3 h-3 text-[#FF0A3C]" />
-                <span className="text-[#FF2E63]">Offline</span>
-              </>
-            )}
-          </span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {onOpenInstall && (
-            <button
-              type="button"
-              onClick={onOpenInstall}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] bg-[#0B0407]/95 hover:bg-[#19050B] text-white border border-[#FF0A3C] shadow-[0_0_18px_rgba(255,10,60,0.5)] font-mono text-[11px] font-semibold uppercase tracking-wider transition-all cursor-pointer"
-            >
-              <DownloadCloud className="w-3.5 h-3.5 text-[#FF0A3C]" />
-              <span>{isAppInstalled ? 'App Ready' : 'Install App'}</span>
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onOpenAuth}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] bg-[#040507]/92 hover:bg-black text-[#F1F5F9] border border-white/25 hover:border-[#F1F5F9] font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
-          >
-            <User className="w-3.5 h-3.5 text-[#F1F5F9]" />
-            <span>{user ? user.handle : 'Sign In'}</span>
-          </button>
-          {onOpenAdmin && (
-            <button
-              type="button"
-              onClick={onOpenAdmin}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[7px] bg-[#040507]/92 hover:bg-black text-[#FF2E63] hover:text-white border border-[#FF2E63]/55 hover:border-[#FF0A3C] font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
-              title="Open KAYA Owner Admin Portal"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-[#FF0A3C]" />
-              <span>Admin</span>
-            </button>
-          )}
-        </div>
-      </div>
 
       <input
         ref={fileInputRef}
@@ -723,12 +655,11 @@ export function HeroVideoCubeStage({
         onChange={(e) => handleUploadVideosOrMedia(e.target.files)}
       />
 
-      {/* Bottom Reveal Bar: KAYA on left; Home/Display/Prompt/Timeline/Video/Audio/Picture + Main Menu on right */}
+      {/* Minimal Bottom Reveal Bar: KAYA on left; Home/Video/Audio/Picture + Menu on right */}
       <div
         onClick={(e) => e.stopPropagation()}
         className="absolute bottom-0 inset-x-0 z-20 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2 bg-gradient-to-t from-black/95 via-black/75 to-transparent transition-opacity duration-300 opacity-85 hover:opacity-100 focus-within:opacity-100"
       >
-        {/* Left: Strictly KAYA letters only */}
         <button
           type="button"
           onClick={onOpenAuth}
@@ -739,7 +670,6 @@ export function HeroVideoCubeStage({
           KAYA
         </button>
 
-        {/* Right: Minimal All-Black Navigation Selections + Main Drop-Down Menu */}
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <button
             type="button"
@@ -754,38 +684,8 @@ export function HeroVideoCubeStage({
 
           <button
             type="button"
-            onClick={() =>
-              onJumpSection ? onJumpSection('studio-display', 'video') : onNavigateTool('video')
-            }
-            className="px-2.5 sm:px-3 py-1.5 rounded-[6px] bg-[#020203] hover:bg-black text-[#F1F5F9] hover:text-white border border-[#FF0A3C]/50 hover:border-[#FF0A3C] font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
-          >
-            Display
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              onJumpSection ? onJumpSection('studio-prompt', 'video') : onNavigateTool('video')
-            }
-            className="px-2.5 sm:px-3 py-1.5 rounded-[6px] bg-[#020203] hover:bg-black text-[#F1F5F9] hover:text-white border border-[#FF2E63]/50 hover:border-[#FF2E63] font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
-          >
-            Prompt
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              onJumpSection ? onJumpSection('studio-timeline', 'video') : onNavigateTool('editor')
-            }
-            className="px-2.5 sm:px-3 py-1.5 rounded-[6px] bg-[#020203] hover:bg-black text-[#F1F5F9] hover:text-white border border-[#F1F5F9]/35 hover:border-[#F1F5F9] font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
-          >
-            Timeline
-          </button>
-
-          <button
-            type="button"
             onClick={() => onNavigateTool('video')}
-            className="px-2.5 sm:px-3 py-1.5 rounded-[6px] bg-[#020203] hover:bg-black text-[#E6ECF5] hover:text-white border border-white/20 hover:border-[#FF1E42]/70 font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer hidden md:inline-flex"
+            className="px-2.5 sm:px-3 py-1.5 rounded-[6px] bg-[#020203] hover:bg-black text-[#E6ECF5] hover:text-white border border-white/20 hover:border-[#FF1E42]/70 font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
           >
             Video
           </button>
@@ -806,7 +706,6 @@ export function HeroVideoCubeStage({
             Picture
           </button>
 
-          {/* Main Drop-Down Menu */}
           <div ref={menuRef} className="relative">
             <button
               type="button"
@@ -860,7 +759,7 @@ export function HeroVideoCubeStage({
                   onClick={() => handleMenuNavigate('intel')}
                   className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#F1F5F9]/60 font-mono text-xs text-white transition-colors cursor-pointer"
                 >
-                  AI Tools &amp; Code
+                  AI Tools &amp; Connectors
                 </button>
                 <button
                   type="button"
@@ -888,42 +787,42 @@ export function HeroVideoCubeStage({
                   onClick={() => handleMenuNavigate('airradio')}
                   className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#F1F5F9]/60 font-mono text-xs text-white transition-colors cursor-pointer"
                 >
-                  KAYA AirRadio (Live FM Synth)
+                  AirRadio FM Broadcast
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('school')}
                   className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#FF2E63]/60 font-mono text-xs text-white transition-colors cursor-pointer"
                 >
-                  Coding &amp; Rendering School
+                  Infinity School
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('merch')}
                   className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#FF1E42]/60 font-mono text-xs text-white transition-colors cursor-pointer"
                 >
-                  Creator Merch &amp; Print Store
+                  Printify Merch Studio
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('live')}
                   className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#F1F5F9]/60 font-mono text-xs text-white transition-colors cursor-pointer"
                 >
-                  Live Camera &amp; Social Stream
+                  Live Camera &amp; Stream
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('animator')}
                   className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#FF1E42]/60 font-mono text-xs text-white transition-colors cursor-pointer"
                 >
-                  Action Animator (Fight &amp; Motion)
+                  Action Animator
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('bridge')}
                   className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#F1F5F9]/60 font-mono text-xs text-white transition-colors cursor-pointer"
                 >
-                  Desktop Bridge (.GLB / .SVG)
+                  Blender &amp; Local Bridge
                 </button>
                 {onOpenPlans && (
                   <button
@@ -934,7 +833,7 @@ export function HeroVideoCubeStage({
                     }}
                     className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#FF5C8A]/60 font-mono text-xs text-[#FF5C8A] transition-colors cursor-pointer"
                   >
-                    Studio Plans &amp; Pro Modules
+                    Studio Plans &amp; Billing
                   </button>
                 )}
 

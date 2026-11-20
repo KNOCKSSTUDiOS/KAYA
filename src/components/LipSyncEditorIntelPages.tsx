@@ -386,18 +386,18 @@ export function LipSyncPage() {
           ref={canvasRef}
           width={960}
           height={440}
-          className="w-full aspect-video max-h-[400px] rounded-[7px] bg-black border border-white/10"
+          className="w-full aspect-video max-h-[400px] rounded-xl bg-[#050304]"
         />
       </div>
 
       {micError && (
-        <div className="font-mono text-xs text-[#FF8DA1] bg-[#FF1E42]/10 border border-[#FF1E42]/35 rounded-[6px] px-3 py-2">
+        <div className="font-mono text-xs text-[#FF8DA1] bg-[#FF0A3C]/10 rounded-xl px-3 py-2">
           {micError}
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="cnc-recess rounded-[8px] p-3.5 space-y-3">
+        <div className="candy-surface rounded-xl p-3.5 space-y-3">
           <label className="font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/65 block">
             Local Voice Script (Zero External API)
           </label>
@@ -405,7 +405,7 @@ export function LipSyncPage() {
             value={scriptText}
             onChange={(e) => setScriptText(e.target.value)}
             rows={2}
-            className="w-full bg-[#06070A] border border-white/15 rounded-[6px] p-2.5 font-mono text-xs text-[#E6ECF5] focus:outline-none focus:border-[#F1F5F9]"
+            className="w-full bg-[#050304] border border-[#B84323]/25 rounded-xl p-2.5 font-mono text-xs text-[#E6ECF5] focus:outline-none focus:border-[#FF0A3C]"
           />
           <div className="flex flex-wrap gap-2">
             <HardwareButton size="sm" tone="cyan" active={mode === 'speech'} onClick={handleSpeakScript}>
@@ -542,7 +542,7 @@ export function EditorPage({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {activeCut && (
-            <span className="px-2 py-1 rounded bg-[#050609] border border-white/10 font-mono text-[10px] text-[#E6ECF5]/80 tabular-nums">
+            <span className="px-2.5 py-1 rounded-full bg-[#090405] font-mono text-[10px] text-[#E6ECF5]/80 tabular-nums">
               {activeCut.specLabel}
             </span>
           )}
@@ -609,12 +609,12 @@ export function EditorPage({
                 const pct = Math.round(((e.clientX - rect.left) / rect.width) * 100);
                 seekTimeline(pct);
               }}
-              className="relative rounded-[6px] bg-[#040507] border border-white/10 p-2 space-y-1.5 cursor-pointer select-none overflow-hidden"
+              className="relative rounded-xl bg-[#050304] p-2 space-y-1.5 cursor-pointer select-none overflow-hidden"
             >
               {/* Active Trim Selection Range Highlight */}
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute top-0 bottom-0 bg-[#F1F5F9]/10 border-x border-[#F1F5F9]/60"
+                className="pointer-events-none absolute top-0 bottom-0 bg-[#FF0A3C]/10 border-x border-[#FF0A3C]/50"
                 style={{ left: `${trimInPct}%`, width: `${Math.max(2, trimOutPct - trimInPct)}%` }}
               />
               {/* Playhead Needle */}
@@ -625,15 +625,15 @@ export function EditorPage({
               />
 
               {/* V1 Video Track */}
-              <div className="relative z-10 h-6 rounded bg-[#141A24] border border-[#F1F5F9]/35 flex items-center px-2.5 font-mono text-[10px] text-[#F1F5F9]">
+              <div className="relative z-10 h-6 rounded-lg bg-[#14070B] flex items-center px-2.5 font-mono text-[10px] text-[#F1F5F9]">
                 V1 VIDEO · {activeCut.label} ({activeCut.duration || '10s'})
               </div>
               {/* FX Color LUT Track */}
-              <div className="relative z-10 h-5 rounded bg-[#1A1220] border border-[#FF2E63]/35 flex items-center px-2.5 font-mono text-[10px] text-[#FF5C8A]">
+              <div className="relative z-10 h-5 rounded-lg bg-[#1D090F] flex items-center px-2.5 font-mono text-[10px] text-[#FF5C8A]">
                 FX LUT / GRADE · {gradeCss === 'none' ? 'Bypass' : 'Custom Grade Active'}
               </div>
               {/* A1 Audio Sync Track */}
-              <div className="relative z-10 h-5 rounded bg-[#12161E] border border-white/15 flex items-center px-2.5 font-mono text-[10px] text-[#E6ECF5]/70">
+              <div className="relative z-10 h-5 rounded-lg bg-[#0D0507] flex items-center px-2.5 font-mono text-[10px] text-[#E6ECF5]/70">
                 A1 AUDIO SYNC BED · Speed {speed}x
               </div>
             </div>
@@ -780,7 +780,7 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
   const [transcript, setTranscript] = useState('');
   const [voiceFeedback, setVoiceFeedback] = useState('Local Web Speech engine ready.');
 
-  // 2. Optical Pixel Recognition + Gemini Vision AI
+  // 2. Optical Pixel Recognition + Self-Hosted Vision AI
   const [swatches, setSwatches] = useState<string[]>([]);
   const [visionStats, setVisionStats] = useState<{
     luminance: number;
@@ -797,7 +797,7 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
   } | null>(null);
   const [aiVisionErr, setAiVisionErr] = useState<string | null>(null);
 
-  // 2b. Gemini AI Co-Director Chat
+  // 2b. Vortex Self-Hosted Co-Director Chat
   const [aiChatInput, setAiChatInput] = useState('');
   const [aiChatBusy, setAiChatBusy] = useState(false);
   const [aiChatReply, setAiChatReply] = useState<string | null>(null);
@@ -1160,7 +1160,7 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
                 <span>{listening ? 'Stop Listening' : 'Voice Dictate'}</span>
               </HardwareButton>
             </div>
-            <p className="font-mono text-xs text-[#E6ECF5]/75 bg-[#06070A] border border-white/10 rounded-[6px] p-2.5">
+            <p className="font-mono text-xs text-[#E6ECF5]/75 bg-[#050304] rounded-xl p-2.5">
               {transcript ? `"${transcript}" — ${voiceFeedback}` : voiceFeedback}
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -1174,12 +1174,12 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
             </div>
           </div>
 
-          {/* Local Canvas Optical Vision + KAYA Native AI Vision */}
-          <div className="cnc-recess rounded-[8px] p-4 space-y-3">
+          {/* Local Canvas Optical Vision + Self-Hosted Vortex Vision */}
+          <div className="candy-surface rounded-xl p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="font-mono text-xs uppercase tracking-wider text-[#FF5C8A] font-semibold flex items-center gap-2">
                 <Eye className="w-3.5 h-3.5" />
-                Optical &amp; KAYA AI Subject Vision
+                Optical &amp; Vortex Subject Vision
               </span>
               <HardwareButton
                 size="sm"
@@ -1198,23 +1198,23 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {swatches.map((hex) => (
-                <div key={hex} className="flex items-center gap-1.5 px-2 py-1 rounded bg-[#0A0C12] border border-white/10">
-                  <span className="w-3 h-3 rounded-sm border border-white/25" style={{ backgroundColor: hex }} />
+                <div key={hex} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full candy-surface">
+                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: hex }} />
                   <span className="font-mono text-[10px] text-[#E6ECF5]/80">{hex}</span>
                 </div>
               ))}
             </div>
             {visionStats && (
               <div className="grid grid-cols-3 gap-2 font-mono text-xs">
-                <div className="bg-[#06070A] border border-white/10 rounded p-2">
+                <div className="candy-trace-tile rounded-xl p-2.5">
                   <div className="text-[10px] text-[#E6ECF5]/50">LUMINANCE</div>
                   <div className="text-white font-bold tabular-nums">{visionStats.luminance}%</div>
                 </div>
-                <div className="bg-[#06070A] border border-white/10 rounded p-2">
+                <div className="candy-trace-tile rounded-xl p-2.5">
                   <div className="text-[10px] text-[#E6ECF5]/50">CONTRAST</div>
                   <div className="text-[#F1F5F9] font-bold tabular-nums">{visionStats.contrast}%</div>
                 </div>
-                <div className="bg-[#06070A] border border-white/10 rounded p-2">
+                <div className="candy-trace-tile rounded-xl p-2.5">
                   <div className="text-[10px] text-[#E6ECF5]/50">SHARPNESS</div>
                   <div className="text-[#FF5C8A] font-bold tabular-nums">{visionStats.edgeScore}%</div>
                 </div>
@@ -1224,7 +1224,7 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
               <p className="font-mono text-[11px] text-[#FF4D6D]">{aiVisionErr}</p>
             )}
             {aiVisionResult && (
-              <div className="bg-[#050608] border border-[#FF0A3C]/40 rounded-[6px] p-2.5 space-y-1 font-mono text-[11px]">
+              <div className="candy-surface rounded-xl p-2.5 space-y-1 font-mono text-[11px]">
                 <div className="text-white font-semibold">{aiVisionResult.analysis}</div>
                 {aiVisionResult.lightingSuggestion && (
                   <div className="text-[#FF5C8A]">Lighting: {aiVisionResult.lightingSuggestion}</div>
@@ -1238,11 +1238,11 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
         </div>
 
         {/* AI Co-Director Chat Console */}
-        <form onSubmit={handleAskAiDirector} className="cnc-recess rounded-[8px] p-4 space-y-3 border border-[#FF0A3C]/30">
+        <form onSubmit={handleAskAiDirector} className="candy-surface rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <span className="font-mono text-xs uppercase tracking-wider text-white font-semibold flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-[#FF0A3C]" />
-              KAYA AI Co-Director (Lighting, Motion, VFX &amp; Code Help)
+              Vortex Co-Director (Lighting, Motion, VFX &amp; Self-Hosted Help)
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -1250,17 +1250,17 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
               type="text"
               value={aiChatInput}
               onChange={(e) => setAiChatInput(e.target.value)}
-              placeholder="Ask AI Co-Director for lighting setups, 144fps pacing, shader tips, or scene prompts…"
-              className="flex-1 min-w-[220px] bg-[#040507] border border-white/15 rounded-[6px] px-3 py-2 font-mono text-xs text-white focus:outline-none focus:border-[#FF0A3C]"
+              placeholder="Ask Vortex Co-Director for lighting setups, 144fps pacing, shader tips, or scene prompts…"
+              className="flex-1 min-w-[220px] bg-[#050304] border border-[#B84323]/30 rounded-full px-4 py-2 font-mono text-xs text-white focus:outline-none focus:border-[#FF0A3C]"
             />
             <HardwareButton type="submit" size="sm" tone="red" active disabled={aiChatBusy || !aiChatInput.trim()}>
               {aiChatBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              <span>{aiChatBusy ? 'Thinking…' : 'Ask AI'}</span>
+              <span>{aiChatBusy ? 'Thinking…' : 'Ask Vortex'}</span>
             </HardwareButton>
           </div>
           {aiChatErr && <p className="font-mono text-xs text-[#FF4D6D]">{aiChatErr}</p>}
           {aiChatReply && (
-            <div className="bg-[#040507] border border-white/15 rounded-[6px] p-3 font-mono text-xs text-[#F1F5F9]/90 whitespace-pre-wrap leading-relaxed">
+            <div className="bg-[#050304] rounded-xl p-3 font-mono text-xs text-[#F1F5F9]/90 whitespace-pre-wrap leading-relaxed">
               {aiChatReply}
             </div>
           )}
@@ -1268,7 +1268,7 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Interactive World Geo-Grid */}
-          <div className="cnc-recess rounded-[8px] p-4 space-y-3">
+          <div className="candy-surface rounded-xl p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="font-mono text-xs uppercase tracking-wider text-[#F1F5F9] font-semibold flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5" />
@@ -1283,44 +1283,44 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
               ref={mapCanvasRef}
               width={560}
               height={220}
-              className="w-full h-[180px] rounded-[6px] border border-white/10 bg-[#06080D]"
+              className="w-full h-[180px] rounded-lg bg-[#050304]"
             />
             <div className="font-mono text-[11px] text-[#E6ECF5]/75 tabular-nums">{geoCoords.label}</div>
           </div>
 
           {/* Protected Engine Capabilities + Workstation Search */}
-          <div className="cnc-recess rounded-[8px] p-4 space-y-3">
+          <div className="candy-surface rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-mono text-xs uppercase tracking-wider text-[#FF5C8A] font-semibold flex items-center gap-2">
                 <FolderTree className="w-3.5 h-3.5" />
-                KAYA™ Protected Engine Index
+                VORTEX · KAYA™ Engine Index
               </span>
               <span className="font-mono text-[11px] text-[#F1F5F9] tabular-nums">
-                Source Locked · © 2024–2026
+                Self-Hosted · © 2024–2026
               </span>
             </div>
 
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-[#E6ECF5]/45 absolute left-2.5 top-2.5" />
+              <Search className="w-3.5 h-3.5 text-[#E6ECF5]/45 absolute left-3 top-2.5" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search KAYA styles, subjects, environments, FPS…"
-                className="w-full bg-[#06070A] border border-white/15 rounded-[6px] pl-8 pr-3 py-1.5 font-mono text-xs text-white focus:outline-none focus:border-[#F1F5F9]"
+                placeholder="Search studio styles, subjects, environments, FPS…"
+                className="w-full bg-[#050304] border border-[#B84323]/30 rounded-full pl-9 pr-3 py-1.5 font-mono text-xs text-white focus:outline-none focus:border-[#FF0A3C]"
               />
             </div>
 
             <div className="max-h-[140px] overflow-y-auto space-y-1.5 pr-1">
               {searchQuery.trim()
                 ? searchableItems.slice(0, 8).map((item, idx) => (
-                    <div key={idx} className="bg-[#06070A] border border-white/10 rounded px-2.5 py-1.5 font-mono text-xs flex justify-between gap-2">
+                    <div key={idx} className="candy-trace-tile rounded-xl px-3 py-1.5 font-mono text-xs flex justify-between gap-2">
                       <span className="text-white font-semibold truncate">{item.title}</span>
                       <span className="text-[#F1F5F9] text-[10px] shrink-0">{item.cat}</span>
                     </div>
                   ))
                 : runtimeModules.map((entry) => (
-                    <div key={entry.name} className="bg-[#06070A] border border-white/10 rounded px-2.5 py-1.5 font-mono text-xs flex justify-between gap-2">
+                    <div key={entry.name} className="candy-trace-tile rounded-xl px-3 py-1.5 font-mono text-xs flex justify-between gap-2">
                       <span className="text-[#E6ECF5]/85">{entry.name}</span>
                       <span className="text-[#FF5C8A] text-[10px] tabular-nums">{entry.spec}</span>
                     </div>

@@ -330,7 +330,7 @@ export function VideoOutput({
       {/* Recessed Glass Monitor Frame */}
       <div className="cnc-recess rounded-[10px] p-2 flex flex-col">
         <div
-          className={`relative w-full rounded-[7px] overflow-hidden border border-white/10 optical-glass flex items-center justify-center ${
+          className={`relative w-full rounded-xl overflow-hidden optical-glass flex items-center justify-center ${
             hasError && appState !== 'VIDEO_READY' ? 'min-h-[260px] py-6' : 'aspect-video max-h-[460px]'
           }`}
         >
@@ -375,14 +375,14 @@ export function VideoOutput({
                 <div className="font-mono text-xs uppercase tracking-[0.22em] text-white font-semibold">
                   Rendering Sequence · {renderProgress}%
                 </div>
-                <div className="w-56 h-1.5 mx-auto rounded bg-[#07080C] border border-white/10 overflow-hidden">
+                <div className="w-56 h-1.5 mx-auto rounded-full bg-[#050304] overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-[#FF1E42] via-[#FF2E63] to-[#F1F5F9] transition-all duration-150"
                     style={{ width: `${Math.max(4, renderProgress)}%` }}
                   />
                 </div>
               </div>
-              <div className="w-full space-y-1.5 font-mono text-[11px] text-left bg-[#07080C]/85 border border-white/10 rounded-[6px] p-3">
+              <div className="w-full space-y-1.5 font-mono text-[11px] text-left bg-[#050304]/90 rounded-xl p-3">
                 {recentLogs.map((log) => (
                   <div key={log.id} className={logColor(log.type)}>
                     <div className="truncate"><span className="text-white/25">›</span> {log.message}</div>
@@ -411,8 +411,8 @@ export function VideoOutput({
 
       {/* Frame & Transparent PNG Sequence Exporter Drawer */}
       {appState === 'VIDEO_READY' && videoUrl && exporterOpen && (
-        <div className="cnc-recess rounded-[10px] p-4 space-y-4 border border-[#F1F5F9]/25">
-          <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2 border-b border-white/10">
+        <div className="candy-surface rounded-xl p-4 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <Film className="w-4 h-4 text-[#F1F5F9] shrink-0" />
               <h3
@@ -615,7 +615,7 @@ export function VideoOutput({
                   <span>Encoding frame {seqProgress.current} of {seqProgress.total}…</span>
                   <span className="text-[#F1F5F9] font-semibold">{seqProgress.percent}%</span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-[#050609] border border-white/10 overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-[#050304] overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-[#FF1E42] via-[#FF2E63] to-[#F1F5F9] transition-all duration-100"
                     style={{ width: `${Math.max(3, seqProgress.percent)}%` }}

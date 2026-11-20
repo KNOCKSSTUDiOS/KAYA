@@ -168,27 +168,27 @@ export function PWAInstallButton({
 
       {modalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/88 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90"
           onClick={() => setModalOpen(false)}
         >
           <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <PlateBezel accent="red" className="w-full overflow-hidden p-5 sm:p-6 space-y-4">
               {/* Header */}
-              <div className="flex items-center justify-between gap-3 pb-3 border-b border-white/10">
+              <div className="flex items-center justify-between gap-3 pb-2">
                 <div className="flex items-center gap-3">
                   <img
                     src="/pwa-192x192.png"
-                    alt="KAYA App Icon"
-                    className="w-11 h-11 rounded-[9px] border border-[#F1F5F9]/35 shadow-[0_0_16px_rgba(255,10,60,0.45)] shrink-0 object-cover"
+                    alt="VORTEX KAYA App"
+                    className="w-11 h-11 rounded-full shadow-[0_0_16px_rgba(255,10,60,0.45)] shrink-0 object-cover"
                   />
                   <div>
                     <h3
                       className="text-sm font-bold uppercase tracking-wider text-white"
                       style={{ fontFamily: 'var(--font-display)' }}
                     >
-                      Install KAYA Studio App
+                      Install Chrome &amp; Desktop App
                     </h3>
-                    <p className="text-xs text-[#F1F5F9]/65 font-mono">Pro &amp; Candy Finish · Standalone</p>
+                    <p className="text-xs text-[#F5E9EA]/65 font-mono">VORTEX · KAYA Standalone</p>
                   </div>
                 </div>
                 <HardwareButton
@@ -203,15 +203,15 @@ export function PWAInstallButton({
               </div>
 
               {/* Offline / Auto-Update Runtime Status */}
-              <div className="cnc-recess rounded-[8px] p-3.5 flex flex-wrap items-center justify-between gap-2.5 border border-white/10">
+              <div className="candy-trace-tile p-3.5 flex flex-wrap items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2 font-mono text-xs">
                   {isOnline ? (
-                    <Wifi className="w-4 h-4 text-[#F1F5F9] shrink-0" />
+                    <Wifi className="w-4 h-4 text-[#F5E9EA] shrink-0" />
                   ) : (
                     <WifiOff className="w-4 h-4 text-[#FF0A3C] shrink-0" />
                   )}
-                  <span className={isOnline ? 'text-[#F1F5F9] font-semibold' : 'text-[#FF2E63] font-semibold'}>
-                    {isOnline ? 'Online · Auto-Sync Active' : 'Offline · Local Cache Ready'}
+                  <span className={isOnline ? 'text-[#F5E9EA] font-semibold' : 'text-[#FF2E63] font-semibold'}>
+                    {isOnline ? 'Chrome Ready · Auto-Sync Active' : 'Offline · Local Cache Ready'}
                   </span>
                 </div>
                 <HardwareButton
@@ -234,42 +234,42 @@ export function PWAInstallButton({
               </div>
 
               {/* Install Controls */}
-              <div className="space-y-3 text-xs text-[#F1F5F9]/85">
+              <div className="space-y-3 text-xs text-[#F5E9EA]/85">
                 {isInstalled ? (
-                  <div className="p-3.5 cnc-recess rounded-[8px] flex items-start gap-3 border border-[#F1F5F9]/30">
-                    <CheckCircle2 className="w-5 h-5 text-[#F1F5F9] shrink-0 mt-0.5" />
+                  <div className="candy-trace-tile p-3.5 flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-[#F5E9EA] shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-white">Running in Standalone App Mode</p>
-                      <p className="text-[#F1F5F9]/65 mt-0.5">
-                        Offline worker &amp; automatic runtime sync are active.
+                      <p className="text-[#F5E9EA]/65 mt-0.5">
+                        Chrome &amp; offline worker sync active.
                       </p>
                     </div>
                   </div>
                 ) : isIOS ? (
-                  <div className="p-4 cnc-recess rounded-[8px] space-y-2.5 border border-[#FF0A3C]/40">
+                  <div className="candy-trace-tile p-4 space-y-2.5">
                     <p className="font-semibold text-white flex items-center gap-1.5">
-                      <Smartphone className="w-4 h-4 text-[#FF2E63]" /> Install KAYA on iPhone / iPad
+                      <Smartphone className="w-4 h-4 text-[#FF2E63]" /> Install on iOS / Tablet
                     </p>
-                    <ol className="list-decimal list-inside space-y-2 text-[#F1F5F9]/80 leading-relaxed">
+                    <ol className="list-decimal list-inside space-y-2 text-[#F5E9EA]/80 leading-relaxed">
                       <li className="flex items-center gap-2">
                         <span>1. Tap</span>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#040507] rounded border border-white/15 font-mono text-[11px] text-white">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#0A0405] rounded-full font-mono text-[11px] text-white">
                           <Share className="w-3 h-3 text-[#FF2E63]" /> Share
                         </span>
                       </li>
                       <li className="flex items-center gap-2">
                         <span>2. Select</span>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#040507] rounded border border-white/15 font-mono text-[11px] text-white">
-                          <PlusSquare className="w-3 h-3 text-[#F1F5F9]" /> Add to Home Screen
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#0A0405] rounded-full font-mono text-[11px] text-white">
+                          <PlusSquare className="w-3 h-3 text-[#F5E9EA]" /> Add to Home Screen
                         </span>
                       </li>
                       <li>3. Tap <strong>Add</strong></li>
                     </ol>
                   </div>
                 ) : (
-                  <div className="p-4 cnc-recess rounded-[8px] space-y-3 border border-[#FF0A3C]/45">
-                    <p className="text-[#F1F5F9]/90 leading-relaxed">
-                      Install KAYA directly as a standalone Desktop &amp; Offline App with your Pro &amp; Candy Finish icon — zero accounts or keys required.
+                  <div className="candy-trace-tile p-4 space-y-3">
+                    <p className="text-[#F5E9EA]/90 leading-relaxed">
+                      Install VORTEX · KAYA as a standalone Google Chrome &amp; Desktop app with GPU acceleration.
                     </p>
 
                     {isInstallable && (
@@ -283,7 +283,7 @@ export function PWAInstallButton({
                         }}
                       >
                         <DownloadCloud className="w-4 h-4 text-white" />
-                        <span>Install KAYA App Now</span>
+                        <span>Install Chrome App Now</span>
                       </HardwareButton>
                     )}
 
@@ -300,36 +300,36 @@ export function PWAInstallButton({
                       )}
                       <span>
                         {downloadedBat
-                          ? 'Downloaded KAYA-Install-App.bat — Double-Click to Run!'
-                          : 'Download 1-Click Windows App Installer (.bat)'}
+                          ? 'Downloaded Desktop Launcher'
+                          : 'Download Chrome Desktop Launcher'}
                       </span>
                     </HardwareButton>
 
                     <HardwareButton
                       fullWidth
                       size="sm"
-                      tone="neutral"
+                      tone="magenta"
                       active={copiedCmd}
                       onClick={copyDesktopInstallCmd}
                     >
                       {copiedCmd ? (
-                        <Check className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                        <Check className="w-3.5 h-3.5 text-[#F5E9EA]" />
                       ) : (
-                        <Copy className="w-3.5 h-3.5 text-[#FF2E63]" />
+                        <Copy className="w-3.5 h-3.5 text-[#FF8C66]" />
                       )}
-                      <span>{copiedCmd ? 'Copied Desktop PowerShell Command!' : 'Copy PowerShell Shortcut Installer'}</span>
+                      <span>{copiedCmd ? 'Copied PowerShell Launcher' : 'Copy PowerShell Launcher'}</span>
                     </HardwareButton>
                   </div>
                 )}
 
-                <div className="p-3 cnc-recess rounded-[8px] space-y-1.5 font-mono text-[11px]">
-                  <div className="flex justify-between text-[#F1F5F9]/60">
+                <div className="candy-trace-tile p-3 space-y-1.5 font-mono text-[11px]">
+                  <div className="flex justify-between text-[#F5E9EA]/60">
                     <span>Runtime Build:</span>
-                    <span className="text-[#F1F5F9] font-semibold">
-                      {liveVersion ? `Live #${liveVersion.slice(-6)}` : 'kaya-v8 Local'}
+                    <span className="text-[#F5E9EA] font-semibold">
+                      {liveVersion ? `Live #${liveVersion.slice(-6)}` : 'kaya-v5'}
                     </span>
                   </div>
-                  <div className="flex justify-between text-[#F1F5F9]/60">
+                  <div className="flex justify-between text-[#F5E9EA]/60">
                     <span>Offline Cache:</span>
                     <LedStatusIndicator label={isOnline ? 'Synced' : 'Offline Ready'} tone={isOnline ? 'cyan' : 'red'} />
                   </div>

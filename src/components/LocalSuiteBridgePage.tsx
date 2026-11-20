@@ -173,8 +173,8 @@ print(f"[KAYA Bridge] Exchange folder ready: {BRIDGE_DIR}")
 print("[KAYA Bridge] Drop exported .glb, .svg, .png, or .wav files into this folder.")
 print("[KAYA Bridge] WebSocket endpoint protocol: ws://127.0.0.1:${wsPort}")
 `;
-    downloadBlob(new Blob([pyScript], { type: 'text/x-python' }), 'kaya-local-bridge.py');
-    setStatusMsg('Downloaded kaya-local-bridge.py workstation connector');
+    downloadBlob(new Blob([pyScript], { type: 'text/x-python' }), 'kaya-workstation-bridge.py');
+    setStatusMsg('Workstation bridge utility downloaded and ready');
   };
 
   const handlePingLocalSocket = () => {
@@ -184,12 +184,12 @@ print("[KAYA Bridge] WebSocket endpoint protocol: ws://127.0.0.1:${wsPort}")
       wsRef.current = ws;
       ws.onopen = () => {
         setWsStatus('connected');
-        ws.send(JSON.stringify({ studio: 'KAYA', event: 'bridge_handshake', ts: Date.now() }));
-        setStatusMsg(`Connected to local daemon on ws://127.0.0.1:${wsPort}`);
+        ws.send(JSON.stringify({ studio: 'VORTEX_KAYA', event: 'bridge_handshake', ts: Date.now() }));
+        setStatusMsg(`Connected to workstation port ${wsPort}`);
       };
       ws.onerror = () => {
         setWsStatus('offline');
-        setStatusMsg(`No local daemon listening on port ${wsPort} — use file exports or run kaya-local-bridge.py`);
+        setStatusMsg(`Port ${wsPort} idle — use scene exports or launch the Workstation Connector`);
       };
     } catch {
       setWsStatus('offline');
@@ -202,105 +202,103 @@ print("[KAYA Bridge] WebSocket endpoint protocol: ws://127.0.0.1:${wsPort}")
         <div className="flex items-center gap-2.5">
           <Cable className="w-4 h-4 text-[#F1F5F9]" />
           <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-display)' }}>
-            Desktop Workstation Bridge (Open Local Protocols)
+            Desktop Workstation &amp; Blender Bridge
           </h2>
         </div>
         <LedStatusIndicator label={statusMsg} tone={wsStatus === 'connected' ? 'emerald' : 'cyan'} />
       </div>
 
       <p className="font-mono text-xs text-[#E6ECF5]/70 leading-relaxed">
-        Export directly into open industry-standard interchange formats for your local 3D modeling suites,
-        digital paint &amp; raster layer editors, vector layout workspaces, and live broadcast capture tools—100% locally with zero third-party keys.
+        Export scenes directly into open studio formats for Blender 3D viewports, digital paint stacks, scalable vector layouts, and live broadcast rigs with zero external keys.
       </p>
 
-      {/* Open Format Local Links */}
+      {/* Seamless Single-Tile Exports */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="cnc-recess rounded-[8px] p-4 flex flex-col justify-between gap-3 border border-white/10">
+        <div className="candy-trace-tile rounded-xl p-4 flex flex-col justify-between gap-3">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#F1F5F9] uppercase">
               <Box className="w-4 h-4" />
-              <span>3D Viewport Mesh Link</span>
+              <span>Blender 3D Mesh Link</span>
             </div>
             <p className="text-[11px] font-mono text-[#E6ECF5]/65">
-              Exports the 27-cubie 3D armature directly as binary glTF (.GLB) for local 3D scenes &amp; shaders.
+              Exports the 27-cubie 3D armature directly as binary glTF mesh for Blender viewports.
             </p>
           </div>
           <HardwareButton size="sm" fullWidth tone="cyan" active disabled={busy} onClick={handleExportGlbScene}>
             <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
-            <span>Export 3D Scene (.GLB)</span>
+            <span>Export 3D Mesh</span>
           </HardwareButton>
         </div>
 
-        <div className="cnc-recess rounded-[8px] p-4 flex flex-col justify-between gap-3 border border-white/10">
+        <div className="candy-trace-tile rounded-xl p-4 flex flex-col justify-between gap-3">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#FF5C8A] uppercase">
               <Layers className="w-4 h-4" />
               <span>Paint &amp; Raster Stack</span>
             </div>
             <p className="text-[11px] font-mono text-[#E6ECF5]/65">
-              Packages layered RGBA cutouts, backdrop plates, and JSON layer stack for local paint editors.
+              Packages layered RGBA cutouts, backdrop plates, and structured layer metadata.
             </p>
           </div>
           <HardwareButton size="sm" fullWidth tone="magenta" active disabled={busy} onClick={handleExportLayeredPaintBundle}>
             <Download className="w-3.5 h-3.5 text-[#FF5C8A]" />
-            <span>Export Paint Bundle (.ZIP)</span>
+            <span>Export Paint Bundle</span>
           </HardwareButton>
         </div>
 
-        <div className="cnc-recess rounded-[8px] p-4 flex flex-col justify-between gap-3 border border-white/10">
+        <div className="candy-trace-tile rounded-xl p-4 flex flex-col justify-between gap-3">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 font-mono text-xs font-bold text-[#FF3B5C] uppercase">
               <PenTool className="w-4 h-4" />
               <span>Vector &amp; Layout Paths</span>
             </div>
             <p className="text-[11px] font-mono text-[#E6ECF5]/65">
-              Generates clean 1920×1080 Bezier paths &amp; typography groups as scalable .SVG templates.
+              Generates clean 1920×1080 Bezier paths and typography groups for vector editors.
             </p>
           </div>
           <HardwareButton size="sm" fullWidth tone="red" active onClick={handleExportVectorSvg}>
             <Download className="w-3.5 h-3.5 text-[#FF3B5C]" />
-            <span>Export Vector Art (.SVG)</span>
+            <span>Export Vector Pack</span>
           </HardwareButton>
         </div>
 
-        <div className="cnc-recess rounded-[8px] p-4 flex flex-col justify-between gap-3 border border-white/10">
+        <div className="candy-trace-tile rounded-xl p-4 flex flex-col justify-between gap-3">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 font-mono text-xs font-bold text-white uppercase">
               <FileCode className="w-4 h-4 text-[#F1F5F9]" />
-              <span>Local Bridge Daemon</span>
+              <span>Workstation Connector</span>
             </div>
             <p className="text-[11px] font-mono text-[#E6ECF5]/65">
-              Python localhost connector script linking ~/KAYA_Workspace_Bridge to your desktop apps.
+              Desktop exchange connector linking local 3D &amp; render workstations over secure socket.
             </p>
           </div>
           <HardwareButton size="sm" fullWidth tone="cyan" active={false} onClick={handleDownloadPythonBridge}>
             <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
-            <span>Download kaya-bridge.py</span>
+            <span>Get Workstation Link</span>
           </HardwareButton>
         </div>
       </div>
 
-      {/* Live Broadcast & Localhost Socket Handshake */}
-      <div className="cnc-recess rounded-[8px] p-4 flex flex-wrap items-center justify-between gap-3">
+      {/* Live Socket Handshake */}
+      <div className="candy-surface rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 flex-wrap">
           <Radio className="w-4 h-4 text-[#FF3B5C]" />
-          <span className="font-mono text-xs text-white">Localhost Socket Sync:</span>
-          <span className="font-mono text-xs text-[#E6ECF5]/65">ws://127.0.0.1:</span>
+          <span className="font-mono text-xs text-white">Workstation Port Sync:</span>
           <input
             type="text"
             value={wsPort}
             onChange={(e) => setWsPort(e.target.value.replace(/\D/g, '').slice(0, 5) || '8765')}
-            className="w-20 bg-[#020203] border border-white/20 rounded-[6px] px-2.5 py-1 font-mono text-xs text-[#F1F5F9] focus:outline-none focus:border-[#F1F5F9]"
+            className="w-20 bg-[#050304] border border-[#B84323]/30 rounded-full px-3 py-1 font-mono text-xs text-[#F1F5F9] text-center focus:outline-none focus:border-[#FF0A3C]"
           />
           {wsStatus === 'connected' && (
             <span className="inline-flex items-center gap-1 font-mono text-xs text-emerald-400">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Live
+              <CheckCircle2 className="w-3.5 h-3.5" /> Connected
             </span>
           )}
         </div>
 
         <HardwareButton size="sm" tone="red" active onClick={handlePingLocalSocket}>
-          <span>Connect Broadcast / Local Port</span>
+          <span>Connect Broadcast Port</span>
         </HardwareButton>
       </div>
     </PlateBezel>

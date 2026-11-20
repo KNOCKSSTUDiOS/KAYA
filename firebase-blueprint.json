@@ -2,20 +2,35 @@
   "entities": {
     "user": {
       "title": "User Profile",
-      "description": "User profile with preferences",
+      "description": "Authenticated studio user profile and active subscription preferences",
       "type": "object",
       "properties": {
         "userId": {
           "type": "string",
-          "description": "Firebase Auth UID"
+          "description": "Firebase Auth UID",
+          "maxLength": 128
         },
         "email": {
           "type": "string",
-          "description": "User email address"
+          "description": "Verified user email address",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User studio display name",
+          "maxLength": 120
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["free", "beginner", "pro", "ultra", "business", "enterprise"]
+        },
+        "billingCycle": {
+          "type": "string",
+          "enum": ["monthly", "yearly"]
         },
         "defaultDuration": {
           "type": "string",
-          "description": "Default video reel duration"
+          "maxLength": 16
         },
         "createdAt": {
           "type": "string",
@@ -24,38 +39,65 @@
       },
       "required": ["userId", "email"]
     },
-    "videoProject": {
-      "title": "Video Project",
-      "description": "Saved cinematic reel project with prompt and video information",
+    "adminMember": {
+      "title": "Admin & Staff Role",
+      "description": "Authorized administrator or employee role record",
       "type": "object",
       "properties": {
         "userId": {
           "type": "string",
-          "description": "Owner user ID"
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "manager", "engineer", "instructor", "support"]
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "grantedBy": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "email", "role", "active"]
+    },
+    "videoProject": {
+      "title": "Studio Project",
+      "description": "Saved Vortex/KAYA studio reel project",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "studioHub": {
+          "type": "string",
+          "maxLength": 64
         },
         "label": {
           "type": "string",
-          "description": "Version label e.g. V1"
+          "maxLength": 64
         },
         "duration": {
           "type": "string",
-          "description": "Duration e.g. 5s, 10s, 15s"
+          "maxLength": 16
         },
         "prompt": {
           "type": "string",
-          "description": "Cinematic prompt directive"
+          "maxLength": 10000
         },
         "videoUrl": {
           "type": "string",
-          "description": "Local stream URL or file reference"
-        },
-        "driveFileId": {
-          "type": "string",
-          "description": "Google Drive file ID if exported"
-        },
-        "driveWebViewLink": {
-          "type": "string",
-          "description": "Google Drive web view link"
+          "maxLength": 2048
         },
         "createdAt": {
           "type": "string",
@@ -63,16 +105,166 @@
         }
       },
       "required": ["userId", "label", "duration", "prompt"]
+    },
+    "studioArtifact": {
+      "title": "Studio Artifact",
+      "description": "Generated render, shader preset, Printify mockup, or Blender scene record",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "studioHub": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["render", "blender_scene", "printify_mockup", "shader", "school_lab", "audio_stem"]
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "studioHub", "title", "kind"]
+    },
+    "connectorSkill": {
+      "title": "Database & Skill Connector",
+      "description": "Self-hosted server, MCP, SQL database, or quantum storage connection",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "connectorType": {
+          "type": "string",
+          "enum": ["mcp", "postgres", "mysql", "sqlite", "firebase", "quantum_storage", "self_hosted_llm"]
+        },
+        "endpointUrl": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "status": {
+          "type": "string",
+          "enum": ["verified", "pending", "disconnected"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "name", "connectorType", "status"]
+    },
+    "printifyItem": {
+      "title": "Printify Catalog Item",
+      "description": "Printify merch mockup and pricing listing",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "productType": {
+          "type": "string",
+          "maxLength": 48
+        },
+        "retailPrice": {
+          "type": "number"
+        },
+        "baseCost": {
+          "type": "number"
+        },
+        "colorHex": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "title", "productType", "retailPrice", "baseCost"]
+    },
+    "billingRecord": {
+      "title": "Studio Billing Subscription",
+      "description": "Infinity and Soul Stripe billing plan record",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["free", "beginner", "pro", "ultra", "business", "enterprise"]
+        },
+        "billingCycle": {
+          "type": "string",
+          "enum": ["monthly", "yearly"]
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["stripe", "infinity_billing"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "canceled", "trialing"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "tier", "billingCycle", "provider", "status"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/user" },
-      "description": "Private user profile and preferences"
+      "description": "Private authenticated user studio profiles"
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/adminMember" },
+      "description": "Protected administrator and staff role directory"
     },
     "/video_projects/{projectId}": {
       "schema": { "$ref": "#/entities/videoProject" },
-      "description": "User saved video projects and reel history"
+      "description": "User-owned Vortex and KAYA studio video projects"
+    },
+    "/artifacts/{artifactId}": {
+      "schema": { "$ref": "#/entities/studioArtifact" },
+      "description": "User-owned studio artifacts and outputs"
+    },
+    "/connectors/{connectorId}": {
+      "schema": { "$ref": "#/entities/connectorSkill" },
+      "description": "Self-hosted MCP, SQL, and cloud database connections"
+    },
+    "/printify_items/{itemId}": {
+      "schema": { "$ref": "#/entities/printifyItem" },
+      "description": "User Printify storefront items"
+    },
+    "/billing_records/{userId}": {
+      "schema": { "$ref": "#/entities/billingRecord" },
+      "description": "User Soul and Infinity billing records"
     }
   }
 }

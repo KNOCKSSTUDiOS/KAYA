@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { Clapperboard, Sparkles, Download, RotateCcw, Box, ShieldCheck } from 'lucide-react';
+import { Clapperboard, Sparkles, Download, RotateCcw, Box } from 'lucide-react';
 import { PlateBezel, HardwareButton, LedStatusIndicator } from './HardwarePrimitives.js';
+import { UNIFIED_WATERMARK_TEXT } from '../lib/watermarkEngine.js';
 
 interface StoryboardLogoPageProps {
   subjectUrl: string;
@@ -221,31 +222,25 @@ export function StoryboardLogoPage({
           </h2>
         </div>
         <LedStatusIndicator
-          label="© 2024–2026 KAYA™"
+          label={UNIFIED_WATERMARK_TEXT}
           tone={mode === 'storyboard' ? 'magenta' : mode === 'overdrive' ? 'red' : 'cyan'}
           pulse
         />
       </div>
 
       {/* Interactive 3D Viewport */}
-      <div className="cnc-recess rounded-[12px] p-2 relative overflow-hidden">
+      <div className="candy-surface rounded-xl p-2 relative overflow-hidden">
         <div
-          className="relative w-full h-[340px] sm:h-[380px] rounded-[9px] overflow-hidden border border-white/10"
+          className="relative w-full h-[340px] sm:h-[380px] rounded-lg overflow-hidden"
           style={{
-            background: 'radial-gradient(circle at center, #140826 0%, #050510 68%, #020305 100%)',
+            background: 'radial-gradient(circle at center, #1E070E 0%, #090405 68%, #050304 100%)',
           }}
         >
           <div ref={mountRef} className="w-full h-full" />
 
-          {/* Top Watermark Stamp Badge */}
-          <div className="pointer-events-none absolute top-3 left-3 px-2.5 py-1 rounded bg-black/75 border border-white/15 font-mono text-[10px] uppercase tracking-widest text-[#F1F5F9] flex items-center gap-1.5">
-            <ShieldCheck className="w-3 h-3 text-[#FF3B5C]" />
-            <span>© 2024–2026 KAYA™ · {formatSummary}</span>
-          </div>
-
-          {/* Floating Glass Action Output Pill (from interactive 3D Storyboard engine) */}
+          {/* Seamless Bottom Overlay Output */}
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-[94%] max-w-2xl flex flex-col items-center gap-2.5">
-            <div className="w-full rounded-[10px] bg-black/75 backdrop-blur-md border border-white/15 px-4 py-2.5 text-center">
+            <div className="w-full rounded-xl bg-[#050304]/85 px-4 py-2.5 text-center">
               <p className="font-mono text-xs text-white font-semibold">{statusBanner}</p>
               <p className="font-mono text-[11px] text-[#E6ECF5]/70 mt-0.5">
                 Active Scene: {beat.shot} ({beat.timecode}) — {beat.camera}
@@ -276,7 +271,7 @@ export function StoryboardLogoPage({
         </div>
       </div>
 
-      {/* 5-Shot Storyboard Filmstrip Cards */}
+      {/* 5-Shot Storyboard Filmstrip Seamless Tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         {STORYBOARD_BEATS.map((item, idx) => (
           <button
@@ -286,19 +281,17 @@ export function StoryboardLogoPage({
               setSelectedShot(idx);
               triggerMode('storyboard');
             }}
-            className={`text-left p-3 rounded-[9px] cnc-module transition-all cursor-pointer border ${
-              selectedShot === idx
-                ? 'border-[#FF5C8A] shadow-[0_0_16px_rgba(255, 46, 99,0.28)]'
-                : 'border-white/10 hover:border-[#F1F5F9]/50'
+            className={`text-left p-3 rounded-xl candy-trace-tile cursor-pointer ${
+              selectedShot === idx ? 'bg-[#19060C]/80 shadow-[0_0_16px_rgba(255,46,99,0.28)]' : ''
             }`}
           >
-            <div className="relative aspect-video rounded-[6px] overflow-hidden bg-black mb-2 border border-white/10">
+            <div className="relative aspect-video rounded-lg overflow-hidden bg-[#050304] mb-2">
               <img
                 src={idx % 2 === 0 ? environmentUrl : subjectUrl}
                 alt={item.shot}
-                className="w-full h-full object-cover opacity-80"
+                className="w-full h-full object-cover opacity-85"
               />
-              <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 font-mono text-[9px] text-[#F1F5F9]">
+              <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-full bg-[#050304]/85 font-mono text-[9px] text-[#F1F5F9]">
                 {item.timecode}
               </span>
             </div>

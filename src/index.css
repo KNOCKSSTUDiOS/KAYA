@@ -7,14 +7,23 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
+@property --trace-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
 :root {
-  --chassis-bg: #030406;
-  --plate-bg: #0B0D12;
-  --module-bg: #11141C;
-  --ink: #F1F5F9;
-  --ink-dim: rgba(241, 245, 249, 0.65);
+  --chassis-bg: #050304;
+  --plate-bg: #090405;
+  --module-bg: #100809;
+  --ink: #F5E9EA;
+  --ink-dim: rgba(245, 233, 234, 0.68);
   --candy-red: #FF0A3C;
-  --pro-chrome: #F1F5F9;
+  --candy-crimson: #9E0622;
+  --rust-amber: #B84323;
+  --rust-deep: #7C2A12;
+  --pro-chrome: #F5E9EA;
   --candy-cherry: #FF2E63;
 }
 
@@ -33,129 +42,140 @@ body {
   color: #FFFFFF;
 }
 
-/* Pro Obsidian Titanium Outer Casing with Glossy Candy Red Perimeter LED */
-.cnc-chassis {
+/* Edge-to-Edge Continuous Dark Candy-Gloss & Rust Backdrop (Zero fragmented white lines) */
+.candy-chassis {
   background:
-    repeating-linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.012) 0px,
-      rgba(255, 255, 255, 0.012) 1px,
-      rgba(0, 0, 0, 0.16) 1px,
-      rgba(0, 0, 0, 0.16) 3px
-    ),
-    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 45%),
-    linear-gradient(165deg, #101218 0%, #06070B 52%, #030406 100%);
-  border: 2px solid #FF0A3C;
-  box-shadow:
-    0 0 0 1px rgba(255, 92, 128, 0.44),
-    0 0 22px rgba(255, 10, 60, 0.52),
-    0 0 58px rgba(255, 10, 60, 0.2),
-    inset 0 0 20px rgba(255, 10, 60, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    radial-gradient(circle at 12% 18%, rgba(255, 10, 60, 0.08) 0%, transparent 42%),
+    radial-gradient(circle at 86% 42%, rgba(184, 67, 35, 0.09) 0%, transparent 45%),
+    radial-gradient(circle at 30% 78%, rgba(158, 6, 34, 0.08) 0%, transparent 48%),
+    linear-gradient(180deg, #050304 0%, #090405 48%, #070304 100%);
 }
 
-/* Pro Brushed Dark Titanium Alloy Plate */
+/* Seamless See-Through Section Surface (Zero hard borders or white divider lines) */
+.candy-surface {
+  background: linear-gradient(180deg, rgba(16, 8, 9, 0.44) 0%, rgba(9, 4, 5, 0.28) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 200, 185, 0.04), 0 14px 40px rgba(0, 0, 0, 0.48);
+}
+
+/* Legacy aliases remapped smoothly to seamless Candy-Gloss & Rust surfaces */
+.cnc-chassis {
+  background: #050304;
+}
+
 .cnc-plate {
-  background-color: #0B0D12;
-  background-image:
-    repeating-linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.016) 0px,
-      rgba(255, 255, 255, 0.016) 1px,
-      rgba(0, 0, 0, 0.18) 1px,
-      rgba(0, 0, 0, 0.18) 3px
-    ),
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.07) 0%,
-      rgba(255, 255, 255, 0.01) 36%,
-      rgba(0, 0, 0, 0.36) 100%
-    ),
-    linear-gradient(180deg, #13161E 0%, #0B0D12 52%, #06070A 100%);
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.88),
-    0 0 0 1px #020304,
-    0 12px 28px rgba(0, 0, 0, 0.68);
+  background: linear-gradient(180deg, rgba(16, 8, 9, 0.56) 0%, rgba(9, 4, 5, 0.34) 100%);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
 
-/* Elevated Pro Matte-Black Machined Sub-Module */
 .cnc-module {
-  background-color: #08090C;
-  background-image:
-    repeating-linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.012) 0px,
-      rgba(255, 255, 255, 0.012) 1px,
-      transparent 1px,
-      transparent 3px
-    ),
-    linear-gradient(180deg, #0D0F14 0%, #07080B 55%, #020304 100%);
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.85),
-    0 6px 16px rgba(0, 0, 0, 0.72);
+  background: rgba(16, 8, 9, 0.38);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
 }
 
-/* Deep Recessed Seam Well */
 .cnc-recess {
-  background: linear-gradient(180deg, #020203 0%, #050608 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    inset 0 4px 14px rgba(0, 0, 0, 0.98),
-    inset 0 1px 2px rgba(0, 0, 0, 0.98),
-    0 1px 0 rgba(255, 255, 255, 0.06);
+  background: rgba(8, 3, 4, 0.52);
+  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.85);
 }
 
-/* Pro & Candy Optical Glass Viewport */
+/* Optical Glass Viewport */
 .optical-glass {
   background:
-    radial-gradient(circle at 20% 15%, rgba(255, 10, 60, 0.09) 0%, transparent 45%),
-    radial-gradient(circle at 85% 85%, rgba(241, 245, 249, 0.07) 0%, transparent 45%),
-    radial-gradient(rgba(241, 245, 249, 0.07) 1px, transparent 0),
-    #040507;
-  background-size: 100% 100%, 100% 100%, 28px 28px, 100% 100%;
-  box-shadow:
-    inset 0 0 32px rgba(0, 0, 0, 0.96),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    0 0 22px rgba(255, 10, 60, 0.12);
+    radial-gradient(circle at 20% 15%, rgba(255, 10, 60, 0.11) 0%, transparent 48%),
+    radial-gradient(circle at 85% 85%, rgba(184, 67, 35, 0.1) 0%, transparent 48%),
+    #060304;
+  box-shadow: inset 0 0 36px rgba(0, 0, 0, 0.92);
 }
 
-/* Pro Chrome-Titanium Outer Bezel Ring */
-.machined-ring {
-  background: conic-gradient(
-    from 135deg,
-    #181B22 0deg,
-    #030305 60deg,
-    #252A36 140deg,
-    #000000 225deg,
-    #14161D 310deg,
-    #181B22 360deg
-  );
-  box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.92),
-    inset 0 1px 1px rgba(255, 255, 255, 0.18),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.95);
-}
-
-/* Specular Candy Clear-Coat Glass Reflection over Black Button Centers */
+/* Sculpted Metallic Capsule Sheen */
 .hw-glass-sheen {
   background-image: linear-gradient(
     145deg,
-    rgba(255, 255, 255, 0.11) 0%,
-    rgba(255, 255, 255, 0.02) 38%,
+    rgba(255, 232, 225, 0.18) 0%,
+    rgba(255, 255, 255, 0.03) 38%,
     rgba(0, 0, 0, 0.52) 100%
   );
 }
 
-.capsule-track-housing {
-  background: linear-gradient(180deg, #0D0F14 0%, #040507 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+/* Single See-Through Seamless Tile with Animated Bioluminescent Racing Dot on Hover/Touch */
+.candy-trace-tile {
+  position: relative;
+  border-radius: 14px;
+  background: linear-gradient(155deg, rgba(22, 10, 12, 0.42) 0%, rgba(10, 4, 6, 0.24) 100%);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), background 220ms ease;
+}
+
+.candy-trace-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  opacity: 0;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--trace-angle),
+    transparent 0deg,
+    transparent 292deg,
+    rgba(184, 67, 35, 0.52) 322deg,
+    rgba(255, 10, 60, 0.95) 348deg,
+    #FFF0F3 357deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  transition: opacity 200ms ease;
+}
+
+.candy-trace-tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 92, 120, 0.24);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+
+.candy-trace-tile:hover,
+.candy-trace-tile:focus-visible,
+.candy-trace-tile:active {
+  transform: translateY(-1px);
+  background: linear-gradient(155deg, rgba(32, 12, 15, 0.56) 0%, rgba(14, 6, 8, 0.38) 100%);
+}
+
+.candy-trace-tile:hover::before,
+.candy-trace-tile:focus-visible::before,
+.candy-trace-tile:active::before,
+.candy-trace-tile[data-active='true']::before {
+  opacity: 1;
+  animation: candyPerimeterSweep 2.4s linear infinite;
+}
+
+.candy-trace-tile:hover::after,
+.candy-trace-tile:focus-visible::after,
+.candy-trace-tile:active::after,
+.candy-trace-tile[data-active='true']::after {
+  opacity: 1;
+}
+
+@keyframes candyPerimeterSweep {
+  from {
+    --trace-angle: 0deg;
+  }
+  to {
+    --trace-angle: 360deg;
+  }
+}
+
+.machined-ring {
+  background: linear-gradient(145deg, #2D181A 0%, #090405 55%, #4A2318 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 4px 12px rgba(0, 0, 0, 0.8);
+    0 4px 12px rgba(0, 0, 0, 0.78),
+    inset 0 1px 1px rgba(255, 224, 214, 0.18),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.9);
 }
 
 input[type="range"].hw-capsule-slider {
@@ -166,37 +186,28 @@ input[type="range"].hw-capsule-slider {
 }
 
 input[type="range"].hw-capsule-slider::-webkit-slider-runnable-track {
-  height: 12px;
+  height: 10px;
   border-radius: 9999px;
-  background: linear-gradient(180deg, #050609 0%, #141720 100%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow:
-    inset 0 3px 6px rgba(0, 0, 0, 0.95),
-    0 1px 0 rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, #060304 0%, #1C0D10 100%);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.92);
 }
 
 input[type="range"].hw-capsule-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 22px;
-  height: 22px;
-  margin-top: -6px;
-  border-radius: 7px;
-  background: radial-gradient(circle at 35% 30%, #FFFFFF 0%, #FF8CA1 30%, #FF0A3C 72%, #3D0210 100%);
-  border: 2px solid #E2E8F0;
+  width: 20px;
+  height: 20px;
+  margin-top: -5px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 32% 28%, #FFFFFF 0%, #FF8A9E 28%, #FF0A3C 68%, #7C2A12 100%);
   box-shadow:
-    0 0 14px rgba(255, 10, 60, 0.78),
-    0 2px 6px rgba(0, 0, 0, 0.85),
-    inset 0 1px 2px rgba(255, 255, 255, 0.9);
-  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms ease;
+    0 0 14px rgba(255, 10, 60, 0.75),
+    0 2px 6px rgba(0, 0, 0, 0.85);
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 input[type="range"].hw-capsule-slider:hover::-webkit-slider-thumb {
-  transform: scale(1.08);
-  box-shadow:
-    0 0 22px rgba(255, 10, 60, 0.96),
-    0 2px 8px rgba(0, 0, 0, 0.92),
-    inset 0 1px 2px rgba(255, 255, 255, 0.95);
+  transform: scale(1.1);
 }
 
 @keyframes ledPulse {
@@ -210,14 +221,15 @@ input[type="range"].hw-capsule-slider:hover::-webkit-slider-thumb {
 
 @media (prefers-reduced-motion: reduce) {
   .animate-led-pulse,
-  .animate-spin {
+  .animate-spin,
+  .candy-trace-tile::before {
     animation: none !important;
   }
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 10, 60, 0.38) #07080B;
+  scrollbar-color: rgba(255, 10, 60, 0.38) #070405;
 }
 
 ::-webkit-scrollbar {
@@ -226,16 +238,16 @@ input[type="range"].hw-capsule-slider:hover::-webkit-slider-thumb {
 }
 
 ::-webkit-scrollbar-track {
-  background: #07080B;
+  background: #070405;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(241, 245, 249, 0.28);
-  border-radius: 3px;
+  background: rgba(184, 67, 35, 0.45);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 10, 60, 0.65);
+  background: rgba(255, 10, 60, 0.72);
 }
 
 .hide-scrollbar {

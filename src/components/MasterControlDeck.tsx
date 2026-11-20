@@ -107,12 +107,12 @@ export function MasterControlDeck({
             const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
             onSeek(ratio * effectiveDuration);
           }}
-          className={`relative rounded-[6px] bg-[#040507] border border-white/10 p-2 space-y-1.5 overflow-hidden select-none ${
+          className={`relative rounded-xl bg-[#050304] p-2.5 space-y-1.5 overflow-hidden select-none ${
             hasReadyVideo ? 'cursor-pointer' : 'cursor-default'
           }`}
         >
           {/* Ruler Ticks */}
-          <div className="flex justify-between font-mono text-[9px] text-[#E6ECF5]/40 pb-0.5 border-b border-white/10 tabular-nums">
+          <div className="flex justify-between font-mono text-[9px] text-[#E6ECF5]/40 pb-0.5 tabular-nums">
             <span>00:00</span>
             <span>{formatTime(effectiveDuration * 0.25)}</span>
             <span>{formatTime(effectiveDuration * 0.5)}</span>
@@ -125,13 +125,13 @@ export function MasterControlDeck({
             className="pointer-events-none absolute top-0 bottom-0 w-0.5 bg-[#FF0A3C] z-20 shadow-[0_0_8px_#FF0A3C]"
             style={{ left: `${playheadPct}%` }}
           />
-          <div className="h-5 rounded bg-[#14171F] border border-[#F1F5F9]/25 flex items-center px-2 font-mono text-[10px] text-[#F1F5F9]">
+          <div className="h-5 rounded-lg bg-[#14070B] flex items-center px-2 font-mono text-[10px] text-[#F1F5F9]">
             V1 VIDEO · {hasReadyVideo ? 'Rendered Master Track' : `Armed (${targetSeconds}s @ ${activeFps}fps)`}
           </div>
-          <div className="h-4 rounded bg-[#180A12] border border-[#FF2E63]/35 flex items-center px-2 font-mono text-[10px] text-[#FF5C8A]">
+          <div className="h-4 rounded-lg bg-[#1D090F] flex items-center px-2 font-mono text-[10px] text-[#FF5C8A]">
             FX GRADE · {activeStyleLabel}
           </div>
-          <div className="h-4 rounded bg-[#101218] border border-white/15 flex items-center px-2 font-mono text-[10px] text-[#E6ECF5]/70">
+          <div className="h-4 rounded-lg bg-[#0D0507] flex items-center px-2 font-mono text-[10px] text-[#E6ECF5]/70">
             A1 AUDIO · 44.1 kHz Stereo Sync Bed
           </div>
         </div>
@@ -209,7 +209,7 @@ export function MasterControlDeck({
           <span className="font-mono text-[10px] uppercase tracking-wider text-[#E6ECF5]/60 shrink-0">
             Progress
           </span>
-          <div className="flex-1 h-2.5 rounded-full bg-[#050609] border border-white/10 overflow-hidden shadow-inner">
+          <div className="flex-1 h-2.5 rounded-full bg-[#050304] overflow-hidden shadow-inner">
             <div
               className="h-full bg-gradient-to-r from-[#FF1E42] via-[#FF2E63] to-[#F1F5F9] transition-all duration-200"
               style={{

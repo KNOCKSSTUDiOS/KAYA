@@ -213,7 +213,7 @@ export function StudioGatesGallery({
               className="text-sm sm:text-base font-bold uppercase tracking-[0.16em] text-white"
               style={{ fontFamily: 'var(--font-display)' }}
             >
-              Page 02 · KAYA Studio Gates &amp; 4-Tile Gallery
+              KAYA Studio Gates &amp; Lineup
             </h2>
           </div>
 
@@ -239,11 +239,11 @@ export function StudioGatesGallery({
               aria-label="Previous 4 studio tiles"
             >
               <ChevronLeft className="w-4 h-4 text-[#F1F5F9]" />
-              <span>Left</span>
+              <span>Prev</span>
             </HardwareButton>
 
             <span className="font-mono text-xs text-[#E6ECF5]/70 tabular-nums px-1">
-              Deck {galleryDeck + 1} / 3 · 4 Tiles
+              Deck {galleryDeck + 1} / 3
             </span>
 
             <HardwareButton
@@ -254,50 +254,43 @@ export function StudioGatesGallery({
               disabled={galleryDeck === 2}
               aria-label="Next 4 studio tiles"
             >
-              <span>Right</span>
+              <span>Next</span>
               <ChevronRight className="w-4 h-4 text-[#FF5C8A]" />
             </HardwareButton>
           </div>
         </div>
 
-        {/* 2x2 FOUR-TILE FULL-TILE STUDIO GALLERY */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+        {/* SEAMLESS SINGLE-TILE 4-UP STUDIO GALLERY (ONE TILE PER ITEM) */}
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-3.5 flex-1">
           {visibleTiles.map((tile) => {
             const isSelected = activeTool === tile.id;
-            const borderTone =
-              tile.tone === 'red'
-                ? 'border-[#FF1E42]/55 hover:border-[#FF1E42]'
-                : tile.tone === 'magenta'
-                ? 'border-[#FF2E63]/55 hover:border-[#FF2E63]'
-                : 'border-[#F1F5F9]/50 hover:border-[#F1F5F9]';
 
             return (
               <button
                 key={tile.id}
                 type="button"
                 onClick={() => onSelectTool(tile.id)}
-                className={`group relative cnc-module rounded-[10px] p-4 sm:p-5 text-left flex flex-col justify-between min-h-[215px] overflow-hidden border transition-all duration-200 cursor-pointer ${borderTone} ${
-                  isSelected ? 'ring-1 ring-[#F1F5F9] shadow-[0_0_24px_rgba(255, 10, 60,0.22)]' : ''
+                className={`group relative candy-trace-tile rounded-xl p-4 sm:p-5 text-left flex flex-col justify-between min-h-[190px] cursor-pointer ${
+                  isSelected ? 'shadow-[0_0_24px_rgba(255,10,60,0.22)] bg-[#14070B]/70' : ''
                 }`}
               >
-                {/* Live Asset Preview Strip for Photo/Video Tiles */}
                 {tile.previewImage && (
                   <img
                     src={tile.previewImage}
                     alt={tile.title}
-                    className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 group-hover:scale-105 transition-all duration-500"
+                    className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-18 group-hover:opacity-28 group-hover:scale-105 transition-all duration-500 rounded-xl"
                   />
                 )}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#030406] via-[#06070B]/80 to-transparent"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#050304]/95 via-[#090405]/75 to-transparent rounded-xl"
                 />
 
                 <div className="relative z-10 flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-[6px] cnc-recess flex items-center justify-center border border-white/15">
+                    <span className="w-8 h-8 rounded-full candy-surface flex items-center justify-center">
                       {tile.icon}
-                    </div>
+                    </span>
                     <div>
                       <span className="font-mono text-[10px] uppercase tracking-widest text-[#E6ECF5]/50 block">
                         Station {tile.index}
@@ -312,23 +305,16 @@ export function StudioGatesGallery({
                   </div>
 
                   <span className="inline-flex items-center gap-1 font-mono text-[11px] text-[#F1F5F9] group-hover:translate-x-0.5 transition-transform">
-                    <span>Launch</span>
+                    <span>Open</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </div>
 
-                <div className="relative z-10 space-y-2.5 mt-4">
-                  <p className="text-xs text-[#E6ECF5]/75">{tile.subtitle}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {tile.specs.map((spec) => (
-                      <span
-                        key={spec}
-                        className="px-2 py-0.5 rounded-[4px] bg-[#040507]/90 border border-white/12 font-mono text-[10px] text-[#E6ECF5]/80 tabular-nums"
-                      >
-                        {spec}
-                      </span>
-                    ))}
-                  </div>
+                <div className="relative z-10 space-y-1.5 mt-3">
+                  <p className="text-xs text-[#E6ECF5]/80">{tile.subtitle}</p>
+                  <p className="font-mono text-[10px] text-[#FF8C69]/80 tabular-nums">
+                    {tile.specs.join(' · ')}
+                  </p>
                 </div>
               </button>
             );
@@ -336,10 +322,9 @@ export function StudioGatesGallery({
         </div>
 
         {/* HEAVY OBSIDIAN BLACK GRADE-7 TITANIUM ENTRANCE GATES OVERLAY */}
-        {/* Left Gate Wing */}
         <div
           aria-hidden={gatesOpen}
-          className={`pointer-events-none absolute inset-y-0 left-0 w-1/2 z-30 cnc-chassis border-r-2 border-[#FF1E42] flex items-center justify-end pr-5 transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`pointer-events-none absolute inset-y-0 left-0 w-1/2 z-30 candy-chassis flex items-center justify-end pr-5 transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             gatesOpen ? '-translate-x-full' : 'translate-x-0'
           }`}
         >
@@ -356,10 +341,9 @@ export function StudioGatesGallery({
           </div>
         </div>
 
-        {/* Right Gate Wing */}
         <div
           aria-hidden={gatesOpen}
-          className={`pointer-events-none absolute inset-y-0 right-0 w-1/2 z-30 cnc-chassis border-l-2 border-[#FF1E42] flex items-center justify-start pl-5 transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`pointer-events-none absolute inset-y-0 right-0 w-1/2 z-30 candy-chassis flex items-center justify-start pl-5 transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             gatesOpen ? 'translate-x-full' : 'translate-x-0'
           }`}
         >
@@ -376,7 +360,6 @@ export function StudioGatesGallery({
           </div>
         </div>
 
-        {/* Center Gate Unlock Button when manually sealed */}
         {!gatesOpen && (
           <div className="absolute inset-0 z-40 flex items-center justify-center">
             <HardwareButton tone="red" size="lg" active onClick={() => setGatesOpen(true)}>

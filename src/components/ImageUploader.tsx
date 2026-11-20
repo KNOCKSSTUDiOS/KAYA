@@ -107,8 +107,8 @@ export function ImageUploader({
         </div>
       </div>
 
-      {/* Recessed Industrial Asset Matrix */}
-      <div className="cnc-recess rounded-[8px] p-3">
+      {/* Seamless Candy-Gloss Asset Matrix */}
+      <div className="candy-surface rounded-xl p-3">
         <div
           className={`grid grid-cols-2 sm:grid-cols-3 gap-2.5 ${
             suggestions.length >= 5 ? 'xl:grid-cols-6' : 'xl:grid-cols-5'
@@ -122,45 +122,39 @@ export function ImageUploader({
                 onClick={() => handleChipClick(item)}
                 disabled={disabled}
                 type="button"
-                className={`group relative flex flex-col p-[2px] rounded-[8px] bg-gradient-to-b text-left transition-all duration-150 active:translate-y-[1px] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#F1F5F9] disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isItemActive
-                    ? type === 'product'
-                      ? 'from-[#F1F5F9]/80 via-[#08222B] to-[#020406] shadow-[0_0_16px_rgba(255, 10, 60,0.28)]'
-                      : 'from-[#FF2E63]/80 via-[#280B22] to-[#040205] shadow-[0_0_16px_rgba(255, 46, 99,0.28)]'
-                    : 'from-[#16181F] via-[#07080B] to-[#000000] hover:from-[#222631]'
+                className={`group relative candy-trace-tile flex flex-col rounded-xl text-left p-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isItemActive ? 'bg-[#19060C]/80 shadow-[0_0_16px_rgba(255,10,60,0.28)]' : ''
                 }`}
               >
-                <div className="w-full h-full rounded-[6px] bg-[#040507] hw-glass-sheen p-2 flex flex-col">
-                  <div className="relative w-full aspect-[4/3] rounded-[4px] overflow-hidden bg-[#020203] border border-white/10 mb-2">
-                    <img
-                      src={item.image}
-                      alt={item.label}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                    {isItemActive && (
-                      <span
-                        className="absolute top-1.5 right-1.5 w-5 h-5 rounded-[5px] p-[1px] bg-gradient-to-b from-white/50 to-black/60 shadow-md flex items-center justify-center"
-                        style={{ backgroundColor: accentHex }}
-                        aria-label="Selected"
-                      >
-                        <Check className="w-3 h-3 stroke-[3] text-[#020203]" />
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between gap-1.5">
-                    <span className={`text-xs font-medium truncate ${isItemActive ? 'text-white' : 'text-[#E6ECF5]/85'}`}>
-                      {item.label}
-                    </span>
+                <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-[#050304] mb-2">
+                  <img
+                    src={item.image}
+                    alt={item.label}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  />
+                  {isItemActive && (
                     <span
-                      aria-hidden="true"
-                      className="w-2 h-2 rounded-[2px] shrink-0 transition-colors"
-                      style={{
-                        backgroundColor: isItemActive ? accentHex : '#0A0B0E',
-                        boxShadow: isItemActive ? `0 0 8px ${accentHex}` : 'none',
-                      }}
-                    />
-                  </div>
+                      className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow-md"
+                      style={{ backgroundColor: accentHex }}
+                      aria-label="Selected"
+                    >
+                      <Check className="w-3 h-3 stroke-[3] text-[#050304]" />
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-1.5 px-0.5">
+                  <span className={`text-xs font-medium truncate ${isItemActive ? 'text-white' : 'text-[#E6ECF5]/85'}`}>
+                    {item.label}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="w-2 h-2 rounded-full shrink-0 transition-colors"
+                    style={{
+                      backgroundColor: isItemActive ? accentHex : '#1A0B0E',
+                      boxShadow: isItemActive ? `0 0 8px ${accentHex}` : 'none',
+                    }}
+                  />
                 </div>
               </button>
             );
@@ -175,34 +169,28 @@ export function ImageUploader({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
               }}
-              className={`relative group flex flex-col p-[2px] rounded-[8px] bg-gradient-to-b text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-[#F1F5F9] ${
-                type === 'product'
-                  ? 'from-[#F1F5F9]/80 via-[#08222B] to-[#020406] shadow-[0_0_16px_rgba(255, 10, 60,0.28)]'
-                  : 'from-[#FF2E63]/80 via-[#280B22] to-[#040205] shadow-[0_0_16px_rgba(255, 46, 99,0.28)]'
-              }`}
+              className="relative group candy-trace-tile flex flex-col rounded-xl text-left p-2 cursor-pointer bg-[#19060C]/80 shadow-[0_0_16px_rgba(255,10,60,0.28)]"
             >
-              <div className="w-full h-full rounded-[6px] bg-[#040507] hw-glass-sheen p-2 flex flex-col">
-                <div className="relative w-full aspect-[4/3] rounded-[4px] overflow-hidden bg-[#020203] border border-white/10 mb-2">
-                  <img
-                    src={selection.images[0]}
-                    alt={selection.description}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover"
-                  />
-                  {!disabled && (
-                    <button
-                      type="button"
-                      onClick={handleClear}
-                      aria-label="Remove uploaded image"
-                      title="Remove custom image"
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-[5px] bg-[#020203]/95 hover:bg-[#FF1E42] border border-white/25 text-white flex items-center justify-center transition-colors cursor-pointer"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-                <span className="text-xs font-medium text-white truncate">Custom Input</span>
+              <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-[#050304] mb-2">
+                <img
+                  src={selection.images[0]}
+                  alt={selection.description}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
+                />
+                {!disabled && (
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    aria-label="Remove uploaded image"
+                    title="Remove custom image"
+                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-[#050304]/90 hover:bg-[#FF0A3C] text-white flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
+              <span className="text-xs font-medium text-white truncate px-0.5">Custom Input</span>
             </div>
           ) : (
             <div
@@ -222,13 +210,11 @@ export function ImageUploader({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
               }}
-              className={`flex flex-col items-center justify-center p-3 rounded-[8px] text-center border border-dashed transition-all cursor-pointer min-h-[112px] focus-visible:outline-2 focus-visible:outline-[#F1F5F9] ${
-                dragging
-                  ? 'border-[#F1F5F9] bg-[#F1F5F9]/10 shadow-[0_0_14px_rgba(255, 10, 60,0.2)]'
-                  : 'border-white/20 hover:border-[#F1F5F9]/60 bg-[#040507] hover:bg-[#080A0E]'
+              className={`flex flex-col items-center justify-center p-3 rounded-xl text-center candy-trace-tile cursor-pointer min-h-[112px] ${
+                dragging ? 'bg-[#FF0A3C]/15 shadow-[0_0_14px_rgba(255,10,60,0.25)]' : ''
               }`}
             >
-              <div className="w-8 h-8 rounded-[6px] cnc-module flex items-center justify-center mb-2 text-[#E6ECF5]/80">
+              <div className="w-8 h-8 rounded-full candy-surface flex items-center justify-center mb-2 text-[#E6ECF5]/80">
                 <Upload className="w-4 h-4" />
               </div>
               <span className="text-xs font-medium text-[#E6ECF5]">Upload Image</span>

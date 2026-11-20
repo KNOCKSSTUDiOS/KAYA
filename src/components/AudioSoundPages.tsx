@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Square, Download, Volume2, Waves, Upload, ShieldCheck } from 'lucide-react';
 import { PlateBezel, HardwareButton, LedStatusIndicator } from './HardwarePrimitives.js';
+import { UNIFIED_WATERMARK_TEXT, getUnifiedWatermarkLabel } from '../lib/watermarkEngine.js';
 
 interface WavCopyrightMeta {
   copyright?: string;
@@ -107,11 +108,11 @@ export function AudioStudioPage() {
   const [playing, setPlaying] = useState(false);
   const [loadedAudioUrl, setLoadedAudioUrl] = useState<string | null>(null);
   const [loadedName, setLoadedName] = useState<string>('');
-  const [copyrightOwner, setCopyrightOwner] = useState('KAYA™ Music Publishing');
+  const [copyrightOwner, setCopyrightOwner] = useState('VORTEX · KAYA™');
   const [watermarkStamp, setWatermarkStamp] = useState(true);
   const [acousticBeacon, setAcousticBeacon] = useState(true);
   const [stampCode] = useState(() => `KY-2024-2026-${Math.floor(1000 + Math.random() * 8999)}`);
-  const [statusText, setStatusText] = useState('© 2024–2026 Music Master & Watermark Ready');
+  const [statusText, setStatusText] = useState(`${UNIFIED_WATERMARK_TEXT} Acoustic Master Ready`);
   const beatTimerRef = useRef<number>(0);
 
   const stopAudio = () => {
@@ -325,18 +326,18 @@ export function AudioStudioPage() {
         <LedStatusIndicator label={statusText} tone={playing || beatActive ? 'red' : 'cyan'} pulse={playing || beatActive} />
       </div>
 
-      {/* Real-time Spectrum Analyzer Canvas + Music Copyright Watermark Stamp */}
-      <div className="cnc-recess rounded-[10px] p-2 relative">
+      {/* Real-time Spectrum Analyzer Canvas + Single Unified Watermark Stamp */}
+      <div className="candy-surface rounded-xl p-2 relative">
         <canvas
           ref={canvasRef}
           width={960}
           height={200}
-          className="w-full h-[180px] rounded-[7px] bg-[#040507] border border-white/10"
+          className="w-full h-[180px] rounded-lg bg-[#050304]"
         />
         {watermarkStamp && (
-          <div className="pointer-events-none absolute bottom-4 right-4 px-3 py-1.5 rounded-[6px] bg-black/80 border border-[#FF1E42]/50 font-mono text-[10px] tracking-widest uppercase text-[#FF9BAE] flex items-center gap-1.5 shadow-[0_0_16px_rgba(255,30,66,0.28)]">
+          <div className="pointer-events-none absolute bottom-4 right-4 px-3 py-1 rounded-full bg-[#050304]/85 font-mono text-[10px] tracking-widest uppercase text-[#FF9BAE] flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-[#FF3B5C]" />
-            <span>© 2024–2026 {copyrightOwner || 'KAYA™'} · {stampCode}</span>
+            <span>{getUnifiedWatermarkLabel(copyrightOwner, stampCode)}</span>
           </div>
         )}
       </div>
@@ -442,7 +443,7 @@ export function AudioStudioPage() {
             </HardwareButton>
           </div>
 
-          <label className="inline-flex items-center gap-2 px-3 py-2 rounded-[7px] bg-[#020203] hover:bg-[#080A0E] border border-white/20 font-mono text-xs text-[#E6ECF5] cursor-pointer">
+          <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full candy-surface font-mono text-xs text-[#E6ECF5] cursor-pointer hover:bg-[#19060C]/80">
             <Upload className="w-3.5 h-3.5 text-[#F1F5F9]" />
             <span className="truncate">{loadedName ? `Loaded: ${loadedName}` : 'Load Local Audio Track…'}</span>
             <input
@@ -524,7 +525,7 @@ export function AudioStudioPage() {
             value={copyrightOwner}
             onChange={(e) => setCopyrightOwner(e.target.value)}
             placeholder="Rights Holder / Label Name…"
-            className="w-full bg-[#040507] border border-white/15 rounded-[6px] px-3 py-2 font-mono text-xs text-white focus:outline-none focus:border-[#F1F5F9]"
+            className="w-full bg-[#050304] border border-[#B84323]/30 rounded-full px-3.5 py-2 font-mono text-xs text-white focus:outline-none focus:border-[#FF0A3C]"
           />
           <HardwareButton
             size="sm"

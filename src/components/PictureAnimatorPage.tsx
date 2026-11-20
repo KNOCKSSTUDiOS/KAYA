@@ -272,20 +272,20 @@ export function PictureAnimatorPage({
       </div>
 
       {/* Live 60fps Animator Viewport */}
-      <div className="cnc-recess rounded-[10px] p-2">
+      <div className="candy-surface rounded-xl p-2">
         <canvas
           ref={canvasRef}
           width={960}
           height={540}
-          className="w-full aspect-video max-h-[420px] rounded-[7px] bg-black border border-white/10"
+          className="w-full aspect-video max-h-[420px] rounded-lg bg-[#050304]"
         />
       </div>
 
       {/* Upload Custom Hero / Opponent Pictures */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <label className="cnc-recess rounded-[8px] p-3 flex items-center justify-between gap-3 border border-white/15 hover:border-[#F1F5F9] cursor-pointer">
+        <label className="candy-trace-tile rounded-xl p-3 flex items-center justify-between gap-3 cursor-pointer">
           <div className="flex items-center gap-3 min-w-0">
-            <img src={heroUrl} alt="Lead Subject" className="w-12 h-12 rounded-[6px] object-cover border border-white/15 shrink-0" />
+            <img src={heroUrl} alt="Lead Subject" className="w-12 h-12 rounded-lg object-cover shrink-0" />
             <div className="min-w-0">
               <span className="font-mono text-xs font-bold text-[#F1F5F9] block">Lead Picture / Character</span>
               <span className="font-mono text-[11px] text-[#E6ECF5]/60 truncate block">Upload any photo or artwork…</span>
@@ -303,9 +303,9 @@ export function PictureAnimatorPage({
           />
         </label>
 
-        <label className="cnc-recess rounded-[8px] p-3 flex items-center justify-between gap-3 border border-white/15 hover:border-[#FF1E42] cursor-pointer">
+        <label className="candy-trace-tile rounded-xl p-3 flex items-center justify-between gap-3 cursor-pointer">
           <div className="flex items-center gap-3 min-w-0">
-            <img src={challengerUrl} alt="Opponent Character" className="w-12 h-12 rounded-[6px] object-cover border border-white/15 shrink-0" />
+            <img src={challengerUrl} alt="Opponent Character" className="w-12 h-12 rounded-lg object-cover shrink-0" />
             <div className="min-w-0">
               <span className="font-mono text-xs font-bold text-[#FF3B5C] block">Challenger / Co-Star Photo</span>
               <span className="font-mono text-[11px] text-[#E6ECF5]/60 truncate block">Upload 2nd fighter or buddy…</span>
