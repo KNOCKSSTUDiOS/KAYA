@@ -230,15 +230,18 @@ export const RENDER_STYLE_PRESETS: {
 ];
 
 export interface CompositionConfig {
-  productUrl: string;
+  productUrl?: string;
   transparentProductUrl?: string;
-  atmosphereUrl: string;
+  atmosphereUrl?: string;
   durationSec: number;
   resolution: ResolutionKey;
   hdrGrade: HDRGradeKey;
   fps?: FPSKey;
   renderStyle?: RenderStyleKey;
   cameraMotion?: CameraMotionKey;
+  lensFocalMm?: number;
+  shutterAngleDeg?: number;
+  grainLevel?: number;
   exposure?: number;
   contrast?: number;
   saturation?: number;
@@ -246,14 +249,17 @@ export interface CompositionConfig {
 }
 
 interface RenderOptions {
-  productUrl: string;
-  atmosphereUrl: string;
+  productUrl?: string;
+  atmosphereUrl?: string;
   durationSec: number;
   resolution?: ResolutionKey;
   hdrGrade?: HDRGradeKey;
   fps?: FPSKey;
   renderStyle?: RenderStyleKey;
   cameraMotion?: CameraMotionKey;
+  lensFocalMm?: number;
+  shutterAngleDeg?: number;
+  grainLevel?: number;
   instructions?: string;
   onProgress?: (progress: number, logMessage: string) => void;
 }
@@ -261,11 +267,22 @@ interface RenderOptions {
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    if (/^https?:\/\//i.test(src) && typeof window !== 'undefined' && !src.startsWith(window.location.origin)) {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error('Failed to load image asset for rendering'));
     img.src = src;
   });
+}
+
+export async function loadOptionalImage(src?: string): Promise<HTMLImageElement | null> {
+  if (!src || !src.trim()) return null;
+  try {
+    return await loadImage(src);
+  } catch {
+    return null;
+  }
 }
 
 function createSoftShadowSprite(w: number, h: number): HTMLCanvasElement {
@@ -609,13 +626,16 @@ interface FrameDrawParams {
   height: number;
   t: number;
   frameIndex: number;
-  productSource: HTMLImageElement | HTMLCanvasElement;
+  productSource: HTMLImageElement | HTMLCanvasElement | null;
   atmoImg: HTMLImageElement | null;
   shadowSprite: HTMLCanvasElement;
   flareSprite: HTMLCanvasElement;
   hdrGrade: HDRGradeKey;
   renderStyle: RenderStyleKey;
   cameraMotion?: CameraMotionKey;
+  lensFocalMm?: number;
+  shutterAngleDeg?: number;
+  grainLevel?: number;
   exposure?: number;
   contrast?: number;
   saturation?: number;
@@ -638,6 +658,9 @@ function drawCompositionFrame(params: FrameDrawParams) {
     hdrGrade,
     renderStyle,
     cameraMotion = 'orbit',
+    lensFocalMm = 35,
+    shutterAngleDeg = 180,
+    grainLevel = 0.2,
     exposure = 1,
     contrast = 1,
     saturation = 1,
@@ -647,10 +670,10 @@ function drawCompositionFrame(params: FrameDrawParams) {
   } = params;
 
   const lowerInstructions = instructions.toLowerCase();
-  const isWarmer = lowerInstructions.includes('warm') || lowerInstructions.includes('golden') || lowerInstructions.includes('sun');
-  const isCooler = lowerInstructions.includes('cool') || lowerInstructions.includes('blue') || lowerInstructions.includes('silver');
-  const isDramatic = lowerInstructions.includes('dramatic') || lowerInstructions.includes('contrast') || lowerInstructions.includes('dark');
-  const isFast = lowerInstructions.includes('fast') || lowerInstructions.includes('rapid') || lowerInstructions.includes('quick');
+  const isWarmer = lowerInstructions.includes('warm') || lowerInstructions.includes('golden') || lowerInstructions.includes('sun') || lowerInstructions.includes('fire');
+  const isCooler = lowerInstructions.includes('cool') || lowerInstructions.includes('blue') || lowerInstructions.includes('silver') || lowerInstructions.includes('rain');
+  const isDramatic = lowerInstructions.includes('dramatic') || lowerInstructions.includes('contrast') || lowerInstructions.includes('dark') || lowerInstructions.includes('noir');
+  const isFast = lowerInstructions.includes('fast') || lowerInstructions.includes('rapid') || lowerInstructions.includes('quick') || lowerInstructions.includes('action');
 
   const isHDR = hdrGrade !== 'standard';
   const isUltra = hdrGrade === 'ultra_cinemax';
@@ -661,37 +684,40 @@ function drawCompositionFrame(params: FrameDrawParams) {
       : '';
   const styleFilter = `${baseStyleFilter}${customTune}`.trim();
 
-  let camScale = 1.0;
+  const focalZoom = Math.max(0.88, Math.min(1.38, 0.92 + (lensFocalMm - 24) * 0.0045));
+  const shutterFactor = Math.max(0.6, Math.min(1.4, shutterAngleDeg / 180));
+
+  let camScale = 1.0 * focalZoom;
   let camOffsetX = 0;
   let camOffsetY = 0;
-  const lightAngle = t * Math.PI * 2 * (isFast ? 2 : 1);
+  const lightAngle = t * Math.PI * 2 * (isFast ? 2 : 1) * shutterFactor;
 
   if (cameraMotion === 'dolly') {
-    camScale = 1.02 + 0.24 * Math.sin(t * Math.PI);
+    camScale = (1.02 + 0.24 * Math.sin(t * Math.PI)) * focalZoom;
     camOffsetX = 0;
-    camOffsetY = -height * 0.012 * t;
+    camOffsetY = -height * 0.014 * t;
   } else if (cameraMotion === 'crane') {
-    camScale = 1.15 - 0.1 * Math.cos(t * Math.PI);
+    camScale = (1.15 - 0.1 * Math.cos(t * Math.PI)) * focalZoom;
     camOffsetX = Math.sin(t * Math.PI) * (width * 0.024);
     camOffsetY = (0.5 - t) * (height * 0.045);
   } else if (cameraMotion === 'handheld') {
-    camScale = 1.1 + Math.sin(t * Math.PI * 6) * 0.025;
+    camScale = (1.1 + Math.sin(t * Math.PI * 6) * 0.025) * focalZoom;
     camOffsetX = Math.sin(t * Math.PI * 10) * (width * 0.015);
     camOffsetY = Math.cos(t * Math.PI * 8) * (height * 0.015);
   } else if (t < 0.4) {
     const p1 = t / 0.4;
     const ease = 1 - Math.pow(1 - p1, 3);
-    camScale = 1.04 + 0.13 * ease;
+    camScale = (1.04 + 0.13 * ease) * focalZoom;
     camOffsetX = Math.sin(p1 * Math.PI) * (width * 0.018);
     camOffsetY = Math.cos(p1 * Math.PI * 0.5) * (height * 0.014);
   } else if (t < 0.72) {
     const p2 = (t - 0.4) / 0.32;
-    camScale = 1.17 + 0.07 * Math.sin(p2 * Math.PI);
+    camScale = (1.17 + 0.07 * Math.sin(p2 * Math.PI)) * focalZoom;
     camOffsetX = (p2 - 0.5) * (width * 0.032);
     camOffsetY = -(height * 0.018) + Math.sin(p2 * Math.PI) * (height * 0.018);
   } else {
     const p3 = (t - 0.72) / 0.28;
-    camScale = 1.17 - 0.07 * p3;
+    camScale = (1.17 - 0.07 * p3) * focalZoom;
     camOffsetX = Math.sin(p3 * Math.PI * 2) * (width * 0.006);
     camOffsetY = 0;
   }
@@ -705,7 +731,7 @@ function drawCompositionFrame(params: FrameDrawParams) {
   if (transparentBackground) {
     ctx.clearRect(0, 0, width, height);
   } else {
-    ctx.fillStyle = '#050609';
+    ctx.fillStyle = '#050304';
     ctx.fillRect(0, 0, width, height);
 
     if (atmoImg) {
@@ -713,7 +739,7 @@ function drawCompositionFrame(params: FrameDrawParams) {
       if (styleFilter) ctx.filter = styleFilter;
       ctx.translate(width / 2, height / 2);
       ctx.scale(camScale * 1.05, camScale * 1.05);
-      ctx.translate(-width / 2 + camOffsetX * 0.28, -height / 2 + camOffsetY * 0.28);
+      ctx.translate(-width / 2 + camOffsetX * 0.35, -height / 2 + camOffsetY * 0.35);
 
       const atmoAspect = atmoImg.naturalWidth / atmoImg.naturalHeight;
       const canvasAspect = width / height;
@@ -730,6 +756,32 @@ function drawCompositionFrame(params: FrameDrawParams) {
         drawY = (height - drawH) / 2;
       }
       ctx.drawImage(atmoImg, drawX, drawY, drawW, drawH);
+      ctx.restore();
+    } else {
+      // Prompt-Driven Pure Cinema Dynamic Volumetric Atmosphere (no floating cutout required)
+      ctx.save();
+      if (styleFilter) ctx.filter = styleFilter;
+      const bgGrad = ctx.createLinearGradient(0, 0, width, height);
+      bgGrad.addColorStop(0, isCooler ? '#040812' : '#080305');
+      bgGrad.addColorStop(0.5, isWarmer ? '#281008' : '#19050B');
+      bgGrad.addColorStop(1, '#040203');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Moving horizon & volumetric bokeh field reactive to prompt + shutter
+      ctx.globalCompositeOperation = 'screen';
+      for (let i = 0; i < 28; i++) {
+        const px = ((i * 211 + t * width * (0.4 + (i % 5) * 0.12)) % (width + 120)) - 60;
+        const py = ((i * 137 + Math.sin(t * Math.PI * 2 + i) * height * 0.14 + height) % height);
+        const rad = (width * 0.008) * (1 + (i % 4) * 0.9);
+        const pGrad = ctx.createRadialGradient(px, py, 1, px, py, rad);
+        pGrad.addColorStop(0, i % 3 === 0 ? 'rgba(255, 10, 60, 0.52)' : i % 3 === 1 ? 'rgba(224, 104, 68, 0.45)' : 'rgba(245, 233, 234, 0.35)');
+        pGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = pGrad;
+        ctx.beginPath();
+        ctx.arc(px, py, rad, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
     }
 
@@ -755,51 +807,52 @@ function drawCompositionFrame(params: FrameDrawParams) {
     }
   }
 
-  // Contact shadow
-  if (!transparentBackground || includeShadow) {
+  // Optional Foreground Asset / Frame Plate (only rendered when user explicitly supplies a foreground plate!)
+  if (productSource) {
+    if (!transparentBackground || includeShadow) {
+      ctx.save();
+      const shadowOsc = 1 + 0.04 * Math.sin(t * Math.PI * 4);
+      const sw = shadowSprite.width * shadowOsc;
+      const sh = shadowSprite.height * shadowOsc;
+      const sx = width / 2 + camOffsetX * 0.85 - sw / 2;
+      const sy = height * 0.80 + camOffsetY * 0.85 - sh / 2;
+      if (transparentBackground) ctx.globalAlpha = 0.55;
+      ctx.drawImage(shadowSprite, sx, sy, sw, sh);
+      ctx.restore();
+    }
+
     ctx.save();
-    const shadowOsc = 1 + 0.04 * Math.sin(t * Math.PI * 4);
-    const sw = shadowSprite.width * shadowOsc;
-    const sh = shadowSprite.height * shadowOsc;
-    const sx = width / 2 + camOffsetX * 0.85 - sw / 2;
-    const sy = height * 0.80 + camOffsetY * 0.85 - sh / 2;
-    if (transparentBackground) ctx.globalAlpha = 0.55;
-    ctx.drawImage(shadowSprite, sx, sy, sw, sh);
+    if (styleFilter) ctx.filter = styleFilter;
+    ctx.translate(width / 2, height / 2);
+    ctx.scale(camScale * morphScaleX, camScale * morphScaleY);
+    ctx.translate(-width / 2 + camOffsetX, -height / 2 + camOffsetY);
+
+    const srcW = productSource instanceof HTMLImageElement ? productSource.naturalWidth : productSource.width;
+    const srcH = productSource instanceof HTMLImageElement ? productSource.naturalHeight : productSource.height;
+    const prodAspect = Math.max(0.1, srcW / Math.max(1, srcH));
+    const maxProdH = height * 0.70;
+    const maxProdW = width * 0.52;
+    let pW = maxProdW;
+    let pH = maxProdW / prodAspect;
+    if (pH > maxProdH) {
+      pH = maxProdH;
+      pW = maxProdH * prodAspect;
+    }
+    const pX = (width - pW) / 2;
+    const pY = (height - pH) / 2 + height * 0.015 + Math.sin(t * Math.PI * 2) * (height * 0.008);
+
+    if (!transparentBackground || includeShadow) {
+      ctx.shadowColor = renderStyle === '3d_scifi'
+        ? 'rgba(255, 10, 60, 0.35)'
+        : renderStyle === '3d_cyberpunk'
+        ? 'rgba(255, 46, 99, 0.42)'
+        : 'rgba(0, 0, 0, 0.55)';
+      ctx.shadowBlur = Math.round(height * 0.035);
+      ctx.shadowOffsetY = Math.round(height * 0.018);
+    }
+    ctx.drawImage(productSource, pX, pY, pW, pH);
     ctx.restore();
   }
-
-  // Hero Subject Foreground
-  ctx.save();
-  if (styleFilter) ctx.filter = styleFilter;
-  ctx.translate(width / 2, height / 2);
-  ctx.scale(camScale * morphScaleX, camScale * morphScaleY);
-  ctx.translate(-width / 2 + camOffsetX, -height / 2 + camOffsetY);
-
-  const srcW = productSource instanceof HTMLImageElement ? productSource.naturalWidth : productSource.width;
-  const srcH = productSource instanceof HTMLImageElement ? productSource.naturalHeight : productSource.height;
-  const prodAspect = Math.max(0.1, srcW / Math.max(1, srcH));
-  const maxProdH = height * 0.70;
-  const maxProdW = width * 0.52;
-  let pW = maxProdW;
-  let pH = maxProdW / prodAspect;
-  if (pH > maxProdH) {
-    pH = maxProdH;
-    pW = maxProdH * prodAspect;
-  }
-  const pX = (width - pW) / 2;
-  const pY = (height - pH) / 2 + height * 0.015 + Math.sin(t * Math.PI * 2) * (height * 0.008);
-
-  if (!transparentBackground || includeShadow) {
-    ctx.shadowColor = renderStyle === '3d_scifi'
-      ? 'rgba(255, 10, 60, 0.35)'
-      : renderStyle === '3d_cyberpunk'
-      ? 'rgba(255, 46, 99, 0.42)'
-      : 'rgba(0, 0, 0, 0.55)';
-    ctx.shadowBlur = Math.round(height * 0.035);
-    ctx.shadowOffsetY = Math.round(height * 0.018);
-  }
-  ctx.drawImage(productSource, pX, pY, pW, pH);
-  ctx.restore();
 
   if (!transparentBackground) {
     // Volumetric Key Light Sweep
@@ -863,9 +916,10 @@ function drawCompositionFrame(params: FrameDrawParams) {
     ctx.fillRect(0, 0, width, height);
     ctx.restore();
 
-    // Subtle Cinema Sensor Micro-Grain
+    // Calibrated Cinema Sensor Grain
+    const gAlpha = Math.max(0.006, Math.min(0.06, grainLevel * 0.06));
     ctx.save();
-    ctx.fillStyle = frameIndex % 2 === 0 ? 'rgba(255, 255, 255, 0.012)' : 'rgba(0, 0, 0, 0.012)';
+    ctx.fillStyle = frameIndex % 2 === 0 ? `rgba(255, 255, 255, ${gAlpha})` : `rgba(0, 0, 0, ${gAlpha})`;
     ctx.fillRect(0, 0, width, height);
     ctx.restore();
   }
@@ -913,6 +967,9 @@ export async function renderCinematicReel(
     fps: requestedFps,
     renderStyle = 'hdr_ultra',
     cameraMotion = 'orbit',
+    lensFocalMm = 35,
+    shutterAngleDeg = 180,
+    grainLevel = 0.2,
     instructions,
     onProgress,
   } = options;
@@ -920,10 +977,10 @@ export async function renderCinematicReel(
   const spec = RESOLUTION_PRESETS.find((r) => r.key === resolution) ?? RESOLUTION_PRESETS[2];
   const fps = requestedFps || spec.fps;
 
-  onProgress?.(5, 'Loading source assets into local optical buffer...');
+  onProgress?.(5, 'Calibrating optical stream & stage buffers...');
   const [productImg, atmoImg] = await Promise.all([
-    loadImage(productUrl),
-    loadImage(atmosphereUrl),
+    loadOptionalImage(productUrl),
+    loadOptionalImage(atmosphereUrl),
   ]);
 
   const width = spec.width;
@@ -1045,6 +1102,9 @@ export async function renderCinematicReel(
         hdrGrade,
         renderStyle,
         cameraMotion,
+        lensFocalMm,
+        shutterAngleDeg,
+        grainLevel,
         transparentBackground: false,
         includeShadow: true,
         instructions,
@@ -1117,13 +1177,15 @@ export async function exportCompositionStillFrame(
     : config.productUrl;
 
   const [productImg, atmoImg] = await Promise.all([
-    loadImage(productAssetUrl),
-    transparentBackground ? Promise.resolve(null) : loadImage(config.atmosphereUrl),
+    loadOptionalImage(productAssetUrl),
+    transparentBackground ? Promise.resolve(null) : loadOptionalImage(config.atmosphereUrl),
   ]);
 
-  const productSource = transparentBackground
-    ? prepareTransparentProductSource(productImg)
-    : productImg;
+  const productSource = productImg
+    ? transparentBackground
+      ? prepareTransparentProductSource(productImg)
+      : productImg
+    : null;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -1151,6 +1213,9 @@ export async function exportCompositionStillFrame(
     hdrGrade: config.hdrGrade,
     renderStyle: config.renderStyle || 'hdr_ultra',
     cameraMotion: config.cameraMotion,
+    lensFocalMm: config.lensFocalMm,
+    shutterAngleDeg: config.shutterAngleDeg,
+    grainLevel: config.grainLevel,
     exposure: config.exposure,
     contrast: config.contrast,
     saturation: config.saturation,
@@ -1196,13 +1261,15 @@ export async function exportCompositionSequenceArchive(
     : config.productUrl;
 
   const [productImg, atmoImg] = await Promise.all([
-    loadImage(productAssetUrl),
-    transparentBackground ? Promise.resolve(null) : loadImage(config.atmosphereUrl),
+    loadOptionalImage(productAssetUrl),
+    transparentBackground ? Promise.resolve(null) : loadOptionalImage(config.atmosphereUrl),
   ]);
 
-  const productSource = transparentBackground
-    ? prepareTransparentProductSource(productImg)
-    : productImg;
+  const productSource = productImg
+    ? transparentBackground
+      ? prepareTransparentProductSource(productImg)
+      : productImg
+    : null;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -1238,6 +1305,9 @@ export async function exportCompositionSequenceArchive(
       hdrGrade: config.hdrGrade,
       renderStyle: config.renderStyle || 'hdr_ultra',
       cameraMotion: config.cameraMotion,
+      lensFocalMm: config.lensFocalMm,
+      shutterAngleDeg: config.shutterAngleDeg,
+      grainLevel: config.grainLevel,
       transparentBackground,
       includeShadow,
       instructions: config.instructions,

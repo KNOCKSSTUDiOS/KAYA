@@ -117,16 +117,22 @@ export function HeroVideoCubeStage({
     workspaceMedia.forEach((asset) => {
       if (asset.kind === 'video') {
         const vid = document.createElement('video');
-        vid.src = asset.url;
+        if (/^https?:\/\//i.test(asset.url) && typeof window !== 'undefined' && !asset.url.startsWith(window.location.origin)) {
+          vid.crossOrigin = 'anonymous';
+        }
+        vid.preload = 'auto';
+        vid.autoplay = true;
         vid.muted = true;
         vid.loop = true;
         vid.playsInline = true;
-        vid.crossOrigin = 'anonymous';
+        vid.src = asset.url;
         vid.play().catch(() => {});
         vids.push({ label: asset.label, video: vid });
       } else {
         const img = new Image();
-        img.crossOrigin = 'anonymous';
+        if (/^https?:\/\//i.test(asset.url) && typeof window !== 'undefined' && !asset.url.startsWith(window.location.origin)) {
+          img.crossOrigin = 'anonymous';
+        }
         img.src = asset.url;
         imgs.push({ label: asset.label, img });
       }
@@ -134,11 +140,15 @@ export function HeroVideoCubeStage({
 
     if (latestVideoUrl) {
       const vid = document.createElement('video');
-      vid.src = latestVideoUrl;
+      if (/^https?:\/\//i.test(latestVideoUrl) && typeof window !== 'undefined' && !latestVideoUrl.startsWith(window.location.origin)) {
+        vid.crossOrigin = 'anonymous';
+      }
+      vid.preload = 'auto';
+      vid.autoplay = true;
       vid.muted = true;
       vid.loop = true;
       vid.playsInline = true;
-      vid.crossOrigin = 'anonymous';
+      vid.src = latestVideoUrl;
       vid.play().catch(() => {});
       vids.unshift({ label: 'Rendered 4K Master', video: vid });
     }
@@ -241,22 +251,30 @@ export function HeroVideoCubeStage({
     texB.magFilter = THREE.LinearFilter;
     texB.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-    // Draw rich varied cinema feeds combining uploaded/rendered videos, showcase animated reels, and workspace photos
+    // Draw rich varied cinema feeds combining KNOCKSSTUDiOS Liquid Metal/Glass Intro, uploaded MP4s, showcase reels, and photos
     const drawFeed = (ctx: CanvasRenderingContext2D, feedIndex: number, t: number) => {
       const w = feedCanvasA.width;
       const h = feedCanvasA.height;
       const vids = mediaVideosRef.current;
       const imgs = mediaImagesRef.current;
       const reels = HERO_SHOWCASE_REELS;
-      const totalSlots = vids.length + reels.length + imgs.length;
+      const totalSlots = reels.length + vids.length + imgs.length;
       if (totalSlots === 0) return;
 
       const slot = Math.abs(feedIndex) % totalSlots;
 
-      // 1. Real user-rendered / dropped videos take priority slots when present
-      if (slot < vids.length) {
-        const vEntry = vids[slot];
+      // 0. Slot 0 opens directly on the Animated Liquid Metal & Glass KNOCKSSTUDiOS Presentation Logo Intro
+      if (slot === 0 && reels[0]) {
+        renderAnimatedReelFrame(ctx, w, h, t, reels[0], showcaseImgsRef.current[reels[0].id]);
+        return;
+      }
+
+      // 1. Uploaded / Rendered MP4 Video Reels shuffle right after the KNOCKSSTUDiOS presentation intro
+      const vidIdx = slot - 1;
+      if (vidIdx >= 0 && vidIdx < vids.length) {
+        const vEntry = vids[vidIdx];
         if (vEntry && vEntry.video.readyState >= 2) {
+          if (vEntry.video.paused) vEntry.video.play().catch(() => {});
           ctx.fillStyle = '#020203';
           ctx.fillRect(0, 0, w, h);
           const vw = vEntry.video.videoWidth || 1280;
@@ -267,9 +285,26 @@ export function HeroVideoCubeStage({
           ctx.drawImage(vEntry.video, (w - dw) / 2, (h - dh) / 2, dw, dh);
           return;
         }
+        const readyBackup = vids.find((v) => v.video.readyState >= 2);
+        if (readyBackup) {
+          ctx.fillStyle = '#020203';
+          ctx.fillRect(0, 0, w, h);
+          const vw = readyBackup.video.videoWidth || 1280;
+          const vh = readyBackup.video.videoHeight || 720;
+          const sc = Math.max(w / vw, h / vh);
+          const dw = vw * sc;
+          const dh = vh * sc;
+          ctx.drawImage(readyBackup.video, (w - dw) / 2, (h - dh) / 2, dw, dh);
+          return;
+        }
+        const fallbackReel = reels[vidIdx % reels.length];
+        if (fallbackReel) {
+          renderAnimatedReelFrame(ctx, w, h, t, fallbackReel, showcaseImgsRef.current[fallbackReel.id]);
+          return;
+        }
       }
 
-      // 2. Diverse Animated Sample Cinema Reels (Cyber Android Holo, Mech Orbit, Cyber Rain Car, Orbital Sunrise, Warp Tunnel, Laser Arena)
+      // 2. Diverse Animated Sample Cinema Reels
       const reelOffset = slot - vids.length;
       if (reelOffset >= 0 && reelOffset < reels.length) {
         const reel = reels[reelOffset];
@@ -277,7 +312,7 @@ export function HeroVideoCubeStage({
         return;
       }
 
-      // 3. Enterprise Workspace Scenes with smooth cinema camera motion + optical flare
+      // 3. Enterprise Workspace Scenes with smooth cinema camera motion
       if (imgs.length > 0) {
         const imgIdx = Math.max(0, slot - vids.length - reels.length) % imgs.length;
         const imgEntry = imgs[imgIdx];
@@ -454,7 +489,8 @@ export function HeroVideoCubeStage({
         });
       }
 
-      if (!isSoftwareGl || tickCounter % 2 === 1 || phase === 'TRANSITION') {
+      const hasLiveVideo = mediaVideosRef.current.some((v) => v.video.readyState >= 2);
+      if (!isSoftwareGl || hasLiveVideo || tickCounter % 2 === 1 || phase === 'TRANSITION') {
         drawFeed(ctxA, currentFeedIdx, totalTime);
         texA.needsUpdate = true;
       }
@@ -592,6 +628,20 @@ export function HeroVideoCubeStage({
       else frameId = requestAnimationFrame(tick);
     }
 
+    const onContextLost = (e: Event) => {
+      e.preventDefault();
+      cancelAnimationFrame(frameId);
+      clearTimeout(frameId);
+    };
+    const onContextRestored = () => {
+      if (!disposed) {
+        if (isSoftwareGl) afterDraw(tick);
+        else frameId = requestAnimationFrame(tick);
+      }
+    };
+    renderer.domElement.addEventListener('webglcontextlost', onContextLost);
+    renderer.domElement.addEventListener('webglcontextrestored', onContextRestored);
+
     if (isSoftwareGl) afterDraw(tick);
     else frameId = requestAnimationFrame(tick);
 
@@ -600,6 +650,8 @@ export function HeroVideoCubeStage({
       cancelAnimationFrame(frameId);
       clearTimeout(frameId);
       ro.disconnect();
+      renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
+      renderer.domElement.removeEventListener('webglcontextrestored', onContextRestored);
       cubies.forEach((c) => c.geometry.dispose());
       obsidianSideMat.dispose();
       innerFrontMat.dispose();
@@ -658,12 +710,12 @@ export function HeroVideoCubeStage({
       {/* Minimal Bottom Reveal Bar: KAYA on left; Home/Video/Audio/Picture + Menu on right */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-0 inset-x-0 z-20 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2 bg-gradient-to-t from-black/95 via-black/75 to-transparent transition-opacity duration-300 opacity-85 hover:opacity-100 focus-within:opacity-100"
+        className="absolute bottom-0 inset-x-0 z-20 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-300 opacity-90 hover:opacity-100 focus-within:opacity-100"
       >
         <button
           type="button"
           onClick={onOpenAuth}
-          className="bg-transparent border-0 p-0 text-white font-bold text-sm sm:text-base uppercase tracking-[0.28em] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#F1F5F9]"
+          className="bg-transparent border-0 p-0 see-thru-font font-bold text-sm sm:text-base uppercase tracking-[0.38em] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#F1F5F9]"
           style={{ fontFamily: 'var(--font-display)' }}
           title={user ? `Signed in as ${user.handle}` : 'Sign In / Sign Up'}
         >
@@ -677,7 +729,7 @@ export function HeroVideoCubeStage({
               const el = document.getElementById('page-cube');
               if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
-            className="px-2.5 sm:px-3 py-1.5 rounded-[6px] bg-[#020203] hover:bg-black text-[#E6ECF5] hover:text-white border border-white/20 hover:border-white/45 font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
+            className="see-thru-bar-btn px-2.5 sm:px-3 py-1.5 rounded-[6px] font-mono text-[11px] uppercase tracking-[0.14em] cursor-pointer"
           >
             Home
           </button>
@@ -685,7 +737,7 @@ export function HeroVideoCubeStage({
           <button
             type="button"
             onClick={() => onNavigateTool('video')}
-            className="px-2.5 sm:px-3 py-1.5 rounded-[6px] bg-[#020203] hover:bg-black text-[#E6ECF5] hover:text-white border border-white/20 hover:border-[#FF1E42]/70 font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
+            className="see-thru-bar-btn px-2.5 sm:px-3 py-1.5 rounded-[6px] font-mono text-[11px] uppercase tracking-[0.14em] cursor-pointer"
           >
             Video
           </button>
@@ -693,7 +745,7 @@ export function HeroVideoCubeStage({
           <button
             type="button"
             onClick={() => onNavigateTool('audio')}
-            className="px-2.5 sm:px-3 py-1.5 rounded-[6px] bg-[#020203] hover:bg-black text-[#E6ECF5] hover:text-white border border-white/20 hover:border-[#F1F5F9]/70 font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer hidden sm:inline-flex"
+            className="see-thru-bar-btn px-2.5 sm:px-3 py-1.5 rounded-[6px] font-mono text-[11px] uppercase tracking-[0.14em] cursor-pointer hidden sm:inline-flex"
           >
             Audio
           </button>
@@ -701,7 +753,7 @@ export function HeroVideoCubeStage({
           <button
             type="button"
             onClick={() => onNavigateTool('picture')}
-            className="px-2.5 sm:px-3 py-1.5 rounded-[6px] bg-[#020203] hover:bg-black text-[#E6ECF5] hover:text-white border border-white/20 hover:border-[#F1F5F9]/70 font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer hidden md:inline-flex"
+            className="see-thru-bar-btn px-2.5 sm:px-3 py-1.5 rounded-[6px] font-mono text-[11px] uppercase tracking-[0.14em] cursor-pointer hidden md:inline-flex"
           >
             Picture
           </button>
@@ -711,13 +763,13 @@ export function HeroVideoCubeStage({
               type="button"
               onClick={() => setMenuOpen((o) => !o)}
               aria-expanded={menuOpen}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] bg-[#020203] hover:bg-black text-white border border-white/25 hover:border-[#FF1E42] font-mono text-[11px] uppercase tracking-wider transition-colors cursor-pointer"
+              className="see-thru-bar-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] font-mono text-[11px] uppercase tracking-[0.14em] cursor-pointer"
             >
               <span>Menu</span>
               {menuOpen ? (
                 <ChevronDown className="w-3.5 h-3.5 text-[#FF3B5C]" />
               ) : (
-                <ChevronUp className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                <ChevronUp className="w-3.5 h-3.5 text-[#F1F5F9]/75" />
               )}
             </button>
 

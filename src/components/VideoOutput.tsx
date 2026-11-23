@@ -11,11 +11,15 @@ import {
   Layers,
   Film,
   X,
+  Info,
 } from 'lucide-react';
 import { PlateBezel, HardwareButton, LedStatusIndicator } from './HardwarePrimitives.js';
 import {
   CompositionConfig,
   RESOLUTION_PRESETS,
+  RENDER_STYLE_PRESETS,
+  HDR_GRADE_PRESETS,
+  CAMERA_MOTION_PRESETS,
   captureVideoElementFrame,
   exportCompositionStillFrame,
   exportCompositionSequenceArchive,
@@ -94,13 +98,14 @@ export function VideoOutput({
   renderProgress = 0,
   onVideoTimeUpdate,
   seekToTime,
-  emptyHint = 'Configure Subject & Environment modules, then press Render Reel',
+  emptyHint = 'Configure Prompt Window, Frames & Camera Rig, or Video options, then press Render Reel',
   composition,
   onLog,
 }: VideoOutputProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  const [showTechSummary, setShowTechSummary] = useState(true);
   const [exporterOpen, setExporterOpen] = useState(false);
   const [transparentMode, setTransparentMode] = useState<boolean>(true);
   const [includeShadow, setIncludeShadow] = useState<boolean>(true);
@@ -142,6 +147,16 @@ export function VideoOutput({
   const spec = composition
     ? RESOLUTION_PRESETS.find((r) => r.key === composition.resolution) ?? RESOLUTION_PRESETS[3]
     : null;
+  const cutStyleObj = composition?.renderStyle
+    ? RENDER_STYLE_PRESETS.find((s) => s.key === composition.renderStyle)
+    : RENDER_STYLE_PRESETS[0];
+  const cutHdrObj = composition?.hdrGrade
+    ? HDR_GRADE_PRESETS.find((g) => g.key === composition.hdrGrade)
+    : HDR_GRADE_PRESETS[2];
+  const cutCameraObj = composition?.cameraMotion
+    ? CAMERA_MOTION_PRESETS.find((c) => c.key === composition.cameraMotion)
+    : CAMERA_MOTION_PRESETS[0];
+  const cutFps = composition?.fps ?? spec?.fps ?? 60;
   const maxWidthLimit = exportScale === '1080p' ? 1920 : undefined;
   const baseWidth = spec?.width || videoRef.current?.videoWidth || 1920;
   const baseHeight = spec?.height || videoRef.current?.videoHeight || 1080;
@@ -280,6 +295,18 @@ export function VideoOutput({
           {appState === 'VIDEO_READY' && videoUrl && (
             <HardwareButton
               size="sm"
+              tone="red"
+              active={showTechSummary}
+              onClick={() => setShowTechSummary((s) => !s)}
+              title="Toggle cut technical summary overlay"
+            >
+              <Info className="w-3.5 h-3.5 text-[#FF3B5C]" />
+              <span>Cut Specs HUD</span>
+            </HardwareButton>
+          )}
+          {appState === 'VIDEO_READY' && videoUrl && (
+            <HardwareButton
+              size="sm"
               tone="cyan"
               active={exporterOpen}
               onClick={() => setExporterOpen((o) => !o)}
@@ -341,31 +368,65 @@ export function VideoOutput({
           />
 
           {appState === 'VIDEO_READY' && videoUrl ? (
-            <video
-              ref={(el) => {
-                videoRef.current = el;
-                if (el) {
-                  el.muted = true;
-                  el.loop = isLooping;
-                }
-              }}
-              src={videoUrl}
-              controls
-              controlsList="nodownload"
-              autoPlay
-              loop={isLooping}
-              playsInline
-              muted
-              onTimeUpdate={(e) => {
-                const v = e.currentTarget;
-                onVideoTimeUpdate?.(v.currentTime, Number.isFinite(v.duration) ? v.duration : 0);
-              }}
-              onLoadedMetadata={(e) => {
-                const v = e.currentTarget;
-                onVideoTimeUpdate?.(v.currentTime, Number.isFinite(v.duration) ? v.duration : 0);
-              }}
-              className="relative z-0 w-full h-full object-contain bg-black"
-            />
+            <>
+              <video
+                ref={(el) => {
+                  videoRef.current = el;
+                  if (el) {
+                    el.muted = true;
+                    el.loop = isLooping;
+                  }
+                }}
+                src={videoUrl}
+                controls
+                controlsList="nodownload"
+                autoPlay
+                loop={isLooping}
+                playsInline
+                muted
+                onTimeUpdate={(e) => {
+                  const v = e.currentTarget;
+                  onVideoTimeUpdate?.(v.currentTime, Number.isFinite(v.duration) ? v.duration : 0);
+                }}
+                onLoadedMetadata={(e) => {
+                  const v = e.currentTarget;
+                  onVideoTimeUpdate?.(v.currentTime, Number.isFinite(v.duration) ? v.duration : 0);
+                }}
+                className="relative z-0 w-full h-full object-contain bg-black"
+              />
+
+              {/* Technical Summary HUD Overlay when render is finished */}
+              {showTechSummary && (
+                <div className="pointer-events-none absolute top-3 left-3 right-3 z-20 flex flex-wrap items-start justify-between gap-2">
+                  <div className="pointer-events-auto candy-trace-tile rounded-xl bg-[#050304]/82 backdrop-blur-md px-3.5 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 font-mono text-[11px] shadow-[0_8px_28px_rgba(0,0,0,0.85)]">
+                    <div>
+                      <span className="text-[#E06844] uppercase text-[9px] block tracking-widest">Cut Master</span>
+                      <span className="text-white font-bold">{versionLabel || 'Cut 1'} · {targetDuration}</span>
+                    </div>
+                    <div>
+                      <span className="text-[#FF0A3C] uppercase text-[9px] block tracking-widest">Resolution</span>
+                      <span className="text-white font-semibold tabular-nums">
+                        {spec?.label || '4K Master'} ({baseWidth}×{baseHeight})
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[#E06844] uppercase text-[9px] block tracking-widest">Frame Rate</span>
+                      <span className="text-white font-semibold tabular-nums">{cutFps} fps</span>
+                    </div>
+                    <div>
+                      <span className="text-[#FF5C8A] uppercase text-[9px] block tracking-widest">Render Style</span>
+                      <span className="text-white font-semibold">{cutStyleObj?.label || '4K HDR Ultra'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[#F5E9EA]/55 uppercase text-[9px] block tracking-widest">Camera &amp; Grade</span>
+                      <span className="text-[#F5E9EA]/90">
+                        {cutCameraObj?.label || '360 Orbit'} {composition?.lensFocalMm ? `· ${composition.lensFocalMm}mm` : ''} · {cutHdrObj?.label || 'Ultra Cinema'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           ) : generating ? (
             <div className="relative z-20 flex flex-col items-center justify-center gap-4 px-6 py-6 w-full max-w-md text-center">
               <div className="w-12 h-12 rounded-[9px] cnc-module flex items-center justify-center border border-[#FF1E42]/50 shadow-[0_0_20px_rgba(255,30,66,0.25)]">

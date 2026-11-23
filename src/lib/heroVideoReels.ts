@@ -3,7 +3,10 @@ import mechVortexImg from '../assets/images/hero_mech_vortex_1794800053918.jpg';
 import neonHypercarImg from '../assets/images/hero_neon_hypercar_1794800054933.jpg';
 import orbitalDawnImg from '../assets/images/hero_orbital_dawn_1794800055374.jpg';
 
+import { STUDIO_COLLAGE_BRAND_IMG } from '../data.js';
+
 export type HeroMotionStyle =
+  | 'knocks_logo_intro'
   | 'holo_field'
   | 'mech_orbit'
   | 'cyber_rain'
@@ -19,6 +22,12 @@ export interface HeroShowcaseReel {
 }
 
 export const HERO_SHOWCASE_REELS: HeroShowcaseReel[] = [
+  {
+    id: 'reel-knocks-intro',
+    label: 'KNOCKSSTUDiOS Liquid Metal Presentation',
+    imageUrl: STUDIO_COLLAGE_BRAND_IMG,
+    motionStyle: 'knocks_logo_intro',
+  },
   {
     id: 'reel-android-holo',
     label: 'Cybernetic Field Projection',
@@ -87,7 +96,101 @@ export function renderAnimatedReelFrame(
   }
 
   // 2. Per-reel dynamic real-time CGI effects
-  if (reel.motionStyle === 'holo_field') {
+  if (reel.motionStyle === 'knocks_logo_intro') {
+    // Liquid Metal & Optical Glass Display KNOCKSSTUDiOS Presentation Intro
+    ctx.save();
+    // Subtle dark optical vignette so liquid chrome pops
+    const vig = ctx.createRadialGradient(w * 0.5, h * 0.48, w * 0.08, w * 0.5, h * 0.5, w * 0.72);
+    vig.addColorStop(0, 'rgba(20, 8, 12, 0.25)');
+    vig.addColorStop(0.65, 'rgba(6, 3, 5, 0.68)');
+    vig.addColorStop(1, 'rgba(2, 2, 3, 0.92)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, w, h);
+
+    // Liquid mercury caustic ribbons & candy-gloss / rust reflections
+    ctx.globalCompositeOperation = 'screen';
+    for (let wave = 0; wave < 4; wave++) {
+      ctx.beginPath();
+      const baseY = h * (0.28 + wave * 0.14);
+      for (let x = 0; x <= w; x += 24) {
+        const dy =
+          Math.sin(x * 0.0085 + t * (1.8 + wave * 0.25) + wave * 1.4) * (18 + wave * 6) +
+          Math.cos(x * 0.004 - t * 1.3) * 10;
+        if (x === 0) ctx.moveTo(x, baseY + dy);
+        else ctx.lineTo(x, baseY + dy);
+      }
+      ctx.strokeStyle =
+        wave % 2 === 0 ? 'rgba(245, 233, 234, 0.22)' : 'rgba(255, 10, 60, 0.24)';
+      ctx.lineWidth = 2.2 - wave * 0.3;
+      ctx.stroke();
+    }
+
+    // Specular prism light sweep passing across the liquid-metal surface
+    const sweepPos = ((t * 0.32) % 1.6) - 0.3;
+    const sweepGrad = ctx.createLinearGradient(
+      w * (sweepPos - 0.18),
+      0,
+      w * (sweepPos + 0.18),
+      h
+    );
+    sweepGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    sweepGrad.addColorStop(0.45, 'rgba(255, 235, 238, 0.18)');
+    sweepGrad.addColorStop(0.52, 'rgba(255, 10, 60, 0.28)');
+    sweepGrad.addColorStop(1, 'rgba(184, 67, 35, 0)');
+    ctx.fillStyle = sweepGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Center Optical Glass Bevel Frame + Liquid Chrome Display Typography
+    ctx.globalCompositeOperation = 'source-over';
+    const boxW = w * 0.72;
+    const boxH = h * 0.3;
+    const bx = (w - boxW) / 2;
+    const by = (h - boxH) / 2;
+
+    const glassFill = ctx.createLinearGradient(bx, by, bx + boxW, by + boxH);
+    glassFill.addColorStop(0, 'rgba(255, 255, 255, 0.09)');
+    glassFill.addColorStop(0.5, 'rgba(10, 4, 6, 0.42)');
+    glassFill.addColorStop(1, 'rgba(255, 10, 60, 0.12)');
+    ctx.fillStyle = glassFill;
+    ctx.fillRect(bx, by, boxW, boxH);
+
+    // Subtle glass specular rim
+    const rimGrad = ctx.createLinearGradient(bx, by, bx + boxW, by);
+    rimGrad.addColorStop(0, 'rgba(255, 255, 255, 0.16)');
+    rimGrad.addColorStop(Math.max(0.05, Math.min(0.95, (Math.sin(t * 1.6) + 1) * 0.5)), 'rgba(255, 255, 255, 0.85)');
+    rimGrad.addColorStop(1, 'rgba(255, 10, 60, 0.38)');
+    ctx.strokeStyle = rimGrad;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(bx, by, boxW, boxH);
+
+    // Animated Liquid Metal Chrome & Translucent Glass KNOCKSSTUDiOS Display Wordmark
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const fontSize = Math.round(w * 0.062);
+    ctx.font = `700 ${fontSize}px "Chakra Petch", sans-serif`;
+
+    const chromeGrad = ctx.createLinearGradient(w * 0.2, by, w * 0.8, by + boxH);
+    const shimmer = (Math.sin(t * 2.1) + 1) * 0.5;
+    chromeGrad.addColorStop(0, 'rgba(220, 224, 232, 0.55)');
+    chromeGrad.addColorStop(Math.max(0.1, Math.min(0.9, shimmer)), 'rgba(255, 255, 255, 0.96)');
+    chromeGrad.addColorStop(Math.min(0.98, shimmer + 0.15), 'rgba(255, 120, 140, 0.65)');
+    chromeGrad.addColorStop(1, 'rgba(184, 67, 35, 0.55)');
+
+    ctx.shadowColor = 'rgba(255, 10, 60, 0.55)';
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = chromeGrad;
+    ctx.fillText('KNOCKSSTUDiOS', w / 2, h * 0.485);
+
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 1.1;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.78)';
+    ctx.strokeText('KNOCKSSTUDiOS', w / 2, h * 0.485);
+
+    ctx.font = `600 ${Math.round(w * 0.017)}px "JetBrains Mono", monospace`;
+    ctx.fillStyle = 'rgba(245, 233, 234, 0.72)';
+    ctx.fillText('LIQUID METAL & OPTICAL GLASS PRESENTATION · VORTEX · KAYA', w / 2, h * 0.575);
+    ctx.restore();
+  } else if (reel.motionStyle === 'holo_field') {
     // Holographic scan wave & floating optical amber particles
     ctx.save();
     ctx.globalCompositeOperation = 'screen';

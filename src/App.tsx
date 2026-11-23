@@ -40,7 +40,7 @@ import {
   Snowflake,
   Database,
 } from 'lucide-react';
-import { PRODUCTS, ATMOSPHERES, MediaSelection } from './data.js';
+import { PRODUCTS, ATMOSPHERES, BACKGROUND_CUBE_VIDEOS, MediaSelection } from './data.js';
 import { ImageUploader } from './components/ImageUploader.js';
 import { VideoOutput, LogEntry } from './components/VideoOutput.js';
 import { ScrollRow } from './components/ScrollRow.js';
@@ -109,7 +109,7 @@ import { UNIFIED_WATERMARK_TEXT } from './lib/watermarkEngine.js';
 
 type LogType = 'info' | 'success' | 'warn' | 'error';
 type AppState = 'IDLE' | 'GENERATING_VIDEO' | 'VIDEO_READY';
-type ActiveModule = 'all' | 'subject' | 'environment' | 'optics';
+type ActiveModule = 'video' | 'frames' | 'all';
 
 interface VideoVersion {
   label: string;
@@ -134,15 +134,15 @@ const WORKBENCH_TOOLS: {
   tone: 'red' | 'cyan' | 'magenta' | 'neutral';
   icon: React.ReactNode;
 }[] = [
-  { key: 'video', label: 'KAYA Cinema', tone: 'red', icon: <Film className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
+  { key: 'video', label: 'Video & Frames', tone: 'red', icon: <Film className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
+  { key: 'vfx', label: 'VFX & BFX', tone: 'magenta', icon: <Sparkles className="w-3.5 h-3.5 text-[#E06844]" /> },
+  { key: 'sound', label: 'Sound · DTS / Sony', tone: 'cyan', icon: <Waves className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
+  { key: 'audio', label: 'Audio & Music', tone: 'cyan', icon: <Volume2 className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
+  { key: 'editor', label: 'Timeline NLE', tone: 'magenta', icon: <Scissors className="w-3.5 h-3.5 text-[#E06844]" /> },
   { key: 'picture', label: 'Picture Suite', tone: 'cyan', icon: <ImageIcon className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
   { key: 'cube', label: '360° Video Cube', tone: 'red', icon: <Box className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
   { key: 'storyboard', label: '3D Storyboard', tone: 'magenta', icon: <Clapperboard className="w-3.5 h-3.5 text-[#E06844]" /> },
-  { key: 'editor', label: 'Timeline Tools', tone: 'magenta', icon: <Scissors className="w-3.5 h-3.5 text-[#E06844]" /> },
   { key: 'intel', label: 'Vortex Vision', tone: 'cyan', icon: <Cpu className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
-  { key: 'audio', label: 'Audio Studio', tone: 'cyan', icon: <Volume2 className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
-  { key: 'vfx', label: 'VFX Shaders', tone: 'magenta', icon: <Sparkles className="w-3.5 h-3.5 text-[#E06844]" /> },
-  { key: 'sound', label: 'Sound Foley', tone: 'cyan', icon: <Waves className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
   { key: 'lipsync', label: 'Lip Sync Rig', tone: 'magenta', icon: <Mic className="w-3.5 h-3.5 text-[#E06844]" /> },
   { key: 'animator', label: 'Action Animator', tone: 'red', icon: <Swords className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
   { key: 'airradio', label: 'AirRadio FM', tone: 'cyan', icon: <Radio className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
@@ -193,13 +193,9 @@ function formatTierLabel(tier: StudioSubscriptionState['tier']): string {
 
 export default function App() {
   const [activeTool, setActiveTool] = useState<StudioPageKey>('video');
-  const [activeModule, setActiveModule] = useState<ActiveModule>('all');
-  const [product, setProduct] = useState<MediaSelection | null>({
-    id: `preset-${PRODUCTS[0].id}`,
-    source: 'suggestion',
-    images: [PRODUCTS[0].image],
-    description: PRODUCTS[0].description,
-  });
+  const [activeModule, setActiveModule] = useState<ActiveModule>('video');
+  // Pure prompt cinema by default (no forced still cutout floating over the scene)
+  const [product, setProduct] = useState<MediaSelection | null>(null);
   const [atmosphere, setAtmosphere] = useState<MediaSelection | null>({
     id: `preset-${ATMOSPHERES[0].id}`,
     source: 'suggestion',
@@ -212,6 +208,9 @@ export default function App() {
   const [fps, setFps] = useState<FPSKey>(60);
   const [renderStyle, setRenderStyle] = useState<RenderStyleKey>('hdr_ultra');
   const [cameraMotion, setCameraMotion] = useState<CameraMotionKey>('orbit');
+  const [lensFocalMm, setLensFocalMm] = useState<number>(35);
+  const [shutterAngleDeg, setShutterAngleDeg] = useState<number>(180);
+  const [grainLevel, setGrainLevel] = useState<number>(0.18);
   const [isLooping, setIsLooping] = useState<boolean>(true);
   const [appState, setAppState] = useState<AppState>('IDLE');
   const [renderProgress, setRenderProgress] = useState<number>(0);
@@ -448,7 +447,7 @@ export default function App() {
   const currentFormatLabel = `${activeResSpec.tag} · ${fps}fps · ${activeStyleSpec.label}`;
 
   const isGenerating = appState === 'GENERATING_VIDEO';
-  const canSubmit = !!product && !!atmosphere && !isGenerating;
+  const canSubmit = !isGenerating && (!!editText.trim() || !!product || !!atmosphere);
 
   const selected = versions.find((v) => v.label === selectedLabel) ?? null;
   const otherVersions = versions.filter((v) => v.label !== selectedLabel);
@@ -458,6 +457,13 @@ export default function App() {
   const selectedProductTransparentUrl = PRODUCTS.find((p) => `preset-${p.id}` === product?.id)?.transparentImage;
 
   const workspaceMedia = useMemo<WorkspaceMediaAsset[]>(() => {
+    const defaultBackgroundVideos: WorkspaceMediaAsset[] = BACKGROUND_CUBE_VIDEOS.map((v) => ({
+      id: v.id,
+      label: v.label,
+      url: v.url,
+      kind: 'video' as const,
+    }));
+
     const baseImages: WorkspaceMediaAsset[] = [
       ...PRODUCTS.map((p) => ({
         id: `prod-${p.id}`,
@@ -497,7 +503,7 @@ export default function App() {
       kind: 'video',
     }));
 
-    return [...uploadedCubeAssets, ...renderedVids, ...baseImages];
+    return [...uploadedCubeAssets, ...renderedVids, ...defaultBackgroundVideos, ...baseImages];
   }, [uploadedCubeAssets, versions, product, atmosphere]);
 
   const scrollToSection = (id: string) => {
@@ -630,8 +636,8 @@ export default function App() {
   };
 
   const handleSubmit = async () => {
-    if (!product || !atmosphere) {
-      addLog('Select both a Subject and an Environment before rendering.', 'error');
+    if (!editText.trim() && !product && !atmosphere) {
+      addLog('Enter a scene prompt or pick a stage backdrop / frame plate before rendering.', 'error');
       return;
     }
 
@@ -645,7 +651,7 @@ export default function App() {
     setAppState('GENERATING_VIDEO');
 
     addLog(
-      `Initializing ${activeResSpec.label} (${fps}fps · ${activeStyleSpec.label} · ${cameraMotion}) · ${duration}…`,
+      `Initializing ${activeResSpec.label} (${fps}fps · ${activeStyleSpec.label} · ${lensFocalMm}mm ${shutterAngleDeg}° · ${cameraMotion}) · ${duration}…`,
       'info'
     );
 
@@ -653,26 +659,32 @@ export default function App() {
       const durSec = parseInt(duration, 10) || 10;
       const promptInstructions = editText.trim() || undefined;
       const compositionSnapshot: CompositionConfig = {
-        productUrl: product.images[0],
+        productUrl: product?.images[0],
         transparentProductUrl: selectedProductTransparentUrl,
-        atmosphereUrl: atmosphere.images[0],
+        atmosphereUrl: atmosphere?.images[0] || ATMOSPHERES[0].image,
         durationSec: durSec,
         resolution,
         hdrGrade,
         fps,
         renderStyle,
         cameraMotion,
+        lensFocalMm,
+        shutterAngleDeg,
+        grainLevel,
         instructions: promptInstructions,
       };
       const result = await renderCinematicReel({
-        productUrl: product.images[0],
-        atmosphereUrl: atmosphere.images[0],
+        productUrl: product?.images[0],
+        atmosphereUrl: atmosphere?.images[0] || ATMOSPHERES[0].image,
         durationSec: durSec,
         resolution,
         hdrGrade,
         fps,
         renderStyle,
         cameraMotion,
+        lensFocalMm,
+        shutterAngleDeg,
+        grainLevel,
         instructions: promptInstructions,
         onProgress: (percent, msg) => {
           setRenderProgress(percent);
@@ -696,7 +708,6 @@ export default function App() {
       setAppState('VIDEO_READY');
       addLog(`${activeResSpec.label} master complete (${result.width}×${result.height} @ ${fps}fps).`, 'success');
 
-      // Persist directly to dedicated Firebase workspace when signed in
       if (kayaUser?.uid) {
         await Promise.all([
           saveStudioProject({
@@ -724,7 +735,7 @@ export default function App() {
   };
 
   const handleEdit = async () => {
-    if (!selected || !editText.trim() || isGenerating || !product || !atmosphere) return;
+    if (!selected || !editText.trim() || isGenerating) return;
     const instructions = editText.trim();
     const fromLabel = selected.label;
     const editDuration = selected.duration || duration;
@@ -738,26 +749,32 @@ export default function App() {
     try {
       const durSec = parseInt(editDuration, 10) || 10;
       const compositionSnapshot: CompositionConfig = {
-        productUrl: product.images[0],
+        productUrl: product?.images[0],
         transparentProductUrl: selectedProductTransparentUrl,
-        atmosphereUrl: atmosphere.images[0],
+        atmosphereUrl: atmosphere?.images[0] || ATMOSPHERES[0].image,
         durationSec: durSec,
         resolution,
         hdrGrade,
         fps,
         renderStyle,
         cameraMotion,
+        lensFocalMm,
+        shutterAngleDeg,
+        grainLevel,
         instructions,
       };
       const result = await renderCinematicReel({
-        productUrl: product.images[0],
-        atmosphereUrl: atmosphere.images[0],
+        productUrl: product?.images[0],
+        atmosphereUrl: atmosphere?.images[0] || ATMOSPHERES[0].image,
         durationSec: durSec,
         resolution,
         hdrGrade,
         fps,
         renderStyle,
         cameraMotion,
+        lensFocalMm,
+        shutterAngleDeg,
+        grainLevel,
         instructions,
         onProgress: (percent, msg) => {
           setRenderProgress(percent);
@@ -816,9 +833,8 @@ export default function App() {
     ).slice(0, 8);
   }, [suiteSearch]);
 
-  const showSubject = activeModule === 'all' || activeModule === 'subject';
-  const showEnvironment = activeModule === 'all' || activeModule === 'environment';
-  const showOptics = activeModule === 'all' || activeModule === 'optics';
+  const showVideoStation = activeModule === 'video' || activeModule === 'all';
+  const showFramesStation = activeModule === 'frames' || activeModule === 'all';
 
   return (
     <div className="min-h-screen w-full bg-[#050304] text-[#F5E9EA] p-0">
@@ -984,12 +1000,12 @@ export default function App() {
             <div className="flex items-center gap-3 shrink-0 ml-auto">
               <div className="text-right leading-tight">
                 <h1
-                  className="text-base sm:text-xl font-bold uppercase tracking-[0.22em] text-white whitespace-nowrap"
+                  className="text-base sm:text-xl font-bold uppercase tracking-[0.28em] see-thru-font whitespace-nowrap"
                   style={{ fontFamily: 'var(--font-display)' }}
                 >
                   VORTEX · KAYA
                 </h1>
-                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#E06844] block whitespace-nowrap">
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] see-thru-font-subtle block whitespace-nowrap">
                   Chrome-Ready Suite · Candy-Gloss &amp; Rust
                 </span>
               </div>
@@ -1094,39 +1110,30 @@ export default function App() {
                     <div className="flex flex-wrap items-center gap-2">
                       <HardwareButton
                         size="sm"
-                        tone="cyan"
-                        active={activeModule === 'all'}
-                        onClick={() => setActiveModule('all')}
+                        tone="red"
+                        active={activeModule === 'video'}
+                        onClick={() => setActiveModule('video')}
                       >
-                        <LayoutGrid className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                        <span>All Modules</span>
+                        <MonitorPlay className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                        <span>Video &amp; Options</span>
                       </HardwareButton>
                       <HardwareButton
                         size="sm"
                         tone="cyan"
-                        active={activeModule === 'subject'}
-                        onClick={() => setActiveModule('subject')}
+                        active={activeModule === 'frames'}
+                        onClick={() => setActiveModule('frames')}
                       >
-                        <Box className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                        <span>Subject Input</span>
+                        <Camera className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                        <span>Frames &amp; Camera Rig</span>
                       </HardwareButton>
                       <HardwareButton
                         size="sm"
                         tone="magenta"
-                        active={activeModule === 'environment'}
-                        onClick={() => setActiveModule('environment')}
+                        active={activeModule === 'all'}
+                        onClick={() => setActiveModule('all')}
                       >
-                        <Layers className="w-3.5 h-3.5 text-[#FF5C8A]" />
-                        <span>Environment</span>
-                      </HardwareButton>
-                      <HardwareButton
-                        size="sm"
-                        tone="red"
-                        active={activeModule === 'optics'}
-                        onClick={() => setActiveModule('optics')}
-                      >
-                        <Sliders className="w-3.5 h-3.5 text-[#FF3B5C]" />
-                        <span>Optics &amp; Shaders</span>
+                        <LayoutGrid className="w-3.5 h-3.5 text-[#FF5C8A]" />
+                        <span>All Video &amp; Frame Stations</span>
                       </HardwareButton>
                     </div>
 
@@ -1135,7 +1142,10 @@ export default function App() {
                         size="sm"
                         tone="red"
                         active={false}
-                        onClick={() => handleJumpSection('studio-display', 'video')}
+                        onClick={() => {
+                          setActiveModule('video');
+                          handleJumpSection('studio-display', 'video');
+                        }}
                       >
                         <MonitorPlay className="w-3.5 h-3.5 text-[#FF3B5C]" />
                         <span>Display</span>
@@ -1144,7 +1154,10 @@ export default function App() {
                         size="sm"
                         tone="magenta"
                         active={false}
-                        onClick={() => handleJumpSection('studio-prompt', 'video')}
+                        onClick={() => {
+                          setActiveModule('video');
+                          handleJumpSection('studio-prompt', 'video');
+                        }}
                       >
                         <Sparkles className="w-3.5 h-3.5 text-[#FF5C8A]" />
                         <span>Prompt Window</span>
@@ -1156,385 +1169,473 @@ export default function App() {
                         onClick={() => handleJumpSection('studio-timeline', 'video')}
                       >
                         <Scissors className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                        <span>Timeline</span>
+                        <span>DaVinci Timeline</span>
                       </HardwareButton>
                     </div>
                   </div>
                 </PlateBezel>
 
-                <div id="studio-display" className="scroll-mt-20">
-                  <VideoOutput
-                    appState={appState}
-                    videoUrl={selected?.videoUrl ?? null}
-                    logs={logs}
-                    isLooping={isLooping}
-                    onToggleLoop={() => setIsLooping((l) => !l)}
-                    onDownload={selected ? () => downloadVideo(selected) : undefined}
-                    onToggleEdit={() => {
-                      setEditOpen((o) => !o);
-                      scrollToSection('studio-prompt');
-                    }}
-                    editOpen={editOpen}
-                    downloading={downloading}
-                    versionLabel={selected?.label}
-                    targetDuration={selected?.duration || duration}
-                    formatSpecLabel={selected?.specLabel || currentFormatLabel}
-                    renderProgress={renderProgress}
-                    onVideoTimeUpdate={(cur, dur) => {
-                      setVideoTime(cur);
-                      setVideoDuration(dur);
-                    }}
-                    seekToTime={seekToTime}
-                    composition={selected?.composition}
-                    onLog={addLog}
-                  />
-                </div>
-
-                {/* PROMPT WINDOW */}
-                <div id="studio-prompt" className="scroll-mt-20">
-                  <PlateBezel accent="magenta" className="p-5 sm:p-6 space-y-3.5">
-                    <div className="flex flex-wrap items-center justify-between gap-2.5">
-                      <div className="flex items-center gap-2.5">
-                        <Sparkles className="w-4 h-4 text-[#FF0A3C]" />
-                        <h3
-                          className="text-sm font-bold uppercase tracking-wider text-white"
-                          style={{ fontFamily: 'var(--font-display)' }}
-                        >
-                          Prompt Window · Self-Hosted Scene Director
-                        </h3>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {[
-                          'Candy-Gloss Specular Rim',
-                          'Burnished Rust Volumetrics',
-                          'Fast 360 Orbit',
-                          'Dramatic Optical Contrast',
-                        ].map((preset) => (
-                          <HardwareButton
-                            key={preset}
-                            size="sm"
-                            tone="neutral"
-                            ledIndicator={false}
-                            onClick={() =>
-                              setEditText((prev) =>
-                                prev.trim() ? `${prev.trim()}, ${preset.toLowerCase()}` : preset
-                              )
-                            }
+                {/* STATION A: FRAMES & CAMERA SETTINGS (IN ITS OWN CLEAN TILE) */}
+                {showFramesStation && (
+                  <div className="space-y-4">
+                    <PlateBezel accent="cyan" className="p-5 sm:p-6 space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+                        <div className="flex items-baseline gap-2.5">
+                          <span className="font-mono text-xs font-bold tracking-widest text-[#F1F5F9] tabular-nums">
+                            CAM
+                          </span>
+                          <h3
+                            className="text-sm sm:text-base font-bold tracking-wide text-[#F5E9EA] uppercase"
+                            style={{ fontFamily: 'var(--font-display)' }}
                           >
-                            <span>+ {preset}</span>
-                          </HardwareButton>
-                        ))}
-                      </div>
-                    </div>
-                    <textarea
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      placeholder={
-                        selected
-                          ? `Enter scene prompt or lighting/camera adjustments for ${selected.label}…`
-                          : 'Enter scene direction, shader cues, or camera rig motion before pressing Render Reel…'
-                      }
-                      className="w-full bg-[#050304] border border-[#B84323]/30 text-[#F5E9EA] p-3.5 font-mono text-xs leading-relaxed focus:outline-none focus:border-[#FF0A3C] rounded-xl resize-y min-h-[84px]"
-                    />
-                    {aiDirectorMeta && (
-                      <div className="candy-surface rounded-xl p-3 grid grid-cols-1 md:grid-cols-3 gap-2 font-mono text-[11px]">
-                        {aiDirectorMeta.directorNotes && (
-                          <div className="text-[#F5E9EA]/85">
-                            <span className="text-[#FF0A3C] uppercase">Director: </span>
-                            {aiDirectorMeta.directorNotes}
-                          </div>
-                        )}
-                        {aiDirectorMeta.lightingCue && (
-                          <div className="text-[#F5E9EA]/85">
-                            <span className="text-[#E06844] uppercase">Lighting: </span>
-                            {aiDirectorMeta.lightingCue}
-                          </div>
-                        )}
-                        {aiDirectorMeta.cameraTip && (
-                          <div className="text-[#F5E9EA]/85">
-                            <span className="text-white uppercase">Rig: </span>
-                            {aiDirectorMeta.cameraTip}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    <div className="flex flex-wrap items-center justify-between gap-2.5">
-                      <span className="font-mono text-[11px] text-[#E6ECF5]/55">
-                        Routed through self-hosted Vortex director server (zero external API keys).
-                      </span>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <HardwareButton
-                          size="sm"
+                            Frames &amp; Camera Settings Rig
+                          </h3>
+                        </div>
+                        <LedStatusIndicator
+                          label={`${lensFocalMm}mm Lens · ${shutterAngleDeg}° Shutter · ${fps} FPS · Grain ${Math.round(grainLevel * 100)}%`}
                           tone="cyan"
-                          active={aiEnhancing}
-                          disabled={aiEnhancing || isGenerating}
-                          onClick={handleEnhancePromptWithAI}
-                        >
-                          {aiEnhancing ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Cpu className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                          )}
-                          <span>{aiEnhancing ? 'Enhancing…' : 'Enhance Scene Prompt'}</span>
-                        </HardwareButton>
-                        {selected && (
-                          <HardwareButton
-                            size="sm"
-                            tone="magenta"
-                            active={!!editText.trim()}
-                            disabled={!editText.trim() || isGenerating}
-                            onClick={handleEdit}
-                          >
-                            {isGenerating ? (
-                              <>
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                <span>Applying…</span>
-                              </>
-                            ) : (
-                              <span>Apply Cut Adjustment</span>
-                            )}
-                          </HardwareButton>
-                        )}
-                        <HardwareButton
-                          size="sm"
-                          tone="red"
-                          active={canSubmit}
-                          disabled={!canSubmit}
-                          onClick={handleSubmit}
-                        >
-                          <Sparkles className="w-3.5 h-3.5 text-[#FF3B5C]" />
-                          <span>Render Reel</span>
-                        </HardwareButton>
+                        />
                       </div>
-                    </div>
-                  </PlateBezel>
-                </div>
 
-                {showSubject && (
-                  <ImageUploader
-                    indexLabel="01."
-                    title="Subject Input"
-                    type="product"
-                    suggestions={PRODUCTS}
-                    selection={product}
-                    onSelect={setProduct}
-                    disabled={isGenerating}
-                  />
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
+                        {/* Lens Focal Length */}
+                        <div className="candy-surface rounded-xl p-3.5 space-y-2.5">
+                          <div className="flex justify-between font-mono text-xs text-[#E6ECF5]/80">
+                            <span>Anamorphic Prime Lens</span>
+                            <span className="text-[#FF0A3C] font-bold tabular-nums">{lensFocalMm}mm</span>
+                          </div>
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {[24, 35, 50, 85].map((mm) => (
+                              <HardwareButton
+                                key={mm}
+                                size="sm"
+                                fullWidth
+                                tone="cyan"
+                                active={lensFocalMm === mm}
+                                disabled={isGenerating}
+                                onClick={() => setLensFocalMm(mm)}
+                              >
+                                <span className="tabular-nums">{mm}mm</span>
+                              </HardwareButton>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Shutter Angle */}
+                        <div className="candy-surface rounded-xl p-3.5 space-y-2.5">
+                          <div className="flex justify-between font-mono text-xs text-[#E6ECF5]/80">
+                            <span>Shutter Angle Motion</span>
+                            <span className="text-[#E06844] font-bold tabular-nums">{shutterAngleDeg}°</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {[90, 180, 360].map((deg) => (
+                              <HardwareButton
+                                key={deg}
+                                size="sm"
+                                fullWidth
+                                tone="magenta"
+                                active={shutterAngleDeg === deg}
+                                disabled={isGenerating}
+                                onClick={() => setShutterAngleDeg(deg)}
+                              >
+                                <span className="tabular-nums">{deg}°</span>
+                              </HardwareButton>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Film Grain & Camera Rig Motion */}
+                        <div className="candy-surface rounded-xl p-3.5 space-y-2.5">
+                          <div className="flex justify-between font-mono text-xs text-[#E6ECF5]/80">
+                            <span>35mm Optical Grain</span>
+                            <span className="text-[#F5E9EA] font-bold tabular-nums">{Math.round(grainLevel * 100)}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={0.6}
+                            step={0.05}
+                            disabled={isGenerating}
+                            value={grainLevel}
+                            onChange={(e) => setGrainLevel(parseFloat(e.target.value))}
+                            className="hw-capsule-slider w-full"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        <div className="candy-surface rounded-xl p-3.5 space-y-3">
+                          <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
+                            <Gauge className="w-3.5 h-3.5 text-[#FF3B5C]" />
+                            <span>Capture Frame Rate (24–144 fps)</span>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {FPS_PRESETS.map((f) => (
+                              <HardwareButton
+                                key={f.key}
+                                fullWidth
+                                tone={f.key >= 90 ? 'red' : 'cyan'}
+                                active={fps === f.key}
+                                disabled={isGenerating}
+                                onClick={() => setFps(f.key)}
+                              >
+                                <span className="font-bold tabular-nums">{f.label}</span>
+                                <span className="text-[11px] text-[#E6ECF5]/65 hidden sm:inline">{f.desc}</span>
+                              </HardwareButton>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="candy-surface rounded-xl p-3.5 space-y-3">
+                          <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
+                            <Compass className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                            <span>Camera Crane &amp; Gimbal Path</span>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {CAMERA_MOTION_PRESETS.map((cm) => (
+                              <HardwareButton
+                                key={cm.key}
+                                size="sm"
+                                fullWidth
+                                tone="cyan"
+                                active={cameraMotion === cm.key}
+                                disabled={isGenerating}
+                                onClick={() => setCameraMotion(cm.key)}
+                              >
+                                <span>{cm.label}</span>
+                              </HardwareButton>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </PlateBezel>
+
+                    <ImageUploader
+                      indexLabel="PLATE A ·"
+                      title="Optional Foreground Crest / Overlay Plate (Off = Pure Scene Render)"
+                      type="product"
+                      suggestions={PRODUCTS}
+                      selection={product}
+                      onSelect={setProduct}
+                      disabled={isGenerating}
+                    />
+
+                    <ImageUploader
+                      indexLabel="PLATE B ·"
+                      title="Stage Backdrop Frame"
+                      type="atmosphere"
+                      suggestions={ATMOSPHERES}
+                      selection={atmosphere}
+                      onSelect={setAtmosphere}
+                      disabled={isGenerating}
+                    />
+                  </div>
                 )}
 
-                {showEnvironment && (
-                  <ImageUploader
-                    indexLabel="02."
-                    title="Environment & Stage"
-                    type="atmosphere"
-                    suggestions={ATMOSPHERES}
-                    selection={atmosphere}
-                    onSelect={setAtmosphere}
-                    disabled={isGenerating}
-                  />
-                )}
-
-                {showOptics && (
-                  <PlateBezel accent={editOpen ? 'magenta' : 'cyan'} className="p-5 sm:p-6 space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-                      <div className="flex items-baseline gap-2.5">
-                        <span className="font-mono text-xs font-bold tracking-widest text-[#FF0A3C] tabular-nums">
-                          03.
-                        </span>
-                        <h3
-                          className="text-sm sm:text-base font-bold tracking-wide text-[#F5E9EA] uppercase"
-                          style={{ fontFamily: 'var(--font-display)' }}
-                        >
-                          Optics, Frame Rate, Camera Rig &amp; Render Shaders
-                        </h3>
-                      </div>
-                      <LedStatusIndicator
-                        label={`${activeResSpec.label} · ${fps}fps · ${activeStyleSpec.label}`}
-                        tone="cyan"
+                {/* STATION B: VIDEO OUTPUT + PROMPT + VIDEO OPTIONS */}
+                {showVideoStation && (
+                  <>
+                    <div id="studio-display" className="scroll-mt-20">
+                      <VideoOutput
+                        appState={appState}
+                        videoUrl={selected?.videoUrl ?? null}
+                        logs={logs}
+                        isLooping={isLooping}
+                        onToggleLoop={() => setIsLooping((l) => !l)}
+                        onDownload={selected ? () => downloadVideo(selected) : undefined}
+                        onToggleEdit={() => {
+                          setEditOpen((o) => !o);
+                          scrollToSection('studio-prompt');
+                        }}
+                        editOpen={editOpen}
+                        downloading={downloading}
+                        versionLabel={selected?.label}
+                        targetDuration={selected?.duration || duration}
+                        formatSpecLabel={selected?.specLabel || currentFormatLabel}
+                        renderProgress={renderProgress}
+                        onVideoTimeUpdate={(cur, dur) => {
+                          setVideoTime(cur);
+                          setVideoDuration(dur);
+                        }}
+                        seekToTime={seekToTime}
+                        composition={selected?.composition}
+                        onLog={addLog}
                       />
                     </div>
 
-                    <div className="candy-surface rounded-xl p-3.5 space-y-3">
-                      <div className="flex items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
-                        <span className="flex items-center gap-2">
-                          <MonitorPlay className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                          <span>Master Video Resolution</span>
-                        </span>
-                        <span className="text-[#F1F5F9] tabular-nums">
-                          {activeResSpec.tag} · {activeResSpec.aspectDesc}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-                        {RESOLUTION_PRESETS.map((r) => (
-                          <HardwareButton
-                            key={r.key}
-                            fullWidth
-                            tone={r.key === 'cinemax_4k' ? 'red' : 'cyan'}
-                            active={resolution === r.key}
-                            disabled={isGenerating}
-                            onClick={() => setResolution(r.key)}
+                    {/* PROMPT WINDOW */}
+                    <div id="studio-prompt" className="scroll-mt-20">
+                      <PlateBezel accent="magenta" className="p-5 sm:p-6 space-y-3.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <Sparkles className="w-4 h-4 text-[#FF0A3C]" />
+                            <h3
+                              className="text-sm font-bold uppercase tracking-wider text-white"
+                              style={{ fontFamily: 'var(--font-display)' }}
+                            >
+                              Prompt Window · Pure Cinema Scene Director
+                            </h3>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {[
+                              'Candy-Gloss Specular Rim',
+                              'Burnished Rust Volumetrics',
+                              'Fast 360 Orbit',
+                              'Neon Rain Reflections',
+                            ].map((preset) => (
+                              <HardwareButton
+                                key={preset}
+                                size="sm"
+                                tone="neutral"
+                                ledIndicator={false}
+                                onClick={() =>
+                                  setEditText((prev) =>
+                                    prev.trim() ? `${prev.trim()}, ${preset.toLowerCase()}` : preset
+                                  )
+                                }
+                              >
+                                <span>+ {preset}</span>
+                              </HardwareButton>
+                            ))}
+                          </div>
+                        </div>
+                        <textarea
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          placeholder={
+                            selected
+                              ? `Enter scene prompt or lighting/camera adjustments for ${selected.label}…`
+                              : 'Describe your scene motion, optical rays, sparks, rain, or camera move — renders cleanly without any floating photo overlay…'
+                          }
+                          className="w-full bg-[#050304] border border-[#B84323]/30 text-[#F5E9EA] p-3.5 font-mono text-xs leading-relaxed focus:outline-none focus:border-[#FF0A3C] rounded-xl resize-y min-h-[84px]"
+                        />
+                        {aiDirectorMeta && (
+                          <div className="candy-surface rounded-xl p-3 grid grid-cols-1 md:grid-cols-3 gap-2 font-mono text-[11px]">
+                            {aiDirectorMeta.directorNotes && (
+                              <div className="text-[#F5E9EA]/85">
+                                <span className="text-[#FF0A3C] uppercase">Director: </span>
+                                {aiDirectorMeta.directorNotes}
+                              </div>
+                            )}
+                            {aiDirectorMeta.lightingCue && (
+                              <div className="text-[#F5E9EA]/85">
+                                <span className="text-[#E06844] uppercase">Lighting: </span>
+                                {aiDirectorMeta.lightingCue}
+                              </div>
+                            )}
+                            {aiDirectorMeta.cameraTip && (
+                              <div className="text-[#F5E9EA]/85">
+                                <span className="text-white uppercase">Rig: </span>
+                                {aiDirectorMeta.cameraTip}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap items-center justify-between gap-2.5">
+                          <span className="font-mono text-[11px] text-[#E6ECF5]/60">
+                            Plate A: {product ? product.description : 'None (Pure Scene Rendering Active)'} · Stage: {atmosphere ? atmosphere.description : 'Obsidian Void'}
+                          </span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <HardwareButton
+                              size="sm"
+                              tone="cyan"
+                              active={aiEnhancing}
+                              disabled={aiEnhancing || isGenerating}
+                              onClick={handleEnhancePromptWithAI}
+                            >
+                              {aiEnhancing ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Cpu className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                              )}
+                              <span>{aiEnhancing ? 'Enhancing…' : 'Enhance Scene Prompt'}</span>
+                            </HardwareButton>
+                            {selected && (
+                              <HardwareButton
+                                size="sm"
+                                tone="magenta"
+                                active={!!editText.trim()}
+                                disabled={!editText.trim() || isGenerating}
+                                onClick={handleEdit}
+                              >
+                                {isGenerating ? (
+                                  <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    <span>Applying…</span>
+                                  </>
+                                ) : (
+                                  <span>Apply Cut Adjustment</span>
+                                )}
+                              </HardwareButton>
+                            )}
+                            <HardwareButton
+                              size="sm"
+                              tone="red"
+                              active={canSubmit}
+                              disabled={!canSubmit}
+                              onClick={handleSubmit}
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-[#FF3B5C]" />
+                              <span>Render Cut</span>
+                            </HardwareButton>
+                          </div>
+                        </div>
+                      </PlateBezel>
+                    </div>
+
+                    {/* VIDEO OPTIONS: RESOLUTION, DURATION, HDR GRADE & RENDER STYLES */}
+                    <PlateBezel accent={editOpen ? 'magenta' : 'cyan'} className="p-5 sm:p-6 space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+                        <div className="flex items-baseline gap-2.5">
+                          <span className="font-mono text-xs font-bold tracking-widest text-[#FF0A3C] tabular-nums">
+                            VIDEO
+                          </span>
+                          <h3
+                            className="text-sm sm:text-base font-bold tracking-wide text-[#F5E9EA] uppercase"
+                            style={{ fontFamily: 'var(--font-display)' }}
                           >
-                            <span className="font-bold">{r.label}</span>
-                            <span className="text-[11px] text-[#E6ECF5]/65 tabular-nums hidden sm:inline">
-                              {r.tag}
+                            Video Mastering Options &amp; Render Shaders
+                          </h3>
+                        </div>
+                        <LedStatusIndicator
+                          label={`${activeResSpec.label} · ${fps}fps · ${activeStyleSpec.label}`}
+                          tone="cyan"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        <div className="candy-surface rounded-xl p-3.5 space-y-3">
+                          <div className="flex items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
+                            <span className="flex items-center gap-2">
+                              <MonitorPlay className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                              <span>Output Resolution</span>
                             </span>
-                          </HardwareButton>
-                        ))}
-                      </div>
-                    </div>
+                            <span className="text-[#F1F5F9] tabular-nums">
+                              {activeResSpec.tag} · {activeResSpec.aspectDesc}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {RESOLUTION_PRESETS.map((r) => (
+                              <HardwareButton
+                                key={r.key}
+                                fullWidth
+                                tone={r.key === 'cinemax_4k' ? 'red' : 'cyan'}
+                                active={resolution === r.key}
+                                disabled={isGenerating}
+                                onClick={() => setResolution(r.key)}
+                              >
+                                <span className="font-bold">{r.label}</span>
+                                <span className="text-[11px] text-[#E6ECF5]/65 tabular-nums hidden sm:inline">
+                                  {r.tag}
+                                </span>
+                              </HardwareButton>
+                            ))}
+                          </div>
+                        </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                      <div className="candy-surface rounded-xl p-3.5 space-y-3">
-                        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
-                          <Gauge className="w-3.5 h-3.5 text-[#FF3B5C]" />
-                          <span>Frame Rate (24–144 fps)</span>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {FPS_PRESETS.map((f) => (
-                            <HardwareButton
-                              key={f.key}
-                              fullWidth
-                              tone={f.key >= 90 ? 'red' : 'cyan'}
-                              active={fps === f.key}
-                              disabled={isGenerating}
-                              onClick={() => setFps(f.key)}
-                            >
-                              <span className="font-bold tabular-nums">{f.label}</span>
-                              <span className="text-[11px] text-[#E6ECF5]/65 hidden sm:inline">{f.desc}</span>
-                            </HardwareButton>
-                          ))}
+                        <div className="candy-surface rounded-xl p-3.5 space-y-3">
+                          <div className="flex items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
+                            <span className="flex items-center gap-2">
+                              <Clock className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                              <span>Cut Duration &amp; HDR Grade</span>
+                            </span>
+                            <span className="text-[#FF5C8A]">{hdrGrade.replace('_', ' ')}</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {DURATION_PRESETS.map((p) => (
+                              <HardwareButton
+                                key={p.value}
+                                fullWidth
+                                tone="cyan"
+                                active={duration === p.value}
+                                disabled={isGenerating}
+                                onClick={() => setDuration(p.value)}
+                              >
+                                <span className="font-bold tabular-nums">{p.time}</span>
+                                <span className="text-[11px] text-[#E6ECF5]/65 hidden sm:inline">{p.desc}</span>
+                              </HardwareButton>
+                            ))}
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 pt-1">
+                            {HDR_GRADE_PRESETS.map((g) => (
+                              <HardwareButton
+                                key={g.key}
+                                size="sm"
+                                fullWidth
+                                tone="magenta"
+                                active={hdrGrade === g.key}
+                                disabled={isGenerating}
+                                onClick={() => setHdrGrade(g.key)}
+                              >
+                                <span className="font-semibold truncate">{g.label}</span>
+                              </HardwareButton>
+                            ))}
+                          </div>
                         </div>
                       </div>
 
                       <div className="candy-surface rounded-xl p-3.5 space-y-3">
-                        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
-                          <Sparkles className="w-3.5 h-3.5 text-[#FF2E63]" />
-                          <span>HDR Dynamic Range Grade</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          {HDR_GRADE_PRESETS.map((g) => (
-                            <HardwareButton
-                              key={g.key}
-                              fullWidth
-                              tone="magenta"
-                              active={hdrGrade === g.key}
-                              disabled={isGenerating}
-                              onClick={() => setHdrGrade(g.key)}
-                            >
-                              <span className="font-semibold truncate">{g.label}</span>
-                            </HardwareButton>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                      <div className="candy-surface rounded-xl p-3.5 space-y-3">
-                        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
-                          <Compass className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                          <span>Camera Rig Motion</span>
+                        <div className="flex items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
+                          <span className="flex items-center gap-2">
+                            <Palette className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                            <span>Video Render Style (19 Engines &amp; Shaders)</span>
+                          </span>
+                          <span className="text-[#F1F5F9] normal-case">{activeStyleSpec.desc}</span>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                          {CAMERA_MOTION_PRESETS.map((cm) => (
+                          {RENDER_STYLE_PRESETS.map((s) => (
                             <HardwareButton
-                              key={cm.key}
+                              key={s.key}
                               size="sm"
                               fullWidth
-                              tone="cyan"
-                              active={cameraMotion === cm.key}
+                              tone={
+                                s.key.includes('cyberpunk') || s.key === 'animorph' || s.key === 'cartoon_3d'
+                                  ? 'magenta'
+                                  : s.key === 'mesh_3d' || s.key === 'real_3d'
+                                  ? 'red'
+                                  : 'cyan'
+                              }
+                              active={renderStyle === s.key}
                               disabled={isGenerating}
-                              onClick={() => setCameraMotion(cm.key)}
+                              onClick={() => setRenderStyle(s.key)}
                             >
-                              <span>{cm.label}</span>
+                              <span className="truncate">{s.label}</span>
                             </HardwareButton>
                           ))}
                         </div>
                       </div>
 
-                      <div className="candy-surface rounded-xl p-3.5 space-y-3">
-                        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
-                          <Clock className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                          <span>Sequence Duration</span>
+                      {otherVersions.length > 0 && (
+                        <div className="candy-surface rounded-xl p-3.5 space-y-2.5">
+                          <span className="text-[11px] font-mono uppercase tracking-wider text-[#E6ECF5]/60 block">
+                            Recorded Cuts
+                          </span>
+                          <ScrollRow className="w-full" rowClassName="gap-3" deps={[otherVersions.length]}>
+                            {otherVersions.map((v) => (
+                              <button
+                                key={v.label}
+                                type="button"
+                                onClick={() => selectVersion(v.label)}
+                                className="group flex-none text-left p-2 candy-trace-tile rounded-xl cursor-pointer"
+                              >
+                                <div className="flex items-center justify-between gap-2 font-mono text-xs text-[#E6ECF5] mb-1.5 tabular-nums">
+                                  <span className="font-bold">{v.label}</span>
+                                  <span className="text-[10px] text-[#FF0A3C]">{v.duration || '10s'}</span>
+                                </div>
+                                <video
+                                  src={v.videoUrl}
+                                  muted
+                                  playsInline
+                                  preload="metadata"
+                                  className="w-32 aspect-video object-cover rounded-lg bg-[#050304] opacity-85 group-hover:opacity-100 transition-opacity"
+                                />
+                              </button>
+                            ))}
+                          </ScrollRow>
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          {DURATION_PRESETS.map((p) => (
-                            <HardwareButton
-                              key={p.value}
-                              fullWidth
-                              tone="cyan"
-                              active={duration === p.value}
-                              disabled={isGenerating}
-                              onClick={() => setDuration(p.value)}
-                            >
-                              <span className="font-bold tabular-nums">{p.time}</span>
-                              <span className="text-[11px] text-[#E6ECF5]/65 hidden sm:inline">{p.desc}</span>
-                            </HardwareButton>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="candy-surface rounded-xl p-3.5 space-y-3">
-                      <div className="flex items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60">
-                        <span className="flex items-center gap-2">
-                          <Palette className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                          <span>Visual Render Style (19 Engines &amp; Shaders)</span>
-                        </span>
-                        <span className="text-[#F1F5F9] normal-case">{activeStyleSpec.desc}</span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {RENDER_STYLE_PRESETS.map((s) => (
-                          <HardwareButton
-                            key={s.key}
-                            size="sm"
-                            fullWidth
-                            tone={
-                              s.key.includes('cyberpunk') || s.key === 'animorph' || s.key === 'cartoon_3d'
-                                ? 'magenta'
-                                : s.key === 'mesh_3d' || s.key === 'real_3d'
-                                ? 'red'
-                                : 'cyan'
-                            }
-                            active={renderStyle === s.key}
-                            disabled={isGenerating}
-                            onClick={() => setRenderStyle(s.key)}
-                          >
-                            <span className="truncate">{s.label}</span>
-                          </HardwareButton>
-                        ))}
-                      </div>
-                    </div>
-
-                    {otherVersions.length > 0 && (
-                      <div className="candy-surface rounded-xl p-3.5 space-y-2.5">
-                        <span className="text-[11px] font-mono uppercase tracking-wider text-[#E6ECF5]/60 block">
-                          Recorded Cuts
-                        </span>
-                        <ScrollRow className="w-full" rowClassName="gap-3" deps={[otherVersions.length]}>
-                          {otherVersions.map((v) => (
-                            <button
-                              key={v.label}
-                              type="button"
-                              onClick={() => selectVersion(v.label)}
-                              className="group flex-none text-left p-2 candy-trace-tile rounded-xl cursor-pointer"
-                            >
-                              <div className="flex items-center justify-between gap-2 font-mono text-xs text-[#E6ECF5] mb-1.5 tabular-nums">
-                                <span className="font-bold">{v.label}</span>
-                                <span className="text-[10px] text-[#FF0A3C]">{v.duration || '10s'}</span>
-                              </div>
-                              <video
-                                src={v.videoUrl}
-                                muted
-                                playsInline
-                                preload="metadata"
-                                className="w-32 aspect-video object-cover rounded-lg bg-[#050304] opacity-85 group-hover:opacity-100 transition-opacity"
-                              />
-                            </button>
-                          ))}
-                        </ScrollRow>
-                      </div>
-                    )}
-                  </PlateBezel>
+                      )}
+                    </PlateBezel>
+                  </>
                 )}
 
                 <MasterControlDeck

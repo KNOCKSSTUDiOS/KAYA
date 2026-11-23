@@ -20,6 +20,11 @@ import {
 } from 'lucide-react';
 import { PlateBezel, HardwareButton, LedStatusIndicator } from './HardwarePrimitives.js';
 import type { StudioPageKey } from './RubiksCubeHubPage.js';
+import {
+  BACKGROUND_CUBE_VIDEOS,
+  STUDIO_COLLAGE_BRAND_IMG,
+  STUDIO_IRON_GATES_IMG,
+} from '../data.js';
 
 interface GalleryTileSpec {
   id: StudioPageKey;
@@ -28,6 +33,7 @@ interface GalleryTileSpec {
   subtitle: string;
   specs: string[];
   previewImage?: string;
+  previewVideo?: string;
   tone: 'red' | 'cyan' | 'magenta';
   icon: React.ReactNode;
 }
@@ -79,6 +85,7 @@ export function StudioGatesGallery({
       title: 'Audio Studio',
       subtitle: 'Web Audio Synth · Spectrum · WAV Master',
       specs: ['44.1 / 48 kHz', 'Low-Pass Filter', 'Live Spectrum', 'WAV Export'],
+      previewVideo: BACKGROUND_CUBE_VIDEOS[3].url,
       tone: 'cyan',
       icon: <Volume2 className="w-4 h-4 text-[#F1F5F9]" />,
     },
@@ -88,6 +95,7 @@ export function StudioGatesGallery({
       title: 'Video Tools · 4K 60fps',
       subtitle: 'Ultra Cinema · Multi-Style Reel Compositor',
       specs: ['4096×1716 Scope', '24 / 30 / 60 fps', '19 Render Engines', formatSummary],
+      previewVideo: BACKGROUND_CUBE_VIDEOS[0].url,
       previewImage: environmentImage,
       tone: 'red',
       icon: <Film className="w-4 h-4 text-[#FF3B5C]" />,
@@ -98,7 +106,7 @@ export function StudioGatesGallery({
       title: 'Picture Tools · 4K Still',
       subtitle: 'Color Suite · Aspect Framing · Alpha RGBA',
       specs: ['PNG / JPG / Alpha', '16:9 · 2.39 · 9:16', 'Exposure & LUTs', 'Transparent Cutout'],
-      previewImage: subjectImage,
+      previewImage: STUDIO_COLLAGE_BRAND_IMG || subjectImage,
       tone: 'cyan',
       icon: <ImageIcon className="w-4 h-4 text-[#F1F5F9]" />,
     },
@@ -108,6 +116,7 @@ export function StudioGatesGallery({
       title: 'Timeline Tools',
       subtitle: 'Multi-Track Ruler · In/Out Trim · Retiming',
       specs: [`${cutsCount} Recorded Cuts`, '0.25x – 2x Speed', 'V1 / FX / A1 Tracks', 'LUT Grade Preview'],
+      previewVideo: BACKGROUND_CUBE_VIDEOS[2].url,
       tone: 'magenta',
       icon: <Scissors className="w-4 h-4 text-[#FF5C8A]" />,
     },
@@ -120,7 +129,7 @@ export function StudioGatesGallery({
       title: 'Smart Voice & AI Tools',
       subtitle: 'Voice Trigger · Pixel Vision · Code Grounding',
       specs: ['Zero API Keys', 'Voice Trigger', 'Swatch Analysis', 'Build Grounding'],
-      previewImage: subjectImage,
+      previewImage: STUDIO_IRON_GATES_IMG || subjectImage,
       tone: 'cyan',
       icon: <Cpu className="w-4 h-4 text-[#F1F5F9]" />,
     },
@@ -130,6 +139,7 @@ export function StudioGatesGallery({
       title: 'VFX & Motion Trails',
       subtitle: '60 fps Realtime Effects, Halftone & .ZIP Export',
       specs: ['Motion Trails', '2D Halftone', 'Kaleidoscope', '.ZIP Sequence'],
+      previewVideo: BACKGROUND_CUBE_VIDEOS[1].url,
       previewImage: environmentImage,
       tone: 'magenta',
       icon: <Sparkles className="w-4 h-4 text-[#FF5C8A]" />,
@@ -140,6 +150,7 @@ export function StudioGatesGallery({
       title: 'Action Animator · 60fps',
       subtitle: 'Picture-to-Fight & Hero Motion Choreography',
       specs: ['Dual Photo Clash', 'Power Aura & Trails', 'Cartoon 3D Squash', '4s Video + .ZIP'],
+      previewVideo: BACKGROUND_CUBE_VIDEOS[4].url,
       previewImage: subjectImage,
       tone: 'red',
       icon: <Swords className="w-4 h-4 text-[#FF3B5C]" />,
@@ -150,6 +161,7 @@ export function StudioGatesGallery({
       title: 'Sound Foley & Lip Sync',
       subtitle: 'Procedural Impact Matrix · Viseme Rig',
       specs: ['Sub Boom & Braam', '0.5x – 2x Pitch', 'WAV Pad Export', '60fps Visemes'],
+      previewImage: STUDIO_COLLAGE_BRAND_IMG,
       tone: 'cyan',
       icon: <Waves className="w-4 h-4 text-[#F1F5F9]" />,
     },
@@ -162,6 +174,7 @@ export function StudioGatesGallery({
       title: 'KAYA AirRadio · FM',
       subtitle: 'Multi-Channel Synth Broadcast & Live Host Mic',
       specs: ['88–108 MHz Tuner', '5 Live Channels', 'Live Spectrum', 'Host Mic Feed'],
+      previewVideo: BACKGROUND_CUBE_VIDEOS[0].url,
       tone: 'cyan',
       icon: <Radio className="w-4 h-4 text-[#F1F5F9]" />,
     },
@@ -171,6 +184,7 @@ export function StudioGatesGallery({
       title: 'Coding & Render School',
       subtitle: 'Rust Systems · Three.js UVs · Shader Lab',
       specs: ['Rust & WASM', 'Mesh 3D Math', 'Telemetry HUD', 'Interactive Sandbox'],
+      previewImage: STUDIO_IRON_GATES_IMG,
       tone: 'magenta',
       icon: <GraduationCap className="w-4 h-4 text-[#FF5C8A]" />,
     },
@@ -180,7 +194,7 @@ export function StudioGatesGallery({
       title: 'Creator Merch & Print',
       subtitle: 'Mockup Studio · Margin Builder · Local Store',
       specs: ['Hoodie / Tee / Mug', 'Custom Print Art', 'Profit Calculator', 'Mockup PNG Export'],
-      previewImage: subjectImage,
+      previewImage: STUDIO_COLLAGE_BRAND_IMG || subjectImage,
       tone: 'red',
       icon: <ShoppingBag className="w-4 h-4 text-[#FF3B5C]" />,
     },
@@ -190,6 +204,7 @@ export function StudioGatesGallery({
       title: 'Live Cam & Social Stream',
       subtitle: 'Camera Recorder & Multi-Platform Simulcast',
       specs: ['Webcam + Mic Live', 'On-Air Lower 3rd', 'Record .WebM', 'Social Share Mesh'],
+      previewVideo: BACKGROUND_CUBE_VIDEOS[2].url,
       previewImage: environmentImage,
       tone: 'cyan',
       icon: <Camera className="w-4 h-4 text-[#F1F5F9]" />,
@@ -260,8 +275,8 @@ export function StudioGatesGallery({
           </div>
         </div>
 
-        {/* SEAMLESS SINGLE-TILE 4-UP STUDIO GALLERY (ONE TILE PER ITEM) */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-3.5 flex-1">
+        {/* CLEAN FULL-TILE WINDOWS 4-UP STUDIO GALLERY (ONE TILE PER ITEM) */}
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
           {visibleTiles.map((tile) => {
             const isSelected = activeTool === tile.id;
 
@@ -269,52 +284,55 @@ export function StudioGatesGallery({
               <button
                 key={tile.id}
                 type="button"
+                data-active={isSelected}
                 onClick={() => onSelectTool(tile.id)}
-                className={`group relative candy-trace-tile rounded-xl p-4 sm:p-5 text-left flex flex-col justify-between min-h-[190px] cursor-pointer ${
-                  isSelected ? 'shadow-[0_0_24px_rgba(255,10,60,0.22)] bg-[#14070B]/70' : ''
+                className={`group candy-trace-tile full-tile-window p-5 text-left flex flex-col justify-between min-h-[218px] cursor-pointer ${
+                  isSelected ? 'shadow-[0_0_24px_rgba(255,10,60,0.22)]' : ''
                 }`}
               >
-                {tile.previewImage && (
+                {tile.previewVideo ? (
+                  <video
+                    src={tile.previewVideo}
+                    muted
+                    loop
+                    playsInline
+                    autoPlay
+                    preload="metadata"
+                    className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-58 group-hover:opacity-84 group-hover:scale-105 transition-all duration-500"
+                  />
+                ) : tile.previewImage ? (
                   <img
                     src={tile.previewImage}
                     alt={tile.title}
-                    className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-18 group-hover:opacity-28 group-hover:scale-105 transition-all duration-500 rounded-xl"
+                    className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-52 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
                   />
-                )}
+                ) : null}
+
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#050304]/95 via-[#090405]/75 to-transparent rounded-xl"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#050304]/95 via-[#090405]/40 to-[#050304]/25"
                 />
 
-                <div className="relative z-10 flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-full candy-surface flex items-center justify-center">
-                      {tile.icon}
-                    </span>
-                    <div>
-                      <span className="font-mono text-[10px] uppercase tracking-widest text-[#E6ECF5]/50 block">
-                        Station {tile.index}
-                      </span>
-                      <h3
-                        className="text-base font-bold uppercase tracking-wider text-white"
-                        style={{ fontFamily: 'var(--font-display)' }}
-                      >
-                        {tile.title}
-                      </h3>
-                    </div>
-                  </div>
+                <div className="relative z-10 flex items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] see-thru-font-subtle">
+                    {tile.icon}
+                    <span>Station {tile.index}</span>
+                  </span>
 
-                  <span className="inline-flex items-center gap-1 font-mono text-[11px] text-[#F1F5F9] group-hover:translate-x-0.5 transition-transform">
+                  <span className="inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.16em] see-thru-font-subtle group-hover:translate-x-0.5 transition-transform">
                     <span>Open</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </div>
 
-                <div className="relative z-10 space-y-1.5 mt-3">
-                  <p className="text-xs text-[#E6ECF5]/80">{tile.subtitle}</p>
-                  <p className="font-mono text-[10px] text-[#FF8C69]/80 tabular-nums">
-                    {tile.specs.join(' · ')}
-                  </p>
+                <div className="relative z-10 space-y-1.5 mt-4">
+                  <h3
+                    className="text-lg sm:text-xl font-bold uppercase tracking-[0.2em] see-thru-font"
+                    style={{ fontFamily: 'var(--font-display)' }}
+                  >
+                    {tile.title}
+                  </h3>
+                  <p className="text-xs see-thru-font-subtle">{tile.subtitle}</p>
                 </div>
               </button>
             );

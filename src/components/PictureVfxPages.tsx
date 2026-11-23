@@ -266,22 +266,40 @@ type VfxLayerKey =
   | '2d_halftone'
   | '2d_kaleidoscope';
 
-export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: string; atmosphereUrl: string }) {
+type BfxBroadcastKey = 'chroma_split' | 'dts_scope' | 'broadcast_slate' | 'lens_halation';
+
+export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl?: string; atmosphereUrl: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [effect, setEffect] = useState<VfxLayerKey>('motion_trails');
+  const [bfxLayers, setBfxLayers] = useState<Record<BfxBroadcastKey, boolean>>({
+    chroma_split: true,
+    dts_scope: true,
+    broadcast_slate: false,
+    lens_halation: true,
+  });
   const [motionTrailsOn, setMotionTrailsOn] = useState<boolean>(true);
   const [intensity, setIntensity] = useState(0.75);
   const [playing, setPlaying] = useState(true);
   const [exportingSeq, setExportingSeq] = useState(false);
 
+  const toggleBfx = (k: BfxBroadcastKey) => {
+    setBfxLayers((prev) => ({ ...prev, [k]: !prev[k] }));
+  };
+
   useEffect(() => {
     let frameId = 0;
     let alive = true;
-    const prod = new Image();
+    const prod = productUrl ? new Image() : null;
     const atmo = new Image();
-    prod.crossOrigin = 'anonymous';
-    atmo.crossOrigin = 'anonymous';
-    prod.src = productUrl;
+    if (prod && productUrl) {
+      if (productUrl.startsWith('http') && !productUrl.startsWith(window.location.origin)) {
+        prod.crossOrigin = 'anonymous';
+      }
+      prod.src = productUrl;
+    }
+    if (atmosphereUrl.startsWith('http') && !atmosphereUrl.startsWith(window.location.origin)) {
+      atmo.crossOrigin = 'anonymous';
+    }
     atmo.src = atmosphereUrl;
 
     const particles = Array.from({ length: 65 }, () => ({
@@ -304,23 +322,21 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
           const h = canvas.height;
           const t = (now - start) / 1000;
 
-          // Motion-trail persistence buffer fade vs clean frame clear
           if (motionTrailsOn) {
-            ctx.fillStyle = `rgba(4, 5, 8, ${0.32 - intensity * 0.16})`;
+            ctx.fillStyle = `rgba(5, 3, 4, ${0.32 - intensity * 0.16})`;
             ctx.fillRect(0, 0, w, h);
           } else {
-            ctx.fillStyle = '#040508';
+            ctx.fillStyle = '#050304';
             ctx.fillRect(0, 0, w, h);
           }
 
           if (atmo.complete && atmo.naturalWidth > 0) {
             ctx.save();
-            ctx.globalAlpha = motionTrailsOn ? 0.35 : 0.72;
+            ctx.globalAlpha = motionTrailsOn ? 0.38 : 0.76;
             ctx.drawImage(atmo, 0, 0, w, h);
             ctx.restore();
           }
 
-          // Compute subject motion path
           const orbitX = Math.sin(t * 2.1) * w * 0.14 * intensity;
           const orbitY = Math.cos(t * 1.6) * h * 0.08 * intensity;
           const curScale = 1 + Math.sin(t * 2.8) * 0.06;
@@ -331,18 +347,17 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
             if (trailHistory.length > 12) trailHistory.shift();
           }
 
-          if (prod.complete && prod.naturalWidth > 0) {
+          if (prod && prod.complete && prod.naturalWidth > 0) {
             const aspect = prod.naturalWidth / prod.naturalHeight;
-            const ph = h * 0.62;
+            const ph = h * 0.56;
             const pw = ph * aspect;
 
-            // Render chromatic afterimage motion trails behind main subject
             if (motionTrailsOn && trailHistory.length > 1) {
               for (let i = 0; i < trailHistory.length - 1; i++) {
                 const tr = trailHistory[i];
                 const ratio = (i + 1) / trailHistory.length;
                 ctx.save();
-                ctx.globalAlpha = ratio * 0.32 * intensity;
+                ctx.globalAlpha = ratio * 0.3 * intensity;
                 ctx.translate(w / 2 + tr.x, h / 2 + tr.y);
                 ctx.rotate(tr.rot);
                 ctx.scale(tr.scale, tr.scale);
@@ -360,7 +375,7 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
             ctx.restore();
           }
 
-          // Active 2D & 3D VFX Passes
+          // Active VFX Passes
           if (effect === 'motion_trails') {
             ctx.save();
             ctx.globalCompositeOperation = 'screen';
@@ -368,7 +383,7 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
               const ang = (s / 14) * Math.PI * 2 + t * 1.4;
               const r1 = 80 + ((t * 180 + s * 35) % 240);
               const r2 = r1 + 65 * intensity;
-              ctx.strokeStyle = s % 2 === 0 ? 'rgba(255, 10, 60, 0.7)' : 'rgba(255, 30, 66, 0.65)';
+              ctx.strokeStyle = s % 2 === 0 ? 'rgba(255, 10, 60, 0.7)' : 'rgba(224, 104, 68, 0.65)';
               ctx.lineWidth = 2.4;
               ctx.beginPath();
               ctx.moveTo(w / 2 + orbitX + Math.cos(ang) * r1, h / 2 + orbitY + Math.sin(ang) * r1);
@@ -412,7 +427,7 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
             for (let s = 0; s < 6; s++) {
               const sy = ((Math.sin(t * 8 + s * 3.1) + 1) * 0.5) * h;
               const sh = 6 + (s % 3) * 8;
-              ctx.fillStyle = s % 2 === 0 ? `rgba(255, 30, 66, ${0.3 * intensity})` : `rgba(255, 10, 60, ${0.3 * intensity})`;
+              ctx.fillStyle = s % 2 === 0 ? `rgba(224, 104, 68, ${0.32 * intensity})` : `rgba(255, 10, 60, ${0.32 * intensity})`;
               ctx.fillRect(0, sy, w, sh);
             }
             ctx.restore();
@@ -423,13 +438,12 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
             ctx.beginPath();
             ctx.arc(w / 2, h / 2, 160, t, t + Math.PI * 1.4);
             ctx.stroke();
-            ctx.strokeStyle = `rgba(255, 30, 66, ${0.55 * intensity})`;
+            ctx.strokeStyle = `rgba(224, 104, 68, ${0.55 * intensity})`;
             ctx.beginPath();
             ctx.arc(w / 2, h / 2, 190, -t * 1.3, -t * 1.3 + Math.PI);
             ctx.stroke();
             ctx.restore();
           } else if (effect === '2d_halftone') {
-            // 2D Optical Comic / Print Halftone Dot Grid Overlay
             ctx.save();
             ctx.fillStyle = `rgba(255, 10, 60, ${0.28 * intensity})`;
             const step = 20;
@@ -443,18 +457,72 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
             }
             ctx.restore();
           } else if (effect === '2d_kaleidoscope') {
-            // 2D Geometric Kaleidoscope Optical Overlay
             ctx.save();
             ctx.globalCompositeOperation = 'screen';
             ctx.translate(w / 2, h / 2);
             for (let k = 0; k < 8; k++) {
               ctx.save();
               ctx.rotate((k * Math.PI) / 4 + t * 0.45);
-              ctx.strokeStyle = k % 2 === 0 ? `rgba(255, 46, 99, ${0.55 * intensity})` : `rgba(255, 10, 60, ${0.55 * intensity})`;
+              ctx.strokeStyle = k % 2 === 0 ? `rgba(255, 46, 99, ${0.55 * intensity})` : `rgba(224, 104, 68, ${0.55 * intensity})`;
               ctx.lineWidth = 2;
               ctx.strokeRect(40, -18, 220 * intensity, 36);
               ctx.restore();
             }
+            ctx.restore();
+          }
+
+          // Active BFX Broadcast FX Layers
+          if (bfxLayers.lens_halation) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            const halo = ctx.createRadialGradient(w * 0.5, h * 0.45, 20, w * 0.5, h * 0.45, w * 0.55);
+            halo.addColorStop(0, `rgba(255, 10, 60, ${0.14 * intensity})`);
+            halo.addColorStop(0.55, `rgba(184, 67, 35, ${0.1 * intensity})`);
+            halo.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = halo;
+            ctx.fillRect(0, 0, w, h);
+            ctx.restore();
+          }
+
+          if (bfxLayers.chroma_split) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            ctx.strokeStyle = `rgba(255, 10, 60, ${0.4 * intensity})`;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(10, 10, w - 20, h - 20);
+            ctx.strokeStyle = `rgba(224, 104, 68, ${0.35 * intensity})`;
+            ctx.strokeRect(14, 12, w - 28, h - 24);
+            ctx.restore();
+          }
+
+          if (bfxLayers.dts_scope) {
+            ctx.save();
+            const bars = 28;
+            const bw = 6;
+            const startX = w - bars * (bw + 3) - 22;
+            for (let b = 0; b < bars; b++) {
+              const mag = 8 + Math.abs(Math.sin(t * 7.5 + b * 0.48)) * 42 * intensity;
+              ctx.fillStyle = b > 20 ? '#FF0A3C' : '#E06844';
+              ctx.fillRect(startX + b * (bw + 3), h - 20 - mag, bw, mag);
+            }
+            ctx.fillStyle = 'rgba(245, 233, 234, 0.72)';
+            ctx.font = '600 10px monospace';
+            ctx.fillText('BFX · DTS:X / SONY SDDS SCOPE', startX, h - 72);
+            ctx.restore();
+          }
+
+          if (bfxLayers.broadcast_slate) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(5, 3, 4, 0.78)';
+            ctx.fillRect(22, h - 68, 320, 46);
+            ctx.fillStyle = '#FF0A3C';
+            ctx.fillRect(22, h - 68, 4, 46);
+            ctx.fillStyle = '#F5E9EA';
+            ctx.font = '700 12px monospace';
+            ctx.fillText('VORTEX · KAYA BROADCAST MASTER', 36, h - 48);
+            ctx.fillStyle = '#E06844';
+            ctx.font = '600 10px monospace';
+            ctx.fillText(`VFX: ${effect.toUpperCase()} · BFX LIVE`, 36, h - 31);
             ctx.restore();
           }
         }
@@ -466,7 +534,7 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
       alive = false;
       cancelAnimationFrame(frameId);
     };
-  }, [productUrl, atmosphereUrl, effect, motionTrailsOn, intensity, playing]);
+  }, [productUrl, atmosphereUrl, effect, bfxLayers, motionTrailsOn, intensity, playing]);
 
   const handleSaveVfxZip = async () => {
     const canvas = canvasRef.current;
@@ -479,12 +547,12 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
           canvas.toBlob((b) => resolve(b!), 'image/png')
         );
         entries.push({
-          name: `kaya-vfx-${effect}-${String(i + 1).padStart(3, '0')}.png`,
+          name: `kaya-vfx-bfx-${effect}-${String(i + 1).padStart(3, '0')}.png`,
           data: new Uint8Array(await blob.arrayBuffer()),
         });
         await new Promise((r) => setTimeout(r, 45));
       }
-      downloadBlob(createZipBlob(entries), `kaya-vfx-${effect}.zip`);
+      downloadBlob(createZipBlob(entries), `kaya-vfx-bfx-${effect}.zip`);
     } finally {
       setExportingSeq(false);
     }
@@ -494,9 +562,9 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
     <PlateBezel accent="magenta" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Sparkles className="w-4 h-4 text-[#FF5C8A]" />
+          <Sparkles className="w-4 h-4 text-[#FF0A3C]" />
           <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-display)' }}>
-            VFX Shaders · 2D Effects &amp; Motion Trails Stage
+            VFX Shaders &amp; BFX Broadcast Compositor
           </h2>
         </div>
         <div className="flex items-center gap-2">
@@ -514,56 +582,90 @@ export function VfxStudioPage({ productUrl, atmosphereUrl }: { productUrl: strin
         />
       </div>
 
-      <div className="cnc-recess rounded-[8px] p-4 space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {(
-            [
-              ['motion_trails', 'Motion Trails'],
-              ['cyber_rain', 'Cyber Rain'],
-              ['anamorphic_flare', 'Anamorphic Flare'],
-              ['glitch_slice', 'Glitch Slice'],
-              ['scifi_hud', 'Sci-Fi HUD'],
-              ['animorph_wave', 'Animorph Wave'],
-              ['2d_halftone', '2D Halftone'],
-              ['2d_kaleidoscope', '2D Kaleidoscope'],
-            ] as [VfxLayerKey, string][]
-          ).map(([k, lbl]) => (
-            <HardwareButton key={k} size="sm" tone="magenta" active={effect === k} onClick={() => setEffect(k)}>
-              <span>{lbl}</span>
-            </HardwareButton>
-          ))}
+      {/* Separated VFX Shaders vs BFX Broadcast FX */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="cnc-recess rounded-[8px] p-4 space-y-2.5">
+          <span className="font-mono text-[11px] uppercase tracking-wider text-[#FF5C8A] block">
+            VFX Visual Shader Passes
+          </span>
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                ['motion_trails', 'Motion Trails'],
+                ['cyber_rain', 'Cyber Rain'],
+                ['anamorphic_flare', 'Anamorphic Flare'],
+                ['glitch_slice', 'Glitch Slice'],
+                ['scifi_hud', 'Sci-Fi HUD'],
+                ['animorph_wave', 'Animorph Wave'],
+                ['2d_halftone', '2D Halftone'],
+                ['2d_kaleidoscope', '2D Kaleidoscope'],
+              ] as [VfxLayerKey, string][]
+            ).map(([k, lbl]) => (
+              <HardwareButton key={k} size="sm" fullWidth tone="magenta" active={effect === k} onClick={() => setEffect(k)}>
+                <span>{lbl}</span>
+              </HardwareButton>
+            ))}
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <HardwareButton
-              size="sm"
-              tone="cyan"
-              active={motionTrailsOn}
-              onClick={() => setMotionTrailsOn((m) => !m)}
-            >
-              <span>Trails Buffer: {motionTrailsOn ? 'ON' : 'OFF'}</span>
-            </HardwareButton>
-            <input
-              type="range"
-              min={0.15}
-              max={1}
-              step={0.05}
-              value={intensity}
-              onChange={(e) => setIntensity(parseFloat(e.target.value))}
-              className="hw-capsule-slider w-28"
-            />
+        <div className="cnc-recess rounded-[8px] p-4 space-y-2.5">
+          <span className="font-mono text-[11px] uppercase tracking-wider text-[#E06844] block">
+            BFX Broadcast FX &amp; Optical Layers
+          </span>
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                ['chroma_split', 'RGB Chromatic Frame'],
+                ['dts_scope', 'DTS / Sony Waveform'],
+                ['broadcast_slate', 'Broadcast Slate Bar'],
+                ['lens_halation', 'Optical Lens Halation'],
+              ] as [BfxBroadcastKey, string][]
+            ).map(([k, lbl]) => (
+              <HardwareButton
+                key={k}
+                size="sm"
+                fullWidth
+                tone="red"
+                active={bfxLayers[k]}
+                onClick={() => toggleBfx(k)}
+              >
+                <span>{lbl}</span>
+              </HardwareButton>
+            ))}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <HardwareButton size="sm" tone="cyan" active={playing} onClick={() => setPlaying((p) => !p)}>
-              {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              <span>{playing ? 'Pause' : 'Play'}</span>
-            </HardwareButton>
-            <HardwareButton size="sm" tone="cyan" active disabled={exportingSeq} onClick={handleSaveVfxZip}>
-              <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
-              <span>{exportingSeq ? 'Packing…' : 'Export VFX PNGs (.zip)'}</span>
-            </HardwareButton>
-          </div>
+        </div>
+      </div>
+
+      <div className="cnc-recess rounded-[8px] p-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <HardwareButton
+            size="sm"
+            tone="cyan"
+            active={motionTrailsOn}
+            onClick={() => setMotionTrailsOn((m) => !m)}
+          >
+            <span>Trails Buffer: {motionTrailsOn ? 'ON' : 'OFF'}</span>
+          </HardwareButton>
+          <span className="font-mono text-[11px] text-[#E6ECF5]/70">FX Intensity ({Math.round(intensity * 100)}%)</span>
+          <input
+            type="range"
+            min={0.15}
+            max={1}
+            step={0.05}
+            value={intensity}
+            onChange={(e) => setIntensity(parseFloat(e.target.value))}
+            className="hw-capsule-slider w-28"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <HardwareButton size="sm" tone="cyan" active={playing} onClick={() => setPlaying((p) => !p)}>
+            {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+            <span>{playing ? 'Pause' : 'Play'}</span>
+          </HardwareButton>
+          <HardwareButton size="sm" tone="cyan" active disabled={exportingSeq} onClick={handleSaveVfxZip}>
+            <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
+            <span>{exportingSeq ? 'Packing…' : 'Export VFX + BFX (.zip)'}</span>
+          </HardwareButton>
         </div>
       </div>
     </PlateBezel>

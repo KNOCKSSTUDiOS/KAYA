@@ -41,6 +41,11 @@ import {
   saveStudioArtifact,
 } from '../lib/firebase.js';
 import { stampUnifiedCanvasWatermark } from '../lib/watermarkEngine.js';
+import {
+  BACKGROUND_CUBE_VIDEOS,
+  STUDIO_COLLAGE_BRAND_IMG,
+  STUDIO_IRON_GATES_IMG,
+} from '../data.js';
 
 export type HubSectionTarget =
   | StudioPageKey
@@ -69,29 +74,31 @@ interface StudioTileDef {
   spec: string;
   kind: 'section' | 'tool';
   icon: React.ReactNode;
+  previewVideo?: string;
+  previewImage?: string;
 }
 
 const VORTEX_LINEUP: StudioTileDef[] = [
-  { id: 'video', title: 'KAYA Cinema Studio', caption: '4K HDR compositor & 19 render engines', spec: '24–144 FPS', kind: 'tool', icon: <Film className="w-4 h-4 text-[#FF0A3C]" /> },
-  { id: 'blender', title: 'Blender Pipeline', caption: 'Real-time PBR mesh clearcoat & scene export', spec: 'GLB Viewport', kind: 'section', icon: <Box className="w-4 h-4 text-[#E06844]" /> },
-  { id: 'infinity', title: 'Infinity · Valerius (V)', caption: 'Sentinel of the Ten Galaxies orbital core', spec: '10 Galaxies', kind: 'section', icon: <Orbit className="w-4 h-4 text-[#FF0A3C]" /> },
-  { id: 'soul', title: 'Soul · Cooling Forge', caption: 'Opus 4.7 thermal governor & frame pacing', spec: 'Opus 4.7', kind: 'section', icon: <Snowflake className="w-4 h-4 text-[#F5E9EA]" /> },
-  { id: 'school', title: 'Infinity School', caption: 'Coding School, Rendering School & AI Tutor', spec: 'Live Labs', kind: 'tool', icon: <GraduationCap className="w-4 h-4 text-[#E06844]" /> },
-  { id: 'merch', title: 'Printify Studio', caption: 'Custom apparel, mugs & posters synced to cloud', spec: 'POD Catalog', kind: 'tool', icon: <ShoppingBag className="w-4 h-4 text-[#FF0A3C]" /> },
-  { id: 'airradio', title: 'AirRadio FM', caption: 'Multi-channel synth broadcast & host mic', spec: '88–108 MHz', kind: 'tool', icon: <Radio className="w-4 h-4 text-[#F5E9EA]" /> },
-  { id: 'cube', title: '360° Video Cube', caption: '27-cubie interactive spatial video matrix', spec: '3D Spatial', kind: 'tool', icon: <Layers className="w-4 h-4 text-[#FF0A3C]" /> },
-  { id: 'picture', title: 'Picture & Color Suite', caption: 'LUT grading, cutouts & alpha framing', spec: 'RGBA 4K', kind: 'tool', icon: <ImageIcon className="w-4 h-4 text-[#F5E9EA]" /> },
-  { id: 'vfx', title: 'VFX Shader App', caption: 'Realtime trails, halftone & prism shaders', spec: '60 FPS FX', kind: 'tool', icon: <Sparkles className="w-4 h-4 text-[#E06844]" /> },
-  { id: 'storyboard', title: '3D Storyboard App', caption: 'Icosahedron shader pre-vis & shot beats', spec: '5-Shot Previs', kind: 'tool', icon: <Clapperboard className="w-4 h-4 text-[#FF0A3C]" /> },
-  { id: 'animator', title: 'Action Animator', caption: 'Dual-subject clash choreography & motion', spec: 'Motion FX', kind: 'tool', icon: <Swords className="w-4 h-4 text-[#E06844]" /> },
-  { id: 'editor', title: 'Timeline Editor', caption: 'Multi-track V1/FX/A1 cuts & speed ramps', spec: '0.25x–2x', kind: 'tool', icon: <Scissors className="w-4 h-4 text-[#F5E9EA]" /> },
-  { id: 'audio', title: 'Audio Mastering', caption: 'DSP spectrum, beats & unified watermark stem', spec: '44.1 kHz', kind: 'tool', icon: <Volume2 className="w-4 h-4 text-[#FF0A3C]" /> },
-  { id: 'sound', title: 'Sound Foley', caption: 'Procedural impact & sub-boom matrix', spec: 'Foley DSP', kind: 'tool', icon: <Waves className="w-4 h-4 text-[#E06844]" /> },
-  { id: 'lipsync', title: 'Lip Sync Rig', caption: 'Phoneme viseme & live mic reactivity', spec: 'Viseme Rig', kind: 'tool', icon: <Mic className="w-4 h-4 text-[#F5E9EA]" /> },
-  { id: 'live', title: 'Live Cam & Stream', caption: 'Camera compositor & WebM recording', spec: 'Broadcast', kind: 'tool', icon: <Camera className="w-4 h-4 text-[#FF0A3C]" /> },
-  { id: 'bridge', title: 'Local Suite Bridge', caption: 'Open desktop mesh & paint pack interchange', spec: 'Local Sync', kind: 'tool', icon: <Cable className="w-4 h-4 text-[#F5E9EA]" /> },
-  { id: 'intel', title: 'AI Vision & Geo Console', caption: 'Self-hosted vision analysis & geo-grid', spec: 'Private AI', kind: 'tool', icon: <Cpu className="w-4 h-4 text-[#E06844]" /> },
-  { id: 'connectors', title: 'MCP, SQL & Cloud Vault', caption: 'Verified databases, skills, artifacts & search', spec: 'Self-Hosted', kind: 'section', icon: <Database className="w-4 h-4 text-[#FF0A3C]" /> },
+  { id: 'video', title: 'KAYA Cinema Studio', caption: '4K HDR compositor & 19 render engines', spec: '24–144 FPS', kind: 'tool', icon: <Film className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[0].url },
+  { id: 'blender', title: 'Blender Pipeline', caption: 'Real-time PBR mesh clearcoat & scene export', spec: 'GLB Viewport', kind: 'section', icon: <Box className="w-4 h-4 text-[#E06844]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
+  { id: 'infinity', title: 'Infinity · Valerius (V)', caption: 'Sentinel of the Ten Galaxies orbital core', spec: '10 Galaxies', kind: 'section', icon: <Orbit className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[2].url },
+  { id: 'soul', title: 'Soul · Cooling Forge', caption: 'Opus 4.7 thermal governor & frame pacing', spec: 'Opus 4.7', kind: 'section', icon: <Snowflake className="w-4 h-4 text-[#F5E9EA]" />, previewImage: STUDIO_IRON_GATES_IMG },
+  { id: 'school', title: 'Infinity School', caption: 'Coding School, Rendering School & AI Tutor', spec: 'Live Labs', kind: 'tool', icon: <GraduationCap className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[4].url },
+  { id: 'merch', title: 'Printify Studio', caption: 'Custom apparel, mugs & posters synced to cloud', spec: 'POD Catalog', kind: 'tool', icon: <ShoppingBag className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
+  { id: 'airradio', title: 'AirRadio FM', caption: 'Multi-channel synth broadcast & host mic', spec: '88–108 MHz', kind: 'tool', icon: <Radio className="w-4 h-4 text-[#F5E9EA]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[3].url },
+  { id: 'cube', title: '360° Video Cube', caption: '27-cubie interactive spatial video matrix', spec: '3D Spatial', kind: 'tool', icon: <Layers className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[1].url },
+  { id: 'picture', title: 'Picture & Color Suite', caption: 'LUT grading, cutouts & alpha framing', spec: 'RGBA 4K', kind: 'tool', icon: <ImageIcon className="w-4 h-4 text-[#F5E9EA]" />, previewImage: STUDIO_IRON_GATES_IMG },
+  { id: 'vfx', title: 'VFX Shader App', caption: 'Realtime trails, halftone & prism shaders', spec: '60 FPS FX', kind: 'tool', icon: <Sparkles className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[0].url },
+  { id: 'storyboard', title: '3D Storyboard App', caption: 'Icosahedron shader pre-vis & shot beats', spec: '5-Shot Previs', kind: 'tool', icon: <Clapperboard className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
+  { id: 'animator', title: 'Action Animator', caption: 'Dual-subject clash choreography & motion', spec: 'Motion FX', kind: 'tool', icon: <Swords className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[1].url },
+  { id: 'editor', title: 'Timeline Editor', caption: 'Multi-track V1/FX/A1 cuts & speed ramps', spec: '0.25x–2x', kind: 'tool', icon: <Scissors className="w-4 h-4 text-[#F5E9EA]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[2].url },
+  { id: 'audio', title: 'Audio Mastering', caption: 'DSP spectrum, beats & unified watermark stem', spec: '44.1 kHz', kind: 'tool', icon: <Volume2 className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_IRON_GATES_IMG },
+  { id: 'sound', title: 'Sound Foley', caption: 'Procedural impact & sub-boom matrix', spec: 'Foley DSP', kind: 'tool', icon: <Waves className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[3].url },
+  { id: 'lipsync', title: 'Lip Sync Rig', caption: 'Phoneme viseme & live mic reactivity', spec: 'Viseme Rig', kind: 'tool', icon: <Mic className="w-4 h-4 text-[#F5E9EA]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[4].url },
+  { id: 'live', title: 'Live Cam & Stream', caption: 'Camera compositor & WebM recording', spec: 'Broadcast', kind: 'tool', icon: <Camera className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[0].url },
+  { id: 'bridge', title: 'Local Suite Bridge', caption: 'Open desktop mesh & paint pack interchange', spec: 'Local Sync', kind: 'tool', icon: <Cable className="w-4 h-4 text-[#F5E9EA]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
+  { id: 'intel', title: 'AI Vision & Geo Console', caption: 'Self-hosted vision analysis & geo-grid', spec: 'Private AI', kind: 'tool', icon: <Cpu className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[2].url },
+  { id: 'connectors', title: 'MCP, SQL & Cloud Vault', caption: 'Verified databases, skills, artifacts & search', spec: 'Self-Hosted', kind: 'section', icon: <Database className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_IRON_GATES_IMG },
 ];
 
 export function VortexHubModules({
@@ -465,7 +472,7 @@ export function VortexHubModules({
 
   const activateHubTile = (id: HubSectionTarget) => {
     if (id === 'blender' || id === 'infinity' || id === 'soul' || id === 'connectors') {
-      onJumpSection(`section-${id}`);
+      onJumpSection(`vortex-${id}`);
       return;
     }
     onSelectTool(id);
@@ -487,12 +494,12 @@ export function VortexHubModules({
 
   return (
     <div className="space-y-10">
-      {/* 1. VORTEX MAIN HUB — SINGLE SEAMLESS TILES WITH RACING DOT */}
-      <section id="section-vortex-hub" className="space-y-4">
+      {/* 1. VORTEX MAIN HUB — CLEAN FULL-TILE WINDOWS WITH SEE-THROUGH FONT */}
+      <section id="vortex-hub" className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2
-              className="text-base sm:text-lg font-bold uppercase tracking-[0.2em] text-[#F5E9EA]"
+              className="text-base sm:text-xl font-bold uppercase tracking-[0.24em] see-thru-font"
               style={{ fontFamily: 'var(--font-display)' }}
             >
               Vortex Main Hub · Connected Studio Lineup
@@ -504,7 +511,7 @@ export function VortexHubModules({
           <LedStatusIndicator label={`${VORTEX_LINEUP.length} Connected Modules`} tone="red" pulse />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {VORTEX_LINEUP.map((tile) => {
             const isActive = activeTool === tile.id;
             return (
@@ -513,20 +520,51 @@ export function VortexHubModules({
                 type="button"
                 data-active={isActive}
                 onClick={() => activateHubTile(tile.id)}
-                className="candy-trace-tile text-left p-4 flex flex-col justify-between gap-2.5 cursor-pointer"
+                className="group candy-trace-tile full-tile-window min-h-[172px] text-left p-4 flex flex-col justify-between gap-3 cursor-pointer"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
+                {tile.previewVideo ? (
+                  <video
+                    src={tile.previewVideo}
+                    muted
+                    loop
+                    playsInline
+                    autoPlay
+                    preload="metadata"
+                    className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-55 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
+                  />
+                ) : tile.previewImage ? (
+                  <img
+                    src={tile.previewImage}
+                    alt={tile.title}
+                    className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-78 group-hover:scale-105 transition-all duration-500"
+                  />
+                ) : null}
+
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#050304]/95 via-[#090405]/45 to-[#050304]/25"
+                />
+
+                <div className="relative z-10 flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
                     {tile.icon}
-                    <span className="font-mono text-xs font-bold text-[#F5E9EA] truncate">
-                      {tile.title}
+                    <span className="font-mono text-[10px] uppercase tracking-[0.18em] see-thru-font-subtle">
+                      {tile.spec}
                     </span>
-                  </div>
-                  <span className="font-mono text-[10px] text-[#FF5E7E] uppercase shrink-0">
-                    {tile.spec}
                   </span>
                 </div>
-                <p className="text-xs text-[#F5E9EA]/68 leading-snug">{tile.caption}</p>
+
+                <div className="relative z-10 space-y-1">
+                  <h3
+                    className="text-sm sm:text-base font-bold uppercase tracking-[0.16em] see-thru-font truncate"
+                    style={{ fontFamily: 'var(--font-display)' }}
+                  >
+                    {tile.title}
+                  </h3>
+                  <p className="text-[11px] see-thru-font-subtle leading-snug line-clamp-2">
+                    {tile.caption}
+                  </p>
+                </div>
               </button>
             );
           })}
@@ -534,7 +572,7 @@ export function VortexHubModules({
       </section>
 
       {/* 2. BLENDER PIPELINE + INFINITY VALERIUS (V) + SOUL COOLING FORGE OPUS 4.7 */}
-      <section id="section-blender" className="candy-surface rounded-[18px] p-5 sm:p-6 space-y-5">
+      <section id="vortex-blender" className="candy-surface rounded-[18px] p-5 sm:p-6 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <Box className="w-5 h-5 text-[#E06844]" />
@@ -643,7 +681,7 @@ export function VortexHubModules({
 
       {/* 3. INFINITY · VALERIUS (V) SENTINEL OF THE TEN GALAXIES + SOUL COOLING FORGE OPUS 4.7 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section id="section-infinity" className="candy-surface rounded-[18px] p-5 space-y-4">
+        <section id="vortex-infinity" className="candy-surface rounded-[18px] p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Orbit className="w-4 h-4 text-[#FF0A3C]" />
@@ -676,7 +714,7 @@ export function VortexHubModules({
           </div>
         </section>
 
-        <section id="section-soul" className="candy-surface rounded-[18px] p-5 space-y-4">
+        <section id="vortex-soul" className="candy-surface rounded-[18px] p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Snowflake className="w-4 h-4 text-[#FF5E7E]" />
@@ -735,7 +773,7 @@ export function VortexHubModules({
       </div>
 
       {/* 4. REAL-TIME SEARCH, CONNECTOR SKILLS / MCP, ARTIFACTS, PROJECTS & EXISTING DB VERIFIER */}
-      <section id="section-connectors" className="candy-surface rounded-[18px] p-5 sm:p-6 space-y-5">
+      <section id="vortex-connectors" className="candy-surface rounded-[18px] p-5 sm:p-6 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Workflow className="w-5 h-5 text-[#FF0A3C]" />

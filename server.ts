@@ -644,9 +644,9 @@ async function startServer() {
     });
   });
 
-  // Proprietary source protection
+  // Proprietary source protection (keep source download APIs & raw archive artifacts restricted while allowing studio media assets)
   app.all(
-    ['/api/build-tree', '/api/file-content', '/api/download-file', '/api/download-code', '/assets/aistudio/*'],
+    ['/api/build-tree', '/api/file-content', '/api/download-file', '/api/download-code', '/assets/aistudio/*.html', '/assets/aistudio/Paste_*'],
     (_req, res) => {
       res.status(403).json({
         error: 'Access denied: Proprietary source code protected © 2024–2026 VORTEX · KAYA™',

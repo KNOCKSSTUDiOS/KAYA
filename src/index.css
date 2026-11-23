@@ -170,6 +170,61 @@ body {
   }
 }
 
+/* See-Through Etched Display Font (matches user's cut screenshots) */
+.see-thru-font {
+  color: rgba(245, 233, 234, 0.44);
+  -webkit-text-stroke: 0.75px rgba(255, 240, 242, 0.56);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.65);
+  transition: color 220ms ease, -webkit-text-stroke-color 220ms ease, text-shadow 220ms ease;
+}
+
+.group:hover .see-thru-font,
+.candy-trace-tile:hover .see-thru-font,
+.see-thru-font:hover,
+.see-thru-font:focus-visible {
+  color: rgba(255, 255, 255, 0.94);
+  -webkit-text-stroke: 0.75px rgba(255, 245, 246, 0.88);
+  text-shadow: 0 0 22px rgba(255, 10, 60, 0.42), 0 2px 14px rgba(0, 0, 0, 0.8);
+}
+
+.see-thru-font-subtle {
+  color: rgba(245, 233, 234, 0.52);
+  -webkit-text-stroke: 0.35px rgba(255, 235, 238, 0.34);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.72);
+  transition: color 200ms ease;
+}
+
+.group:hover .see-thru-font-subtle,
+.candy-trace-tile:hover .see-thru-font-subtle {
+  color: rgba(255, 232, 235, 0.92);
+}
+
+/* Minimal Cut-Screenshot Bottom Bar See-Through Glass Buttons */
+.see-thru-bar-btn {
+  background: rgba(5, 3, 4, 0.24);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: rgba(245, 233, 234, 0.56);
+  border: 1px solid rgba(255, 240, 242, 0.16);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.75);
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.see-thru-bar-btn:hover,
+.see-thru-bar-btn:focus-visible {
+  background: rgba(12, 4, 6, 0.58);
+  color: rgba(255, 255, 255, 0.96);
+  border-color: rgba(255, 10, 60, 0.58);
+}
+
+/* Clean Edge-to-Edge Full-Tile Window */
+.full-tile-window {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  isolation: isolate;
+}
+
 .machined-ring {
   background: linear-gradient(145deg, #2D181A 0%, #090405 55%, #4A2318 100%);
   box-shadow:

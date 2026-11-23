@@ -1,5 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Square, Download, Volume2, Waves, Upload, ShieldCheck } from 'lucide-react';
+import {
+  Play,
+  Square,
+  Download,
+  Volume2,
+  Waves,
+  Upload,
+  ShieldCheck,
+  Music,
+  Disc3,
+} from 'lucide-react';
 import { PlateBezel, HardwareButton, LedStatusIndicator } from './HardwarePrimitives.js';
 import { UNIFIED_WATERMARK_TEXT, getUnifiedWatermarkLabel } from '../lib/watermarkEngine.js';
 
@@ -31,7 +41,7 @@ function encodeWavBlob(samples: Float32Array, sampleRate: number, meta?: WavCopy
   let listChunkSize = 0;
   if (infoChunks.length > 0) {
     const subSize = infoChunks.reduce((acc, c) => acc + c.length, 0);
-    listChunkSize = 12 + subSize; // 'LIST' + size + 'INFO' + subchunks
+    listChunkSize = 12 + subSize;
   }
 
   const dataByteLen = samples.length * 2;
@@ -89,6 +99,61 @@ function downloadBlob(blob: Blob, name: string) {
 }
 
 type SynthPreset = 'cinema_drone' | 'cyber_bass' | 'scifi_pad' | 'noir_pulse';
+export type SpatialCodecKey = 'dts_x' | 'sony_sdds' | 'dry_stereo';
+
+interface MusicStemPreset {
+  id: string;
+  title: string;
+  genre: string;
+  bpm: number;
+  baseFreq: number;
+  cutoff: number;
+  synth: SynthPreset;
+  steps: boolean[];
+}
+
+const MUSIC_STEM_PRESETS: MusicStemPreset[] = [
+  {
+    id: 'harbor_drive',
+    title: 'Midnight Harbor Drive',
+    genre: 'Outrun Synth · 118 BPM',
+    bpm: 118,
+    baseFreq: 98,
+    cutoff: 1650,
+    synth: 'cyber_bass',
+    steps: [true, false, true, true, false, true, false, true],
+  },
+  {
+    id: 'rust_forge',
+    title: 'Rust Forge 128',
+    genre: 'Industrial Pulse · 128 BPM',
+    bpm: 128,
+    baseFreq: 82,
+    cutoff: 2200,
+    synth: 'noir_pulse',
+    steps: [true, true, false, true, true, false, true, false],
+  },
+  {
+    id: 'valerius_cosmic',
+    title: 'Valerius Celestial Pad',
+    genre: 'Cinema Score · 92 BPM',
+    bpm: 92,
+    baseFreq: 110,
+    cutoff: 1200,
+    synth: 'scifi_pad',
+    steps: [true, false, false, true, false, false, true, false],
+  },
+  {
+    id: 'candy_neon',
+    title: 'Candy-Gloss Club Loop',
+    genre: 'Chrome Electro · 124 BPM',
+    bpm: 124,
+    baseFreq: 130,
+    cutoff: 2600,
+    synth: 'cinema_drone',
+    steps: [true, false, true, false, true, true, false, true],
+  },
+];
 
 export function AudioStudioPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -96,15 +161,17 @@ export function AudioStudioPage() {
   const oscNodesRef = useRef<OscillatorNode[]>([]);
   const animIdRef = useRef<number>(0);
 
-  const [preset, setPreset] = useState<SynthPreset>('cinema_drone');
-  const [baseFreq, setBaseFreq] = useState(110);
-  const [cutoff, setCutoff] = useState(1400);
+  const [selectedStemId, setSelectedStemId] = useState<string>(MUSIC_STEM_PRESETS[0].id);
+  const [preset, setPreset] = useState<SynthPreset>('cyber_bass');
+  const [spatialBus, setSpatialBus] = useState<SpatialCodecKey>('dts_x');
+  const [baseFreq, setBaseFreq] = useState(98);
+  const [cutoff, setCutoff] = useState(1650);
   const [bpm, setBpm] = useState(118);
-  const [lowGainDb, setLowGainDb] = useState(2);
-  const [highGainDb, setHighGainDb] = useState(1);
+  const [lowGainDb, setLowGainDb] = useState(3);
+  const [highGainDb, setHighGainDb] = useState(2);
   const [beatActive, setBeatActive] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
-  const [steps, setSteps] = useState<boolean[]>([true, false, true, false, true, true, false, true]);
+  const [steps, setSteps] = useState<boolean[]>([true, false, true, true, false, true, false, true]);
   const [playing, setPlaying] = useState(false);
   const [loadedAudioUrl, setLoadedAudioUrl] = useState<string | null>(null);
   const [loadedName, setLoadedName] = useState<string>('');
@@ -112,7 +179,7 @@ export function AudioStudioPage() {
   const [watermarkStamp, setWatermarkStamp] = useState(true);
   const [acousticBeacon, setAcousticBeacon] = useState(true);
   const [stampCode] = useState(() => `KY-2024-2026-${Math.floor(1000 + Math.random() * 8999)}`);
-  const [statusText, setStatusText] = useState(`${UNIFIED_WATERMARK_TEXT} Acoustic Master Ready`);
+  const [statusText, setStatusText] = useState(`${UNIFIED_WATERMARK_TEXT} Music Bus Ready`);
   const beatTimerRef = useRef<number>(0);
 
   const stopAudio = () => {
@@ -138,6 +205,16 @@ export function AudioStudioPage() {
     };
   }, []);
 
+  const loadStemPreset = (stem: MusicStemPreset) => {
+    setSelectedStemId(stem.id);
+    setPreset(stem.synth);
+    setBpm(stem.bpm);
+    setBaseFreq(stem.baseFreq);
+    setCutoff(stem.cutoff);
+    setSteps(stem.steps);
+    setStatusText(`Loaded Music Stem: ${stem.title} (${stem.bpm} BPM)`);
+  };
+
   // 8-Step Music & Beat Sequencer loop
   useEffect(() => {
     if (!beatActive) {
@@ -150,19 +227,24 @@ export function AudioStudioPage() {
     if (ctx.state === 'suspended') ctx.resume();
 
     let stepIdx = 0;
-    const intervalMs = Math.max(110, Math.round((60 / bpm / 2) * 1000));
+    const intervalMs = Math.max(105, Math.round((60 / bpm / 2) * 1000));
     beatTimerRef.current = window.setInterval(() => {
       setActiveStep(stepIdx);
       if (steps[stepIdx]) {
         const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
         const g = ctx.createGain();
         const isDownbeat = stepIdx % 4 === 0;
         osc.type = isDownbeat ? 'sine' : 'triangle';
-        osc.frequency.setValueAtTime(isDownbeat ? baseFreq * 1.2 : baseFreq * 2.5, ctx.currentTime);
+        osc.frequency.setValueAtTime(isDownbeat ? baseFreq * 1.25 : baseFreq * 2.5, ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(isDownbeat ? 38 : baseFreq, ctx.currentTime + 0.14);
+        filter.type = 'lowshelf';
+        filter.frequency.value = 140;
+        filter.gain.value = spatialBus === 'dts_x' ? 4 : spatialBus === 'sony_sdds' ? 2.5 : 0;
         g.gain.setValueAtTime(0.28, ctx.currentTime);
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
-        osc.connect(g);
+        osc.connect(filter);
+        filter.connect(g);
         g.connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.17);
@@ -171,7 +253,7 @@ export function AudioStudioPage() {
     }, intervalMs);
 
     return () => clearInterval(beatTimerRef.current);
-  }, [beatActive, bpm, baseFreq, steps]);
+  }, [beatActive, bpm, baseFreq, steps, spatialBus]);
 
   const startLiveSynth = () => {
     stopAudio();
@@ -188,12 +270,12 @@ export function AudioStudioPage() {
     const lowShelf = ctx.createBiquadFilter();
     lowShelf.type = 'lowshelf';
     lowShelf.frequency.value = 180;
-    lowShelf.gain.value = lowGainDb;
+    lowShelf.gain.value = lowGainDb + (spatialBus === 'dts_x' ? 3 : 0);
 
     const highShelf = ctx.createBiquadFilter();
     highShelf.type = 'highshelf';
     highShelf.frequency.value = 3200;
-    highShelf.gain.value = highGainDb;
+    highShelf.gain.value = highGainDb + (spatialBus === 'sony_sdds' ? 2.5 : 0);
 
     const gain = ctx.createGain();
     gain.gain.value = 0.24;
@@ -228,7 +310,7 @@ export function AudioStudioPage() {
     });
     oscNodesRef.current = oscs;
     setPlaying(true);
-    setStatusText(`Mastering ${preset.replace('_', ' ')} @ ${baseFreq} Hz`);
+    setStatusText(`Mastering ${preset.replace('_', ' ')} via ${spatialBus.toUpperCase()} @ ${baseFreq} Hz`);
 
     const dataArr = new Uint8Array(analyser.frequencyBinCount);
     const drawSpectrum = () => {
@@ -239,7 +321,7 @@ export function AudioStudioPage() {
       analyser.getByteFrequencyData(dataArr);
       const w = canvas.width;
       const h = canvas.height;
-      g.fillStyle = '#040507';
+      g.fillStyle = '#050304';
       g.fillRect(0, 0, w, h);
 
       const barW = w / dataArr.length;
@@ -247,9 +329,9 @@ export function AudioStudioPage() {
         const val = dataArr[i] / 255;
         const bh = val * (h - 24);
         const grad = g.createLinearGradient(0, h - bh, 0, h);
-        grad.addColorStop(0, '#F1F5F9');
-        grad.addColorStop(0.5, '#FF2E63');
-        grad.addColorStop(1, '#FF1E42');
+        grad.addColorStop(0, '#F5E9EA');
+        grad.addColorStop(0.5, '#E06844');
+        grad.addColorStop(1, '#FF0A3C');
         g.fillStyle = grad;
         g.fillRect(i * barW + 1, h - bh, Math.max(2, barW - 2), bh);
       }
@@ -286,7 +368,6 @@ export function AudioStudioPage() {
     const rendered = await offline.startRendering();
     const raw = new Float32Array(rendered.getChannelData(0));
     if (watermarkStamp && acousticBeacon) {
-      // Embed ultra-subtle 19.2 kHz copyright signature carrier pulses every 0.5s
       for (let i = 0; i < raw.length; i++) {
         const t = i / sampleRate;
         const pulseWindow = (t % 0.5) < 0.04 ? 0.0022 : 0;
@@ -301,12 +382,12 @@ export function AudioStudioPage() {
         ? {
             copyright: copyrightLine,
             artist: copyrightOwner.trim() || 'KAYA™ Studio',
-            title: `${preset.toUpperCase()} Master (${stampCode})`,
-            software: 'KAYA™ 4K HDR Audio Engine © 2024–2026',
+            title: `${preset.toUpperCase()} (${spatialBus.toUpperCase()}) Master (${stampCode})`,
+            software: 'VORTEX · KAYA Audio & Music Engine © 2024–2026',
           }
         : undefined
     );
-    downloadBlob(wav, `kaya-music-${preset}-${baseFreq}hz-2024-2026.wav`);
+    downloadBlob(wav, `kaya-music-${selectedStemId}-${spatialBus}-${baseFreq}hz.wav`);
     setStatusText(
       watermarkStamp
         ? `Exported Stamped WAV (${copyrightLine})`
@@ -318,21 +399,67 @@ export function AudioStudioPage() {
     <PlateBezel accent="cyan" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Volume2 className="w-4 h-4 text-[#F1F5F9]" />
+          <Music className="w-4 h-4 text-[#FF0A3C]" />
           <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-display)' }}>
-            Audio Studio · Mastering Sound &amp; Music Editor
+            Audio &amp; Music Workstation · Backing Tracks &amp; Mastering
           </h2>
         </div>
         <LedStatusIndicator label={statusText} tone={playing || beatActive ? 'red' : 'cyan'} pulse={playing || beatActive} />
       </div>
 
-      {/* Real-time Spectrum Analyzer Canvas + Single Unified Watermark Stamp */}
+      {/* Music Library Presets Row */}
+      <div className="cnc-recess rounded-[10px] p-3.5 space-y-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/70">
+            Studio Music Stems &amp; Score Library
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {(
+              [
+                ['dts_x', 'DTS:X Cinema Bus'],
+                ['sony_sdds', 'Sony SDDS 7.1 Bus'],
+                ['dry_stereo', 'Pure Stereo Bus'],
+              ] as [SpatialCodecKey, string][]
+            ).map(([k, lbl]) => (
+              <HardwareButton
+                key={k}
+                size="sm"
+                tone={k === 'dts_x' ? 'red' : k === 'sony_sdds' ? 'magenta' : 'cyan'}
+                active={spatialBus === k}
+                onClick={() => setSpatialBus(k)}
+              >
+                <span>{lbl}</span>
+              </HardwareButton>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          {MUSIC_STEM_PRESETS.map((stem) => (
+            <button
+              key={stem.id}
+              type="button"
+              onClick={() => loadStemPreset(stem)}
+              className={`candy-trace-tile rounded-xl p-3 text-left transition-colors cursor-pointer ${
+                selectedStemId === stem.id ? 'bg-[#19060C]/90' : 'bg-[#090406]/70'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-xs font-bold text-white truncate">{stem.title}</span>
+                <Disc3 className={`w-3.5 h-3.5 shrink-0 ${selectedStemId === stem.id ? 'text-[#FF0A3C]' : 'text-[#E6ECF5]/40'}`} />
+              </div>
+              <span className="font-mono text-[10px] text-[#E06844] block mt-1">{stem.genre}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Real-time Spectrum Analyzer Canvas + Unified Watermark Stamp */}
       <div className="candy-surface rounded-xl p-2 relative">
         <canvas
           ref={canvasRef}
           width={960}
-          height={200}
-          className="w-full h-[180px] rounded-lg bg-[#050304]"
+          height={190}
+          className="w-full h-[170px] rounded-lg bg-[#050304]"
         />
         {watermarkStamp && (
           <div className="pointer-events-none absolute bottom-4 right-4 px-3 py-1 rounded-full bg-[#050304]/85 font-mono text-[10px] tracking-widest uppercase text-[#FF9BAE] flex items-center gap-1.5">
@@ -346,7 +473,7 @@ export function AudioStudioPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="cnc-recess rounded-[8px] p-3.5 space-y-2.5">
           <span className="font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/60 block">
-            Synth &amp; Mastering Voice
+            Synth &amp; Score Voice
           </span>
           <div className="grid grid-cols-2 gap-2">
             {(
@@ -435,7 +562,7 @@ export function AudioStudioPage() {
               onClick={playing ? stopAudio : startLiveSynth}
             >
               {playing ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              <span>{playing ? 'Stop Synth' : 'Audition Synth'}</span>
+              <span>{playing ? 'Stop Synth' : 'Play Score Stem'}</span>
             </HardwareButton>
             <HardwareButton tone="magenta" active={false} onClick={handleExportWav}>
               <Download className="w-3.5 h-3.5 text-[#FF5C8A]" />
@@ -445,7 +572,7 @@ export function AudioStudioPage() {
 
           <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full candy-surface font-mono text-xs text-[#E6ECF5] cursor-pointer hover:bg-[#19060C]/80">
             <Upload className="w-3.5 h-3.5 text-[#F1F5F9]" />
-            <span className="truncate">{loadedName ? `Loaded: ${loadedName}` : 'Load Local Audio Track…'}</span>
+            <span className="truncate">{loadedName ? `Loaded: ${loadedName}` : 'Import Custom Music Track…'}</span>
             <input
               type="file"
               accept="audio/*"
@@ -467,7 +594,7 @@ export function AudioStudioPage() {
       <div className="cnc-recess rounded-[8px] p-3.5 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/70">
-            8-Step Music &amp; Rhythm Sequencer ({bpm} BPM)
+            8-Step Music Rhythm Sequencer ({bpm} BPM)
           </span>
           <div className="flex flex-wrap items-center gap-3">
             <input
@@ -547,17 +674,17 @@ export function AudioStudioPage() {
             <span>RIFF + Sonic Watermark: {acousticBeacon ? 'ON' : 'OFF'}</span>
           </HardwareButton>
         </div>
-        <p className="font-mono text-[11px] text-[#E6ECF5]/60">
-          Embeds binary RIFF LIST/INFO copyright metadata (<code className="text-[#F1F5F9]">ICOP / IART / ISFT</code>) and subtle ultrasonic provenance pulse into every exported music track.
-        </p>
       </div>
     </PlateBezel>
   );
 }
 
+type SampleCategory = 'all' | 'sub_impact' | 'scifi_holo' | 'mech_foley' | 'risers';
+
 interface SoundPadSpec {
   id: string;
   label: string;
+  category: Exclude<SampleCategory, 'all'>;
   freqStart: number;
   freqEnd: number;
   dur: number;
@@ -566,73 +693,179 @@ interface SoundPadSpec {
 }
 
 const FOLEY_PADS: SoundPadSpec[] = [
-  { id: 'sub_boom', label: 'Cinema Sub Boom', freqStart: 120, freqEnd: 32, dur: 0.9, type: 'sine', tone: 'red' },
-  { id: 'cyber_braam', label: 'Cyber Braam', freqStart: 95, freqEnd: 68, dur: 1.1, type: 'sawtooth', tone: 'magenta' },
-  { id: 'scifi_sweep', label: 'Sci-Fi Riser', freqStart: 180, freqEnd: 1100, dur: 0.8, type: 'triangle', tone: 'cyan' },
-  { id: 'cnc_latch', label: 'CNC Mech Latch', freqStart: 900, freqEnd: 190, dur: 0.12, type: 'square', tone: 'cyan' },
-  { id: 'laser_pulse', label: 'Laser Pulse', freqStart: 1600, freqEnd: 240, dur: 0.28, type: 'sawtooth', tone: 'red' },
-  { id: 'holo_chime', label: 'Holo Glass Chime', freqStart: 880, freqEnd: 1320, dur: 0.55, type: 'sine', tone: 'cyan' },
-  { id: 'plasma_hum', label: 'Plasma Arc', freqStart: 220, freqEnd: 145, dur: 0.7, type: 'sawtooth', tone: 'magenta' },
-  { id: 'glitch_hit', label: 'Glitch Burst', freqStart: 1400, freqEnd: 90, dur: 0.22, type: 'square', tone: 'red' },
+  // Cinema Sub & Impact
+  { id: 'sub_boom', label: 'Cinema Sub Boom', category: 'sub_impact', freqStart: 120, freqEnd: 30, dur: 0.95, type: 'sine', tone: 'red' },
+  { id: 'cyber_braam', label: 'Trailer Braam', category: 'sub_impact', freqStart: 95, freqEnd: 58, dur: 1.15, type: 'sawtooth', tone: 'magenta' },
+  { id: 'vault_slam', label: 'Iron Vault Slam', category: 'sub_impact', freqStart: 220, freqEnd: 36, dur: 0.52, type: 'triangle', tone: 'red' },
+  { id: 'thunder_drop', label: '808 Deep Drop', category: 'sub_impact', freqStart: 145, freqEnd: 28, dur: 0.85, type: 'sine', tone: 'red' },
+  // Sci-Fi & Holo
+  { id: 'laser_pulse', label: 'Laser Pulse', category: 'scifi_holo', freqStart: 1600, freqEnd: 240, dur: 0.28, type: 'sawtooth', tone: 'red' },
+  { id: 'holo_chime', label: 'Holo Glass Chime', category: 'scifi_holo', freqStart: 880, freqEnd: 1320, dur: 0.55, type: 'sine', tone: 'cyan' },
+  { id: 'plasma_arc', label: 'Plasma Arc', category: 'scifi_holo', freqStart: 240, freqEnd: 145, dur: 0.7, type: 'sawtooth', tone: 'magenta' },
+  { id: 'orbit_ping', label: 'Orbital Sonar Ping', category: 'scifi_holo', freqStart: 1080, freqEnd: 1020, dur: 0.65, type: 'sine', tone: 'cyan' },
+  // Mechanical & Foley
+  { id: 'cnc_latch', label: 'CNC Mech Latch', category: 'mech_foley', freqStart: 900, freqEnd: 190, dur: 0.14, type: 'square', tone: 'cyan' },
+  { id: 'glitch_hit', label: 'Digital Glitch Burst', category: 'mech_foley', freqStart: 1400, freqEnd: 90, dur: 0.22, type: 'square', tone: 'red' },
+  { id: 'shutter_snap', label: '35mm Shutter Snap', category: 'mech_foley', freqStart: 1200, freqEnd: 280, dur: 0.09, type: 'triangle', tone: 'cyan' },
+  { id: 'chain_clank', label: 'Steel Chain Clank', category: 'mech_foley', freqStart: 760, freqEnd: 310, dur: 0.34, type: 'square', tone: 'magenta' },
+  // Risers & Broadcast
+  { id: 'scifi_sweep', label: 'Sci-Fi Riser', category: 'risers', freqStart: 180, freqEnd: 1180, dur: 0.85, type: 'triangle', tone: 'cyan' },
+  { id: 'turbine_spool', label: 'Cooling Turbine Spool', category: 'risers', freqStart: 140, freqEnd: 920, dur: 1.0, type: 'sawtooth', tone: 'magenta' },
+  { id: 'broadcast_stinger', label: 'SDDS Stinger Sweep', category: 'risers', freqStart: 320, freqEnd: 1640, dur: 0.48, type: 'sine', tone: 'red' },
+  { id: 'reverse_whoosh', label: 'Reverse Whoosh Cue', category: 'risers', freqStart: 95, freqEnd: 880, dur: 0.72, type: 'triangle', tone: 'cyan' },
 ];
 
 export function SoundFoleyPage() {
+  const [category, setCategory] = useState<SampleCategory>('all');
+  const [spatialCodec, setSpatialCodec] = useState<SpatialCodecKey>('dts_x');
   const [pitchMult, setPitchMult] = useState(1.0);
+  const [subPunchDb, setSubPunchDb] = useState(4);
+  const [stereoPanSpread, setStereoPanSpread] = useState(0.5);
   const [lastTriggered, setLastTriggered] = useState<SoundPadSpec>(FOLEY_PADS[0]);
+
+  const visiblePads =
+    category === 'all' ? FOLEY_PADS : FOLEY_PADS.filter((p) => p.category === category);
 
   const triggerPad = (pad: SoundPadSpec) => {
     setLastTriggered(pad);
     const Ctx = window.AudioContext || (window as any).webkitAudioContext;
     const ctx = new Ctx();
     const osc = ctx.createOscillator();
+    const eqSub = ctx.createBiquadFilter();
+    const eqAir = ctx.createBiquadFilter();
+    const panner = ctx.createStereoPanner();
     const gain = ctx.createGain();
+
     osc.type = pad.type;
     osc.frequency.setValueAtTime(pad.freqStart * pitchMult, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(
       Math.max(20, pad.freqEnd * pitchMult),
       ctx.currentTime + pad.dur
     );
-    gain.gain.setValueAtTime(0.38, ctx.currentTime);
+
+    eqSub.type = 'lowshelf';
+    eqSub.frequency.value = 110;
+    eqSub.gain.value = spatialCodec === 'dts_x' ? subPunchDb + 3 : spatialCodec === 'sony_sdds' ? subPunchDb + 1.5 : 0;
+
+    eqAir.type = 'highshelf';
+    eqAir.frequency.value = 4200;
+    eqAir.gain.value = spatialCodec === 'sony_sdds' ? 4 : spatialCodec === 'dts_x' ? 2 : 0;
+
+    // Slight alternating stereo spread for immersive surround cues
+    const idx = FOLEY_PADS.findIndex((p) => p.id === pad.id);
+    panner.pan.value =
+      spatialCodec === 'dry_stereo' ? 0 : ((idx % 2 === 0 ? -1 : 1) * stereoPanSpread * 0.65);
+
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + pad.dur);
-    osc.connect(gain);
+
+    osc.connect(eqSub);
+    eqSub.connect(eqAir);
+    eqAir.connect(panner);
+    panner.connect(gain);
     gain.connect(ctx.destination);
+
     osc.start();
     osc.stop(ctx.currentTime + pad.dur);
-    setTimeout(() => ctx.close().catch(() => {}), Math.round(pad.dur * 1000) + 200);
+    setTimeout(() => ctx.close().catch(() => {}), Math.round(pad.dur * 1000) + 250);
   };
 
   const exportPadWav = async (pad: SoundPadSpec) => {
     const sampleRate = 44100;
     const offline = new OfflineAudioContext(1, Math.round(sampleRate * pad.dur), sampleRate);
     const osc = offline.createOscillator();
+    const eqSub = offline.createBiquadFilter();
     const gain = offline.createGain();
+
     osc.type = pad.type;
     osc.frequency.setValueAtTime(pad.freqStart * pitchMult, 0);
     osc.frequency.exponentialRampToValueAtTime(Math.max(20, pad.freqEnd * pitchMult), pad.dur);
+
+    eqSub.type = 'lowshelf';
+    eqSub.frequency.value = 110;
+    eqSub.gain.value = spatialCodec === 'dts_x' ? subPunchDb + 3 : spatialCodec === 'sony_sdds' ? subPunchDb : 0;
+
     gain.gain.setValueAtTime(0.42, 0);
     gain.gain.exponentialRampToValueAtTime(0.001, pad.dur);
-    osc.connect(gain);
+
+    osc.connect(eqSub);
+    eqSub.connect(gain);
     gain.connect(offline.destination);
     osc.start(0);
     osc.stop(pad.dur);
     const buf = await offline.startRendering();
-    downloadBlob(encodeWavBlob(buf.getChannelData(0), sampleRate), `kaya-sfx-${pad.id}.wav`);
+    downloadBlob(
+      encodeWavBlob(buf.getChannelData(0), sampleRate, {
+        title: `${pad.label} (${spatialCodec.toUpperCase()})`,
+        software: 'VORTEX · KAYA DTS / Sony SDDS Sound Engine',
+      }),
+      `kaya-sample-${pad.id}-${spatialCodec}.wav`
+    );
   };
 
   return (
     <PlateBezel accent="magenta" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Waves className="w-4 h-4 text-[#FF5C8A]" />
+          <Waves className="w-4 h-4 text-[#FF0A3C]" />
           <h2 className="text-sm sm:text-base font-bold uppercase tracking-wider text-white" style={{ fontFamily: 'var(--font-display)' }}>
-            06. Sound Effects &amp; Foley Matrix
+            Sample Sounds Matrix · DTS:X &amp; Sony SDDS Digital Sound
           </h2>
         </div>
-        <LedStatusIndicator label={`Active SFX: ${lastTriggered.label}`} tone="magenta" />
+        <LedStatusIndicator
+          label={`${spatialCodec.toUpperCase()} · ${lastTriggered.label}`}
+          tone="magenta"
+        />
       </div>
 
-      <div className="cnc-recess rounded-[8px] p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {FOLEY_PADS.map((pad) => (
+      {/* Category Filter + Spatial Sound Codec Bus */}
+      <div className="cnc-recess rounded-[10px] p-3.5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {(
+            [
+              ['all', 'All Samples (16)'],
+              ['sub_impact', 'Sub & Impact'],
+              ['scifi_holo', 'Sci-Fi & Holo'],
+              ['mech_foley', 'Mech & Foley'],
+              ['risers', 'Risers & Stingers'],
+            ] as [SampleCategory, string][]
+          ).map(([k, lbl]) => (
+            <HardwareButton
+              key={k}
+              size="sm"
+              tone="cyan"
+              active={category === k}
+              onClick={() => setCategory(k)}
+            >
+              <span>{lbl}</span>
+            </HardwareButton>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          {(
+            [
+              ['dts_x', 'DTS:X Cinema'],
+              ['sony_sdds', 'Sony SDDS 7.1'],
+              ['dry_stereo', 'Dry Reference'],
+            ] as [SpatialCodecKey, string][]
+          ).map(([k, lbl]) => (
+            <HardwareButton
+              key={k}
+              size="sm"
+              tone={k === 'dts_x' ? 'red' : k === 'sony_sdds' ? 'magenta' : 'neutral'}
+              active={spatialCodec === k}
+              onClick={() => setSpatialCodec(k)}
+            >
+              <span>{lbl}</span>
+            </HardwareButton>
+          ))}
+        </div>
+      </div>
+
+      {/* Sample Pad Matrix */}
+      <div className="cnc-recess rounded-[10px] p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {visiblePads.map((pad) => (
           <HardwareButton
             key={pad.id}
             fullWidth
@@ -641,16 +874,19 @@ export function SoundFoleyPage() {
             active={lastTriggered.id === pad.id}
             onClick={() => triggerPad(pad)}
           >
-            <span>{pad.label}</span>
+            <Volume2 className="w-3.5 h-3.5 shrink-0 opacity-80" />
+            <span className="truncate">{pad.label}</span>
           </HardwareButton>
         ))}
       </div>
 
-      <div className="cnc-recess rounded-[8px] p-4 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-1 min-w-[220px]">
-          <span className="font-mono text-xs text-[#E6ECF5]/75 whitespace-nowrap">
-            Pitch Multiplier ({pitchMult.toFixed(2)}x)
-          </span>
+      {/* Mastering Controls + WAV Export */}
+      <div className="cnc-recess rounded-[10px] p-4 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-4 items-center">
+        <div className="space-y-1">
+          <div className="flex justify-between font-mono text-xs text-[#E6ECF5]/75">
+            <span>Pitch Multiplier</span>
+            <span className="text-[#F1F5F9] tabular-nums">{pitchMult.toFixed(2)}x</span>
+          </div>
           <input
             type="range"
             min={0.5}
@@ -658,9 +894,43 @@ export function SoundFoleyPage() {
             step={0.05}
             value={pitchMult}
             onChange={(e) => setPitchMult(parseFloat(e.target.value))}
-            className="hw-capsule-slider flex-1"
+            className="hw-capsule-slider w-full"
           />
         </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <div className="flex justify-between font-mono text-[11px] text-[#E6ECF5]/75">
+              <span>Sub LFE Punch</span>
+              <span className="text-[#FF3B5C] tabular-nums">+{subPunchDb} dB</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={12}
+              step={1}
+              value={subPunchDb}
+              onChange={(e) => setSubPunchDb(Number(e.target.value))}
+              className="hw-capsule-slider w-full"
+            />
+          </div>
+          <div className="space-y-1">
+            <div className="flex justify-between font-mono text-[11px] text-[#E6ECF5]/75">
+              <span>Surround Spread</span>
+              <span className="text-[#E06844] tabular-nums">{Math.round(stereoPanSpread * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.1}
+              value={stereoPanSpread}
+              onChange={(e) => setStereoPanSpread(parseFloat(e.target.value))}
+              className="hw-capsule-slider w-full"
+            />
+          </div>
+        </div>
+
         <HardwareButton
           tone="cyan"
           active
