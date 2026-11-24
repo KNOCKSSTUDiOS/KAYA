@@ -114,10 +114,10 @@ export function StudioLegalModal({
                 className="text-base sm:text-lg font-bold uppercase tracking-wider text-[#F5E9EA]"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
-                VORTEX · KAYA™ Governance, Policies &amp; Unified Watermark
+                KAYA · KNOCKSSTUDiOS™ Governance, Policies &amp; Unified Watermark
               </h2>
               <p className="font-mono text-[11px] text-[#F5E9EA]/60">
-                Active Plan: {activeTierLabel} · {activeFps} fps · Firebase Committed Backend
+                Active Plan: {activeTierLabel} · {activeFps} fps · Cloud Workspace Sync
               </p>
             </div>
           </div>
@@ -166,13 +166,13 @@ export function StudioLegalModal({
                 <div className="candy-trace-tile p-4 space-y-1.5">
                   <h3 className="font-mono text-xs font-bold uppercase text-[#F5E9EA]">Creator Ownership</h3>
                   <p className="text-xs text-[#F5E9EA]/75 leading-relaxed">
-                    Every 4K HDR reel, Blender GLB export, Printify mockup, and audio master authored inside VORTEX · KAYA™ belongs cleanly to its creator.
+                    Every 4K HDR reel, Blender GLB export, Printify mockup, and audio master authored inside KAYA · KNOCKSSTUDiOS™ belongs cleanly to its creator.
                   </p>
                 </div>
                 <div className="candy-trace-tile p-4 space-y-1.5">
                   <h3 className="font-mono text-xs font-bold uppercase text-[#E06844]">Protected Marks</h3>
                   <p className="text-xs text-[#F5E9EA]/75 leading-relaxed">
-                    VORTEX™, KAYA™, Infinity · Valerius (V) Sentinel of the Ten Galaxies™, and Soul Cooling Forge Opus 4.7™ are protected studio marks.
+                    KAYA™, KNOCKSSTUDiOS™, Infinity · Valerius (V) Sentinel of the Ten Galaxies™, and Soul Cooling Forge Opus 4.7™ are protected studio marks.
                   </p>
                 </div>
               </div>
@@ -187,7 +187,7 @@ export function StudioLegalModal({
                   <span>Committed Cloud Storage &amp; Zero-Device-Leak Policy</span>
                 </div>
                 <p className="text-xs leading-relaxed">
-                  All user profiles, projects, Printify listings, billing states, and verified database connectors persist strictly to Firebase and committed self-hosted endpoints—zero records are routed to phone storage or SD card space.
+                  All user profiles, projects, Printify listings, billing states, and verified database connectors persist strictly to dedicated cloud servers and committed self-hosted endpoints—zero records are routed to phone storage or SD card space.
                 </p>
               </div>
             </div>

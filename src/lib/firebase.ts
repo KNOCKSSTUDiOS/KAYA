@@ -175,8 +175,22 @@ export function subscribeAuth(callback: (user: FirebaseUser | null) => void) {
 }
 
 export async function signInWithChromeGoogle(): Promise<FirebaseUser> {
-  const result = await signInWithPopup(auth, googleProvider);
-  return result.user;
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    return result.user;
+  } catch (err: any) {
+    const code = err?.code || '';
+    if (code === 'auth/popup-blocked') {
+      throw new Error('Popup was blocked by the browser. Allow popups for this site or sign in with Username & Password.');
+    }
+    if (code === 'auth/unauthorized-domain') {
+      throw new Error('Google popup domain is not authorized yet in console. Sign in with Username & Password below.');
+    }
+    if (code === 'auth/cancelled-popup-request' || code === 'auth/popup-closed-by-user') {
+      throw new Error('Google sign-in window was closed.');
+    }
+    throw err;
+  }
 }
 
 export async function signOutUser(): Promise<void> {
@@ -190,7 +204,7 @@ export async function syncUserProfile(user: FirebaseUser, defaults?: Partial<Clo
     const existing = snap.data() as CloudUserDoc;
     if (defaults && (defaults.tier || defaults.billingCycle || defaults.displayName)) {
       const updated = {
-        displayName: defaults.displayName || existing.displayName || user.displayName || 'Vortex Creator',
+        displayName: defaults.displayName || existing.displayName || user.displayName || 'Studio Member',
         email: user.email || existing.email,
         tier: defaults.tier || existing.tier || 'free',
         billingCycle: defaults.billingCycle || existing.billingCycle || 'monthly',
@@ -204,7 +218,7 @@ export async function syncUserProfile(user: FirebaseUser, defaults?: Partial<Clo
   const created: CloudUserDoc = {
     userId: user.uid,
     email: user.email || '',
-    displayName: defaults?.displayName || user.displayName || 'Vortex Creator',
+    displayName: defaults?.displayName || user.displayName || 'Studio Member',
     tier: defaults?.tier || 'free',
     billingCycle: defaults?.billingCycle || 'monthly',
     defaultDuration: defaults?.defaultDuration || '10s',

@@ -1179,7 +1179,7 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="font-mono text-xs uppercase tracking-wider text-[#FF5C8A] font-semibold flex items-center gap-2">
                 <Eye className="w-3.5 h-3.5" />
-                Optical &amp; Vortex Subject Vision
+                Optical &amp; KAYA Subject Vision
               </span>
               <HardwareButton
                 size="sm"
@@ -1242,7 +1242,7 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
           <div className="flex items-center justify-between gap-2">
             <span className="font-mono text-xs uppercase tracking-wider text-white font-semibold flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-[#FF0A3C]" />
-              Vortex Co-Director (Lighting, Motion, VFX &amp; Self-Hosted Help)
+              KAYA Co-Director (Lighting, Motion, VFX &amp; Self-Hosted Help)
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -1250,12 +1250,12 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
               type="text"
               value={aiChatInput}
               onChange={(e) => setAiChatInput(e.target.value)}
-              placeholder="Ask Vortex Co-Director for lighting setups, 144fps pacing, shader tips, or scene prompts…"
+              placeholder="Ask KAYA Co-Director for lighting setups, 144fps pacing, shader tips, or scene prompts…"
               className="flex-1 min-w-[220px] bg-[#050304] border border-[#B84323]/30 rounded-full px-4 py-2 font-mono text-xs text-white focus:outline-none focus:border-[#FF0A3C]"
             />
             <HardwareButton type="submit" size="sm" tone="red" active disabled={aiChatBusy || !aiChatInput.trim()}>
               {aiChatBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              <span>{aiChatBusy ? 'Thinking…' : 'Ask Vortex'}</span>
+              <span>{aiChatBusy ? 'Thinking…' : 'Ask Co-Director'}</span>
             </HardwareButton>
           </div>
           {aiChatErr && <p className="font-mono text-xs text-[#FF4D6D]">{aiChatErr}</p>}
@@ -1293,7 +1293,7 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
             <div className="flex items-center justify-between">
               <span className="font-mono text-xs uppercase tracking-wider text-[#FF5C8A] font-semibold flex items-center gap-2">
                 <FolderTree className="w-3.5 h-3.5" />
-                VORTEX · KAYA™ Engine Index
+                KAYA · KNOCKSSTUDiOS™ Engine Index
               </span>
               <span className="font-mono text-[11px] text-[#F1F5F9] tabular-nums">
                 Self-Hosted · © 2024–2026

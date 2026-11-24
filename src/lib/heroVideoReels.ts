@@ -188,7 +188,7 @@ export function renderAnimatedReelFrame(
 
     ctx.font = `600 ${Math.round(w * 0.017)}px "JetBrains Mono", monospace`;
     ctx.fillStyle = 'rgba(245, 233, 234, 0.72)';
-    ctx.fillText('LIQUID METAL & OPTICAL GLASS PRESENTATION · VORTEX · KAYA', w / 2, h * 0.575);
+    ctx.fillText('LIQUID METAL & OPTICAL GLASS PRESENTATION · KAYA STUDIO', w / 2, h * 0.575);
     ctx.restore();
   } else if (reel.motionStyle === 'holo_field') {
     // Holographic scan wave & floating optical amber particles

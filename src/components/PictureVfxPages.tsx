@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Image as ImageIcon, Sparkles, Download, Layers, Play, Pause } from 'lucide-react';
+import { Image as ImageIcon, Sparkles, Download, Layers, Play, Pause, Upload } from 'lucide-react';
 import { PlateBezel, HardwareButton, LedStatusIndicator } from './HardwarePrimitives.js';
 import {
   RENDER_STYLE_PRESETS,
@@ -9,11 +9,13 @@ import {
   exportCompositionStillFrame,
 } from '../lib/studioRenderer.js';
 import { createZipBlob, ZipEntryInput } from '../lib/zipBuilder.js';
+import { fileToDownscaledDataUrl } from '../images.js';
 
 interface PictureStudioPageProps {
   productUrl: string;
   transparentProductUrl?: string;
   atmosphereUrl: string;
+  onUploadPic?: (dataUrl: string, name: string) => void;
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -31,6 +33,7 @@ export function PictureStudioPage({
   productUrl,
   transparentProductUrl,
   atmosphereUrl,
+  onUploadPic,
 }: PictureStudioPageProps) {
   const [style, setStyle] = useState<RenderStyleKey>('3d_cyberpunk');
   const [resolution, setResolution] = useState<ResolutionKey>('cinemax_4k');
@@ -38,9 +41,12 @@ export function PictureStudioPage({
   const [exposure, setExposure] = useState(1.0);
   const [contrast, setContrast] = useState(1.05);
   const [saturation, setSaturation] = useState(1.05);
+  const [customPicUrl, setCustomPicUrl] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [rendering, setRendering] = useState(false);
+  const picInputRef = useRef<HTMLInputElement | null>(null);
 
+  const effectivePicUrl = customPicUrl || productUrl;
   const activeRes = RESOLUTION_PRESETS.find((r) => r.key === resolution) ?? RESOLUTION_PRESETS[3];
   const activeStyleObj = RENDER_STYLE_PRESETS.find((s) => s.key === style) ?? RENDER_STYLE_PRESETS[0];
 
@@ -49,8 +55,8 @@ export function PictureStudioPage({
     try {
       const res = await exportCompositionStillFrame(
         {
-          productUrl,
-          transparentProductUrl,
+          productUrl: effectivePicUrl,
+          transparentProductUrl: customPicUrl ? undefined : transparentProductUrl,
           atmosphereUrl,
           durationSec: 10,
           resolution,
@@ -80,15 +86,15 @@ export function PictureStudioPage({
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
-  }, [productUrl, atmosphereUrl, style, resolution, transparentCutout, exposure, contrast, saturation]);
+  }, [effectivePicUrl, atmosphereUrl, style, resolution, transparentCutout, exposure, contrast, saturation]);
 
   const handleSavePicture = async (format: 'png' | 'jpeg') => {
     setRendering(true);
     try {
       const res = await exportCompositionStillFrame(
         {
-          productUrl,
-          transparentProductUrl,
+          productUrl: effectivePicUrl,
+          transparentProductUrl: customPicUrl ? undefined : transparentProductUrl,
           atmosphereUrl,
           durationSec: 10,
           resolution,
@@ -122,6 +128,27 @@ export function PictureStudioPage({
           </h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={picInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              try {
+                const url = await fileToDownscaledDataUrl(file);
+                setCustomPicUrl(url);
+                onUploadPic?.(url, file.name);
+              } finally {
+                if (picInputRef.current) picInputRef.current.value = '';
+              }
+            }}
+          />
+          <HardwareButton size="sm" tone="red" active onClick={() => picInputRef.current?.click()}>
+            <Upload className="w-3.5 h-3.5" />
+            <span>Upload Pic</span>
+          </HardwareButton>
           <span className="px-2.5 py-1 rounded-full bg-[#090405] font-mono text-[10px] text-[#E6ECF5]/80 tabular-nums">
             {activeRes.tag} · {activeRes.aspectDesc} · {transparentCutout ? 'RGBA Alpha' : '24-Bit RGB'}
           </span>

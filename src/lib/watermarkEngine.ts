@@ -1,10 +1,10 @@
 /**
  * Unified Studio Watermark Engine
- * Enforces one consistent VORTEX · KAYA™ mark per canvas/viewport surface
+ * Enforces one consistent KAYA · KNOCKSSTUDiOS™ mark per canvas/viewport surface
  * so watermarks never stack or collide across compositors.
  */
 
-export const UNIFIED_WATERMARK_TEXT = '© 2024–2026 VORTEX · KAYA™';
+export const UNIFIED_WATERMARK_TEXT = '© 2024–2026 KAYA · KNOCKSSTUDiOS™';
 
 export interface UnifiedWatermarkConfig {
   enabled: boolean;
@@ -15,8 +15,8 @@ export interface UnifiedWatermarkConfig {
 
 const DEFAULT_WATERMARK: UnifiedWatermarkConfig = {
   enabled: true,
-  ownerLabel: 'VORTEX · KAYA™',
-  stampCode: 'VK-2026',
+  ownerLabel: 'KAYA · KNOCKSSTUDiOS™',
+  stampCode: 'KNK-2026',
   tier: 'free',
 };
 
@@ -32,8 +32,8 @@ export function setUnifiedWatermarkConfig(patch: Partial<UnifiedWatermarkConfig>
 }
 
 export function getUnifiedWatermarkLabel(customOwner?: string, customCode?: string): string {
-  const owner = (customOwner || activeConfig.ownerLabel || 'VORTEX · KAYA™').trim();
-  const code = (customCode || activeConfig.stampCode || 'VK-2026').trim();
+  const owner = (customOwner || activeConfig.ownerLabel || 'KAYA · KNOCKSSTUDiOS™').trim();
+  const code = (customCode || activeConfig.stampCode || 'KNK-2026').trim();
   return `© 2024–2026 ${owner} · ${code}`;
 }
 

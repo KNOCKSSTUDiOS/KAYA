@@ -4,17 +4,19 @@ import {
   ShieldCheck,
   ShieldAlert,
   Users,
-  RefreshCw,
   Sliders,
   UserPlus,
   Trash2,
+  User,
+  Lock,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { PlateBezel, HardwareButton, LedStatusIndicator } from './HardwarePrimitives.js';
 import type { KayaUserProfile } from './KayaAuthModal.js';
 import {
   StaffMemberDoc,
   StaffRole,
-  auth,
   fetchStaffRoster,
   revokeStaffMember,
   signInWithChromeGoogle,
@@ -35,10 +37,11 @@ export function ProtectedAdminModal({
   user,
   onAuthChange,
 }: ProtectedAdminModalProps) {
-  const [challengeId, setChallengeId] = useState('');
-  const [challengeQuestion, setChallengeQuestion] = useState('');
-  const [captchaAnswer, setCaptchaAnswer] = useState('');
-  const [verifiedToken, setVerifiedToken] = useState<string | null>(null);
+  const [canClaimAdmin, setCanClaimAdmin] = useState(false);
+  const [adminUser, setAdminUser] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+
   const [staffMember, setStaffMember] = useState<StaffMemberDoc | null>(null);
   const [roster, setRoster] = useState<StaffMemberDoc[]>([]);
   const [staffJwt, setStaffJwt] = useState<string | null>(null);
@@ -59,14 +62,12 @@ export function ProtectedAdminModal({
   const [error, setError] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
-  const loadChallenge = useCallback(async () => {
+  const checkStaffStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/verify/challenge');
+      const res = await fetch('/api/staff/status');
       if (res.ok) {
         const data = await res.json();
-        setChallengeId(data.challengeId);
-        setChallengeQuestion(data.question);
-        setCaptchaAnswer('');
+        setCanClaimAdmin(Boolean(data.canClaim));
       }
     } catch {
       // ignore
@@ -77,9 +78,10 @@ export function ProtectedAdminModal({
     if (isOpen) {
       setError(null);
       setStatusMsg(null);
-      loadChallenge();
+      setAdminPassword('');
+      checkStaffStatus();
     }
-  }, [isOpen, loadChallenge]);
+  }, [isOpen, checkStaffStatus]);
 
   const loadOverviewAndRoster = useCallback(async (jwt: string) => {
     try {
@@ -97,50 +99,71 @@ export function ProtectedAdminModal({
     }
   }, []);
 
-  const handleAuthenticateStaff = async (e: React.FormEvent) => {
+  const handlePasswordAdminSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      let currentFb = auth.currentUser;
-      if (!currentFb) {
-        currentFb = await signInWithChromeGoogle();
-      }
-      if (!currentFb.emailVerified) {
-        throw new Error('Verified Google account email is required.');
-      }
-
-      // 1. Verify captcha server-side
-      let vToken = verifiedToken;
-      if (!vToken) {
-        const capRes = await fetch('/api/verify/captcha', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ challengeId, answer: captchaAnswer }),
-        });
-        const capJson = await capRes.json();
-        if (!capRes.ok || !capJson.verified) {
-          await loadChallenge();
-          throw new Error(capJson.error || 'Captcha verification failed.');
-        }
-        vToken = capJson.verificationToken;
-        setVerifiedToken(vToken);
+      const endpoint = canClaimAdmin ? '/api/staff/claim' : '/api/staff/login';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: adminUser.trim(),
+          password: adminPassword,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.token || !json.staff) {
+        throw new Error(json.error || 'Administrator authentication failed.');
       }
 
-      // 2. Verify staff role in Firestore /admins/{uid}
-      const member = await verifyStaffAccess(currentFb);
+      const memberDoc: StaffMemberDoc = {
+        userId: json.staff.id || 'owner-knocksstudios',
+        email: json.staff.email,
+        role: json.staff.role || 'admin',
+        active: true,
+      };
+      setStaffMember(memberDoc);
+      setStaffJwt(json.token);
+      setCanClaimAdmin(false);
+      onAuthChange?.({
+        uid: memberDoc.userId,
+        handle: json.staff.handle || 'KNOCKSSTUDiOS',
+        email: memberDoc.email,
+        role: memberDoc.role,
+        tier: 'enterprise',
+        signedInAt: new Date().toISOString(),
+        token: json.token,
+      });
+      await loadOverviewAndRoster(json.token);
+      setStatusMsg(`Authenticated as ${memberDoc.role.toUpperCase()} · ${json.staff.handle}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Admin authentication failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleStaffSignIn = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const fbUser = await signInWithChromeGoogle();
+      if (!fbUser.emailVerified) {
+        throw new Error('Verified Google email is required.');
+      }
+      const member = await verifyStaffAccess(fbUser);
       if (!member) {
-        throw new Error('This Google account is not registered under Studio Staff Access.');
+        throw new Error('This Google account is not authorized in Studio Staff Access.');
       }
 
-      // 3. Exchange for signed server staff session
       const staffRes = await fetch('/api/staff/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: currentFb.email,
+          email: fbUser.email,
           role: member.role,
-          verificationToken: vToken,
         }),
       });
       const staffJson = await staffRes.json();
@@ -151,8 +174,8 @@ export function ProtectedAdminModal({
       setStaffMember(member);
       setStaffJwt(staffJson.token);
       onAuthChange?.({
-        uid: currentFb.uid,
-        handle: currentFb.displayName || member.email.split('@')[0],
+        uid: fbUser.uid,
+        handle: fbUser.displayName || member.email.split('@')[0],
         email: member.email,
         role: member.role,
         tier: 'enterprise',
@@ -162,13 +185,15 @@ export function ProtectedAdminModal({
       await loadOverviewAndRoster(staffJson.token);
       setStatusMsg(`Authenticated as ${member.role.toUpperCase()} · ${member.email}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Staff verification failed.');
+      setError(err instanceof Error ? err.message : 'Google staff sign-in failed.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleToggleConfig = async (key: 'allowPublicSignup' | 'enforceWatermark' | 'overdrive144fps' | 'maintenanceMode') => {
+  const handleToggleConfig = async (
+    key: 'allowPublicSignup' | 'enforceWatermark' | 'overdrive144fps' | 'maintenanceMode'
+  ) => {
     if (!staffJwt) return;
     const nextVal = !config[key];
     try {
@@ -226,7 +251,7 @@ export function ProtectedAdminModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/92 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/90 backdrop-blur-md overflow-y-auto"
       onClick={onClose}
     >
       <div className="w-full max-w-4xl my-auto" onClick={(e) => e.stopPropagation()}>
@@ -239,10 +264,10 @@ export function ProtectedAdminModal({
                   className="text-base sm:text-lg font-bold uppercase tracking-[0.16em] text-[#F5E9EA]"
                   style={{ fontFamily: 'var(--font-display)' }}
                 >
-                  Protected Administrator &amp; Employee Portal
+                  KAYA · Protected Administrator Portal
                 </h2>
                 <p className="font-mono text-[11px] text-[#F5E9EA]/60">
-                  Real Google Auth + Captcha + Role-Based Firestore Registry
+                  KNOCKSSTUDiOS · Admin Username &amp; Password or Verified Google Account
                 </p>
               </div>
             </div>
@@ -255,37 +280,69 @@ export function ProtectedAdminModal({
           </div>
 
           {!staffMember || !staffJwt ? (
-            <form onSubmit={handleAuthenticateStaff} className="candy-trace-tile p-5 space-y-4">
+            <form onSubmit={handlePasswordAdminSubmit} className="candy-trace-tile p-5 space-y-4">
               <p className="text-xs text-[#F5E9EA]/80 leading-relaxed">
-                This protected portal is restricted to verified studio administrators and authorized staff roles.
-                Complete verification below and authenticate with your verified Google account.
+                {canClaimAdmin
+                  ? 'First-run setup: choose your Studio Administrator username & password (minimum 8 characters) to claim protected access.'
+                  : 'Sign in with your Studio Administrator username/email & password, or continue with an authorized Google account.'}
               </p>
 
-              <div className="space-y-1.5">
-                <label className="font-mono text-xs text-[#FF8C66] block">
-                  Verification Challenge: {challengeQuestion || 'Loading challenge…'}
-                </label>
-                <div className="flex items-center gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="relative">
+                  <User className="w-4 h-4 text-[#E06844]/80 absolute left-3.5 top-2.5" />
                   <input
                     type="text"
-                    required
-                    value={captchaAnswer}
-                    onChange={(e) => setCaptchaAnswer(e.target.value)}
-                    placeholder="Enter verification answer"
-                    className="flex-1 rounded-full bg-[#070304] px-4 py-2 font-mono text-xs text-[#F5E9EA] focus:outline-none"
+                    value={adminUser}
+                    onChange={(e) => setAdminUser(e.target.value)}
+                    placeholder={canClaimAdmin ? 'Admin Username (e.g. KNOCKSSTUDiOS)' : 'Admin Username or Email'}
+                    className="w-full rounded-full bg-[#070304] border border-white/15 pl-10 pr-4 py-2 font-mono text-xs text-[#F5E9EA] focus:outline-none focus:border-[#FF0A3C]"
                   />
-                  <HardwareButton type="button" size="sm" tone="neutral" ledIndicator={false} onClick={loadChallenge}>
-                    <RefreshCw className="w-3.5 h-3.5" />
-                  </HardwareButton>
+                </div>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-[#E06844]/80 absolute left-3.5 top-2.5" />
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    required
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    placeholder={canClaimAdmin ? 'Set Admin Password (8+ chars)' : 'Admin Password'}
+                    className="w-full rounded-full bg-[#070304] border border-white/15 pl-10 pr-10 py-2 font-mono text-xs text-[#F5E9EA] focus:outline-none focus:border-[#FF0A3C]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass((s) => !s)}
+                    className="absolute right-3.5 top-2.5 text-[#F5E9EA]/50 hover:text-white cursor-pointer"
+                    aria-label={showPass ? 'Hide password' : 'Show password'}
+                  >
+                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
               {error && <p className="font-mono text-xs text-[#FF4D6D]">{error}</p>}
 
-              <HardwareButton type="submit" size="md" tone="red" active disabled={loading}>
-                <ShieldCheck className="w-4 h-4" />
-                <span>{loading ? 'Verifying Staff Credentials…' : 'Sign In & Verify Staff Access'}</span>
-              </HardwareButton>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <HardwareButton type="submit" size="md" tone="red" active disabled={loading}>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>
+                    {loading
+                      ? 'Verifying…'
+                      : canClaimAdmin
+                      ? 'Claim & Enter Admin Portal'
+                      : 'Sign In with Admin Password'}
+                  </span>
+                </HardwareButton>
+
+                <HardwareButton
+                  type="button"
+                  size="md"
+                  tone="cyan"
+                  disabled={loading}
+                  onClick={handleGoogleStaffSignIn}
+                >
+                  <span>Continue with Google</span>
+                </HardwareButton>
+              </div>
             </form>
           ) : (
             <div className="space-y-5">
@@ -348,7 +405,7 @@ export function ProtectedAdminModal({
                     type="text"
                     value={newUid}
                     onChange={(e) => setNewUid(e.target.value)}
-                    placeholder="Employee Firebase UID"
+                    placeholder="Employee Account ID"
                     className="rounded-full bg-[#070304] px-3.5 py-2 font-mono text-xs text-[#F5E9EA] focus:outline-none"
                   />
                   <input
@@ -378,7 +435,7 @@ export function ProtectedAdminModal({
                 <div className="space-y-2">
                   {roster.length === 0 ? (
                     <p className="font-mono text-[11px] text-[#F5E9EA]/55">
-                      Root Administrator active. Use the form above to grant future employee access by Firebase UID.
+                      Root Administrator active. Use the form above to grant future employee access.
                     </p>
                   ) : (
                     roster.map((m) => (

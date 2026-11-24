@@ -178,7 +178,7 @@ export function PWAInstallButton({
                 <div className="flex items-center gap-3">
                   <img
                     src="/pwa-192x192.png"
-                    alt="VORTEX KAYA App"
+                    alt="KAYA Studio App"
                     className="w-11 h-11 rounded-full shadow-[0_0_16px_rgba(255,10,60,0.45)] shrink-0 object-cover"
                   />
                   <div>
@@ -188,7 +188,7 @@ export function PWAInstallButton({
                     >
                       Install Chrome &amp; Desktop App
                     </h3>
-                    <p className="text-xs text-[#F5E9EA]/65 font-mono">VORTEX · KAYA Standalone</p>
+                    <p className="text-xs text-[#F5E9EA]/65 font-mono">KAYA · KNOCKSSTUDiOS Standalone</p>
                   </div>
                 </div>
                 <HardwareButton
@@ -269,7 +269,7 @@ export function PWAInstallButton({
                 ) : (
                   <div className="candy-trace-tile p-4 space-y-3">
                     <p className="text-[#F5E9EA]/90 leading-relaxed">
-                      Install VORTEX · KAYA as a standalone Google Chrome &amp; Desktop app with GPU acceleration.
+                      Install KAYA Studio as a standalone Google Chrome &amp; Desktop app with GPU acceleration.
                     </p>
 
                     {isInstallable && (

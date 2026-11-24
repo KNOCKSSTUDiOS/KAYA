@@ -39,8 +39,10 @@ import {
   Orbit,
   Snowflake,
   Database,
+  ImagePlus,
 } from 'lucide-react';
 import { PRODUCTS, ATMOSPHERES, BACKGROUND_CUBE_VIDEOS, MediaSelection } from './data.js';
+import { fileToDownscaledDataUrl } from './images.js';
 import { ImageUploader } from './components/ImageUploader.js';
 import { VideoOutput, LogEntry } from './components/VideoOutput.js';
 import { ScrollRow } from './components/ScrollRow.js';
@@ -64,7 +66,6 @@ import {
   StudioPageKey,
   WorkspaceMediaAsset,
 } from './components/RubiksCubeHubPage.js';
-import { StudioGatesGallery } from './components/StudioGatesGallery.js';
 import { AudioStudioPage, SoundFoleyPage } from './components/AudioSoundPages.js';
 import { PictureStudioPage, VfxStudioPage } from './components/PictureVfxPages.js';
 import { LipSyncPage, EditorPage, IntelCodePage } from './components/LipSyncEditorIntelPages.js';
@@ -142,7 +143,7 @@ const WORKBENCH_TOOLS: {
   { key: 'picture', label: 'Picture Suite', tone: 'cyan', icon: <ImageIcon className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
   { key: 'cube', label: '360° Video Cube', tone: 'red', icon: <Box className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
   { key: 'storyboard', label: '3D Storyboard', tone: 'magenta', icon: <Clapperboard className="w-3.5 h-3.5 text-[#E06844]" /> },
-  { key: 'intel', label: 'Vortex Vision', tone: 'cyan', icon: <Cpu className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
+  { key: 'intel', label: 'KAYA Vision', tone: 'cyan', icon: <Cpu className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
   { key: 'lipsync', label: 'Lip Sync Rig', tone: 'magenta', icon: <Mic className="w-3.5 h-3.5 text-[#E06844]" /> },
   { key: 'animator', label: 'Action Animator', tone: 'red', icon: <Swords className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
   { key: 'airradio', label: 'AirRadio FM', tone: 'cyan', icon: <Radio className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
@@ -159,12 +160,12 @@ const SUITE_MENU_ENTRIES: {
   targetType: 'section' | 'tool';
   target: string;
 }[] = [
-  { id: 'vortex', label: 'Vortex Main Hub Lineup', category: 'Hub', targetType: 'section', target: 'vortex-hub' },
+  { id: 'kaya-hub', label: 'KAYA Unified Studio Hub', category: 'Hub', targetType: 'section', target: 'vortex-hub' },
+  { id: 'davinci', label: 'DaVinci Resolve Pipeline · XML, EDL & 3D LUT', category: 'Pipeline', targetType: 'section', target: 'vortex-davinci' },
   { id: 'blender', label: 'Blender 3D Pipeline & Shaders', category: '3D Suite', targetType: 'section', target: 'vortex-blender' },
   { id: 'infinity', label: 'Infinity · Valerius (V) Sentinel of Ten Galaxies', category: 'Core', targetType: 'section', target: 'vortex-infinity' },
   { id: 'soul', label: 'Soul · Cooling Forge Opus 4.7 & Billing', category: 'Cooling', targetType: 'section', target: 'vortex-soul' },
   { id: 'connectors', label: 'MCP Skills, SQL, Search & Artifacts', category: 'Backend', targetType: 'section', target: 'vortex-connectors' },
-  { id: 'gates', label: 'KAYA Studio Gates & Lineup', category: 'Gallery', targetType: 'section', target: 'page-gates' },
   ...WORKBENCH_TOOLS.map((t) => ({
     id: `tool-${t.key}`,
     label: t.label,
@@ -261,10 +262,30 @@ export default function App() {
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const versionCount = useRef(0);
   const [uploadedCubeAssets, setUploadedCubeAssets] = useState<WorkspaceMediaAsset[]>([]);
+  const [uploadedPics, setUploadedPics] = useState<{ id: string; name: string; url: string }[]>([]);
+  const globalPicInputRef = useRef<HTMLInputElement>(null);
+  const [autoUpdateEnabled, setAutoUpdateEnabled] = useState<boolean>(true);
+  const [updateReadyVersion, setUpdateReadyVersion] = useState<string | null>(null);
+  const knownBuildVersionRef = useRef<string | null>(null);
+  const autoUpdateRef = useRef<boolean>(true);
+  const appStateRef = useRef<AppState>('IDLE');
+  const editTextRef = useRef<string>('');
   const [editOpen, setEditOpen] = useState(false);
   const [editText, setEditText] = useState('');
   const [downloading, setDownloading] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+
+  useEffect(() => {
+    autoUpdateRef.current = autoUpdateEnabled;
+  }, [autoUpdateEnabled]);
+
+  useEffect(() => {
+    appStateRef.current = appState;
+  }, [appState]);
+
+  useEffect(() => {
+    editTextRef.current = editText;
+  }, [editText]);
 
   const addLog = useCallback((message: string, type: LogType = 'info', image?: string) => {
     setLogs((prev) => [
@@ -308,7 +329,7 @@ export default function App() {
     testFirestoreConnection().catch(() => false);
     const unsub = subscribeAuth(async (fbUser) => {
       if (!fbUser) {
-        setKayaUser(null);
+        setKayaUser((prev) => (prev?.token ? prev : null));
         setCloudProjects([]);
         setCloudArtifacts([]);
         setCloudConnectors([]);
@@ -349,7 +370,7 @@ export default function App() {
   useEffect(() => {
     const onOnline = () => {
       setIsOnline(true);
-      addLog('Connection active — Firebase workspace sync online.', 'success');
+      addLog('Connection active — Cloud workspace sync online.', 'success');
     };
     const onOffline = () => {
       setIsOnline(false);
@@ -363,27 +384,109 @@ export default function App() {
     };
   }, [addLog]);
 
-  const handleManualAutoSync = async () => {
-    if (!navigator.onLine) {
-      setIsOnline(false);
-      addLog('Offline — local studio workstation operational.', 'info');
-      return;
-    }
-    setSyncingApp(true);
-    try {
-      const res = await fetch('/api/app-version', { cache: 'no-store' });
-      if (res.ok) {
-        const data = (await res.json()) as { version?: string };
-        addLog(`Workspace synchronized (#${(data.version || 'vortex').slice(-6)}).`, 'success');
+  const checkAppUpdates = useCallback(
+    async (manual = false) => {
+      if (!navigator.onLine) {
+        setIsOnline(false);
+        if (manual) addLog('Offline — local studio workstation operational.', 'info');
+        return;
       }
-      if (kayaUser?.uid) {
-        await hydrateCloudWorkspace(kayaUser.uid);
+      if (manual) setSyncingApp(true);
+      try {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker
+            .getRegistration()
+            .then((reg) => reg?.update())
+            .catch(() => undefined);
+        }
+        const res = await fetch('/api/app-version', { cache: 'no-store' });
+        if (res.ok) {
+          const data = (await res.json()) as { version?: string };
+          const serverVer = data.version || 'kaya-vortex-1';
+          if (!knownBuildVersionRef.current) {
+            knownBuildVersionRef.current = serverVer;
+          } else if (serverVer !== knownBuildVersionRef.current) {
+            setUpdateReadyVersion(serverVer);
+            if (
+              autoUpdateRef.current &&
+              appStateRef.current === 'IDLE' &&
+              !editTextRef.current.trim()
+            ) {
+              addLog(`Auto-Update applying build #${serverVer.slice(-6)}…`, 'success');
+              setTimeout(() => window.location.reload(), 650);
+              return;
+            }
+            addLog(`New KAYA update ready (#${serverVer.slice(-6)}). Click Apply Update when ready.`, 'warn');
+          } else if (manual) {
+            addLog(`Workspace up to date (#${serverVer.slice(-6)}).`, 'success');
+          }
+        }
+        if (manual && kayaUser?.uid) {
+          await hydrateCloudWorkspace(kayaUser.uid);
+        }
+      } catch {
+        if (manual) addLog('Update check skipped — local studio active.', 'warn');
+      } finally {
+        if (manual) setSyncingApp(false);
       }
-    } catch {
-      addLog('Sync check skipped — local studio active.', 'warn');
-    } finally {
-      setSyncingApp(false);
+    },
+    [addLog, hydrateCloudWorkspace, kayaUser?.uid]
+  );
+
+  // Automatic Background Auto-Update Polling (every 45s + focus/online)
+  useEffect(() => {
+    checkAppUpdates(false);
+    const interval = window.setInterval(() => {
+      if (autoUpdateRef.current) {
+        checkAppUpdates(false);
+      }
+    }, 45_000);
+    const onFocus = () => {
+      if (autoUpdateRef.current) checkAppUpdates(false);
+    };
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [checkAppUpdates]);
+
+  const handleManualAutoSync = () => checkAppUpdates(true);
+
+  const handleUploadPics = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const list = Array.from(files).slice(0, 12);
+    const added: { id: string; name: string; url: string }[] = [];
+    for (const file of list) {
+      try {
+        const dataUrl = await fileToDownscaledDataUrl(file);
+        added.push({
+          id: `pic-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          name: file.name,
+          url: dataUrl,
+        });
+      } catch {
+        // skip unreadable image file
+      }
     }
+    if (added.length > 0) {
+      setUploadedPics((prev) => [...added, ...prev].slice(0, 24));
+      setUploadedCubeAssets((prev) => [
+        ...added.map((p) => ({
+          id: p.id,
+          label: p.name,
+          url: p.url,
+          kind: 'image' as const,
+        })),
+        ...prev,
+      ]);
+      addLog(
+        `Uploaded ${added.length} pic${added.length > 1 ? 's' : ''} to KAYA Pictures Tray & 360° Cube.`,
+        'success',
+        added[0].url
+      );
+    }
+    if (globalPicInputRef.current) globalPicInputRef.current.value = '';
   };
 
   const handleEnhancePromptWithAI = async () => {
@@ -551,6 +654,11 @@ export default function App() {
         handleSubmit();
         return;
       }
+      if (phrase.includes('davinci') || phrase.includes('resolve')) {
+        scrollToSection('vortex-davinci');
+        addLog(`Voice jumped to DaVinci Resolve Pipeline from "${phrase}".`, 'success');
+        return;
+      }
       if (phrase.includes('blender')) {
         scrollToSection('vortex-blender');
         addLog(`Voice jumped to Blender Pipeline from "${phrase}".`, 'success');
@@ -712,7 +820,7 @@ export default function App() {
         await Promise.all([
           saveStudioProject({
             userId: kayaUser.uid,
-            studioHub: 'VORTEX · KAYA',
+            studioHub: 'KAYA Studio',
             label: `${activeResSpec.tag} Master (${fps}fps)`,
             duration,
             prompt: promptText,
@@ -851,7 +959,7 @@ export default function App() {
           onOpenInstall={() => setInstallModalOpen(true)}
           onOpenAuth={() => setAuthModalOpen(true)}
           onNavigateTool={handleSelectToolFromGalleryOrNav}
-          onNavigateGates={() => scrollToSection('page-gates')}
+          onNavigateGates={() => scrollToSection('vortex-hub')}
           onOpenPlans={() => setPlansModalOpen(true)}
           onAddWorkspaceMedia={(asset) => setUploadedCubeAssets((prev) => [asset, ...prev])}
           onJumpSection={handleJumpSection}
@@ -859,8 +967,16 @@ export default function App() {
 
         {/* CONTINUOUS EDGE-TO-EDGE ENDLESS SCROLL SUITE BELOW SCREEN 1 */}
         <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-6 py-4 flex flex-col gap-5">
-          {/* TOP CONTROL BAR: Search & Menu Left/Center · Prominent VORTEX · KAYA Branding Top Right */}
+          {/* TOP CONTROL BAR: Search & Menu Left/Center · Prominent KAYA Branding Top Right */}
           <header className="sticky top-2 z-40 candy-surface rounded-2xl px-3.5 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-3">
+            <input
+              ref={globalPicInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handleUploadPics(e.target.files)}
+            />
             {/* Search & Dropdown Menu Left/Center */}
             <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[260px]">
               {/* Accessible Suite Dropdown Menu */}
@@ -871,7 +987,7 @@ export default function App() {
                   active={suiteMenuOpen}
                   onClick={() => setSuiteMenuOpen((o) => !o)}
                   aria-expanded={suiteMenuOpen}
-                  aria-label="Open VORTEX · KAYA Suite Navigation Menu"
+                  aria-label="Open KAYA Studio Navigation Menu"
                 >
                   <Menu className="w-3.5 h-3.5 text-[#FF0A3C]" />
                   <span>Suite Menu</span>
@@ -909,7 +1025,7 @@ export default function App() {
                   type="text"
                   value={suiteSearch}
                   onChange={(e) => setSuiteSearch(e.target.value)}
-                  placeholder="Search studios, Blender, Infinity…"
+                  placeholder="Search DaVinci, Blender, Infinity…"
                   className="w-full bg-[#050304] border border-[#B84323]/30 rounded-full pl-8 pr-3 py-1.5 font-mono text-xs text-white focus:outline-none focus:border-[#FF0A3C]"
                 />
                 {matchingSuiteEntries.length > 0 && (
@@ -937,6 +1053,17 @@ export default function App() {
               </div>
 
               {/* Action Controls */}
+              <HardwareButton
+                size="sm"
+                tone="red"
+                active={uploadedPics.length > 0}
+                onClick={() => globalPicInputRef.current?.click()}
+                title="Upload multiple images directly into Studio Frames, Backdrop & 360° Cube"
+              >
+                <ImagePlus className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                <span>Upload Pics{uploadedPics.length > 0 ? ` (${uploadedPics.length})` : ''}</span>
+              </HardwareButton>
+
               <HardwareButton
                 size="sm"
                 tone={voiceActive ? 'red' : 'cyan'}
@@ -974,21 +1101,49 @@ export default function App() {
 
               <HardwareButton
                 size="sm"
-                tone={isOnline ? 'cyan' : 'red'}
-                active={!isOnline || syncingApp}
-                onClick={handleManualAutoSync}
+                tone={autoUpdateEnabled ? 'cyan' : 'neutral'}
+                active={autoUpdateEnabled}
+                onClick={() => {
+                  const next = !autoUpdateEnabled;
+                  setAutoUpdateEnabled(next);
+                  addLog(`Background Auto-Update ${next ? 'ENABLED (every 45s)' : 'PAUSED'}.`, 'info');
+                }}
+                title="Automatic background build & Service Worker update checker"
               >
-                {syncingApp ? (
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                ) : isOnline ? (
-                  <Wifi className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                ) : (
-                  <WifiOff className="w-3.5 h-3.5 text-[#FF0A3C]" />
-                )}
+                <RefreshCw className={`w-3.5 h-3.5 ${syncingApp ? 'animate-spin text-[#FF0A3C]' : 'text-[#F1F5F9]'}`} />
                 <span className="hidden md:inline">
-                  {syncingApp ? 'Syncing…' : isOnline ? 'Cloud Sync' : 'Offline Ready'}
+                  Auto-Update: {autoUpdateEnabled ? 'ON' : 'OFF'}
                 </span>
               </HardwareButton>
+
+              {updateReadyVersion ? (
+                <HardwareButton
+                  size="sm"
+                  tone="red"
+                  active
+                  onClick={() => window.location.reload()}
+                  title="Apply newly detected KAYA studio update"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                  <span>Apply Update</span>
+                </HardwareButton>
+              ) : (
+                <HardwareButton
+                  size="sm"
+                  tone={isOnline ? 'cyan' : 'red'}
+                  active={!isOnline || syncingApp}
+                  onClick={handleManualAutoSync}
+                >
+                  {isOnline ? (
+                    <Wifi className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                  ) : (
+                    <WifiOff className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                  )}
+                  <span className="hidden lg:inline">
+                    {syncingApp ? 'Checking…' : isOnline ? 'Sync Now' : 'Offline Ready'}
+                  </span>
+                </HardwareButton>
+              )}
 
               <PWAInstallButton
                 externalOpen={installModalOpen}
@@ -996,17 +1151,17 @@ export default function App() {
               />
             </div>
 
-            {/* PROMINENT TOP-RIGHT STUDIO BRANDING */}
+            {/* PROMINENT TOP-RIGHT UNIFIED STUDIO BRANDING */}
             <div className="flex items-center gap-3 shrink-0 ml-auto">
               <div className="text-right leading-tight">
                 <h1
                   className="text-base sm:text-xl font-bold uppercase tracking-[0.28em] see-thru-font whitespace-nowrap"
                   style={{ fontFamily: 'var(--font-display)' }}
                 >
-                  VORTEX · KAYA
+                  KAYA
                 </h1>
                 <span className="font-mono text-[10px] uppercase tracking-[0.18em] see-thru-font-subtle block whitespace-nowrap">
-                  Chrome-Ready Suite · Candy-Gloss &amp; Rust
+                  KNOCKSSTUDiOS · 4K HDR Studio Suite
                 </span>
               </div>
               <GeometricMark />
@@ -1018,7 +1173,11 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-2">
               <HardwareButton size="sm" tone="red" active onClick={() => scrollToSection('vortex-hub')}>
                 <Layers className="w-3.5 h-3.5 text-[#FF0A3C]" />
-                <span>Vortex Hub</span>
+                <span>KAYA Hub</span>
+              </HardwareButton>
+              <HardwareButton size="sm" tone="red" active={false} onClick={() => scrollToSection('vortex-davinci')}>
+                <Scissors className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                <span>DaVinci Pipeline</span>
               </HardwareButton>
               <HardwareButton size="sm" tone="cyan" active={false} onClick={() => scrollToSection('vortex-blender')}>
                 <Box className="w-3.5 h-3.5 text-[#E06844]" />
@@ -1047,7 +1206,7 @@ export default function App() {
           </div>
 
           {/* ====================================================================
-              VORTEX MAIN HUB: BLENDER, INFINITY (VALERIUS V), SOUL COOLING, CONNECTORS
+              UNIFIED KAYA STUDIO HUB: SINGLE LINEUP, DAVINCI, BLENDER, INFINITY, SOUL, CONNECTORS
               ==================================================================== */}
           <VortexHubModules
             activeTool={activeTool}
@@ -1056,22 +1215,20 @@ export default function App() {
             projects={cloudProjects}
             artifacts={cloudArtifacts}
             connectors={cloudConnectors}
+            activeFps={fps}
+            activeWidth={activeResSpec.width}
+            activeHeight={activeResSpec.height}
+            activeStyleLabel={activeStyleSpec.label}
+            cuts={versions.map((v) => ({
+              label: v.label,
+              durationSec: parseInt(v.duration || duration, 10) || 10,
+              prompt: v.prompt,
+              specLabel: v.specLabel,
+            }))}
             onRefreshCloudData={() => kayaUser?.uid && hydrateCloudWorkspace(kayaUser.uid)}
             onSelectTool={handleSelectToolFromGalleryOrNav}
             onOpenBilling={handleOpenBillingFromHub}
             onJumpSection={scrollToSection}
-          />
-
-          {/* ====================================================================
-              KAYA STUDIO GATES & SEAMLESS LINEUP GALLERY
-              ==================================================================== */}
-          <StudioGatesGallery
-            activeTool={activeTool}
-            subjectImage={selectedProductUrl}
-            environmentImage={selectedAtmosphereUrl}
-            formatSummary={currentFormatLabel}
-            cutsCount={versions.length}
-            onSelectTool={handleSelectToolFromGalleryOrNav}
           />
 
           {/* ====================================================================
@@ -1164,6 +1321,15 @@ export default function App() {
                       </HardwareButton>
                       <HardwareButton
                         size="sm"
+                        tone="red"
+                        active={false}
+                        onClick={() => globalPicInputRef.current?.click()}
+                      >
+                        <ImagePlus className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                        <span>Upload Pics</span>
+                      </HardwareButton>
+                      <HardwareButton
+                        size="sm"
                         tone="cyan"
                         active={false}
                         onClick={() => handleJumpSection('studio-timeline', 'video')}
@@ -1174,6 +1340,72 @@ export default function App() {
                     </div>
                   </div>
                 </PlateBezel>
+
+                {uploadedPics.length > 0 && (
+                  <PlateBezel screws={false} accent="red" className="p-3.5 space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-mono text-[11px] uppercase tracking-wider text-[#F5E9EA]/80">
+                        Uploaded Studio Pics ({uploadedPics.length}) — Apply to Stage, Overlay, or Picture Suite
+                      </span>
+                      <HardwareButton
+                        size="sm"
+                        tone="red"
+                        onClick={() => globalPicInputRef.current?.click()}
+                      >
+                        <ImagePlus className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                        <span>+ Add More Pics</span>
+                      </HardwareButton>
+                    </div>
+                    <ScrollRow className="w-full" rowClassName="gap-3" deps={[uploadedPics.length]}>
+                      {uploadedPics.map((pic) => (
+                        <div key={pic.id} className="flex-none w-44 candy-trace-tile rounded-xl p-2 space-y-2">
+                          <img
+                            src={pic.url}
+                            alt={pic.name}
+                            className="w-full h-24 object-cover rounded-lg bg-[#050304]"
+                          />
+                          <div className="font-mono text-[10px] text-white truncate">{pic.name}</div>
+                          <div className="flex items-center gap-1.5">
+                            <HardwareButton
+                              size="sm"
+                              tone="cyan"
+                              fullWidth
+                              ledIndicator={false}
+                              onClick={() => {
+                                setAtmosphere({
+                                  id: pic.id,
+                                  source: 'upload',
+                                  images: [pic.url],
+                                  description: pic.name,
+                                });
+                                addLog(`Set "${pic.name}" as Stage Backdrop Plate B.`, 'success', pic.url);
+                              }}
+                            >
+                              <span>Stage</span>
+                            </HardwareButton>
+                            <HardwareButton
+                              size="sm"
+                              tone="magenta"
+                              fullWidth
+                              ledIndicator={false}
+                              onClick={() => {
+                                setProduct({
+                                  id: pic.id,
+                                  source: 'upload',
+                                  images: [pic.url],
+                                  description: pic.name,
+                                });
+                                addLog(`Set "${pic.name}" as Overlay Plate A.`, 'success', pic.url);
+                              }}
+                            >
+                              <span>Overlay</span>
+                            </HardwareButton>
+                          </div>
+                        </div>
+                      ))}
+                    </ScrollRow>
+                  </PlateBezel>
+                )}
 
                 {/* STATION A: FRAMES & CAMERA SETTINGS (IN ITS OWN CLEAN TILE) */}
                 {showFramesStation && (
@@ -1669,9 +1901,22 @@ export default function App() {
 
             {activeTool === 'picture' && (
               <PictureStudioPage
-                productUrl={selectedProductUrl}
+                productUrl={uploadedPics[0]?.url || selectedProductUrl}
                 transparentProductUrl={selectedProductTransparentUrl}
                 atmosphereUrl={selectedAtmosphereUrl}
+                onUploadPic={(url, name) => {
+                  const entry = {
+                    id: `pic-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                    name,
+                    url,
+                  };
+                  setUploadedPics((prev) => [entry, ...prev].slice(0, 24));
+                  setUploadedCubeAssets((prev) => [
+                    { id: entry.id, label: name, url, kind: 'image' },
+                    ...prev,
+                  ]);
+                  addLog(`Uploaded "${name}" to Picture Suite & 360° Cube.`, 'success', url);
+                }}
               />
             )}
 
@@ -1680,7 +1925,7 @@ export default function App() {
                 workspaceMedia={workspaceMedia}
                 latestVideoUrl={selected?.videoUrl ?? null}
                 onAddWorkspaceMedia={(asset) => setUploadedCubeAssets((prev) => [asset, ...prev])}
-                onEnterGates={() => scrollToSection('page-gates')}
+                onEnterGates={() => scrollToSection('vortex-hub')}
               />
             )}
 
@@ -1755,7 +2000,7 @@ export default function App() {
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 font-mono text-xs text-white font-semibold">
                   <ShieldCheck className="w-4 h-4 text-[#FF0A3C] shrink-0" />
-                  <span>{UNIFIED_WATERMARK_TEXT} · Chrome &amp; Firebase Studio Cloud</span>
+                  <span>{UNIFIED_WATERMARK_TEXT} · Dedicated Studio Cloud</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-4 font-mono text-[11px] text-[#F5E9EA]/75">
                   <span className="inline-flex items-center gap-1.5">

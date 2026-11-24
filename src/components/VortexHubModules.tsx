@@ -46,10 +46,18 @@ import {
   STUDIO_COLLAGE_BRAND_IMG,
   STUDIO_IRON_GATES_IMG,
 } from '../data.js';
+import {
+  DaVinciColorProfile,
+  DaVinciCutInput,
+  exportDaVinciCubeLut,
+  exportDaVinciEdl,
+  exportDaVinciFcpxml,
+} from '../lib/davinciPipeline.js';
 
 export type HubSectionTarget =
   | StudioPageKey
   | 'blender'
+  | 'davinci'
   | 'infinity'
   | 'soul'
   | 'connectors';
@@ -61,6 +69,11 @@ interface VortexHubModulesProps {
   projects: StudioProjectDoc[];
   artifacts: StudioArtifactDoc[];
   connectors: StudioConnectorDoc[];
+  activeFps?: number;
+  activeWidth?: number;
+  activeHeight?: number;
+  activeStyleLabel?: string;
+  cuts?: DaVinciCutInput[];
   onRefreshCloudData: () => void;
   onSelectTool: (tool: StudioPageKey) => void;
   onOpenBilling: (provider: 'stripe' | 'infinity_billing') => void;
@@ -79,25 +92,26 @@ interface StudioTileDef {
 }
 
 const VORTEX_LINEUP: StudioTileDef[] = [
-  { id: 'video', title: 'KAYA Cinema Studio', caption: '4K HDR compositor & 19 render engines', spec: '24–144 FPS', kind: 'tool', icon: <Film className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[0].url },
-  { id: 'blender', title: 'Blender Pipeline', caption: 'Real-time PBR mesh clearcoat & scene export', spec: 'GLB Viewport', kind: 'section', icon: <Box className="w-4 h-4 text-[#E06844]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
+  { id: 'video', title: 'Video & Frames Studio', caption: '4K HDR compositor, Camera Rig & 19 shaders', spec: '24–144 FPS', kind: 'tool', icon: <Film className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[0].url },
+  { id: 'davinci', title: 'DaVinci Resolve Pipeline', caption: 'FCPXML timeline, CMX 3600 EDL & 3D .cube LUT bridge', spec: 'XML · EDL · LUT', kind: 'section', icon: <Scissors className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[2].url },
+  { id: 'blender', title: 'Blender 3D Pipeline', caption: 'Real-time PBR mesh clearcoat & GLB export', spec: 'GLB Viewport', kind: 'section', icon: <Box className="w-4 h-4 text-[#E06844]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
+  { id: 'vfx', title: 'VFX & BFX Compositor', caption: 'Visual FX trails & DTS/Sony broadcast scopes', spec: 'VFX + BFX', kind: 'tool', icon: <Sparkles className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[1].url },
+  { id: 'sound', title: 'Sound · DTS & Sony SDDS', caption: '16 sample foley pads & spatial cinema DSP', spec: 'DTS:X / 7.1', kind: 'tool', icon: <Waves className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[3].url },
+  { id: 'audio', title: 'Audio & Music Studio', caption: 'Stem library, 3-band EQ & stamped WAV master', spec: '44.1 kHz', kind: 'tool', icon: <Volume2 className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_IRON_GATES_IMG },
+  { id: 'picture', title: 'Picture & Color Suite', caption: 'Upload pics, LUT grading, cutouts & 4K alpha', spec: 'RGBA 4K', kind: 'tool', icon: <ImageIcon className="w-4 h-4 text-[#F5E9EA]" />, previewImage: STUDIO_IRON_GATES_IMG },
+  { id: 'editor', title: 'DaVinci NLE Timeline', caption: '5-track V1/V2/FX/A1/A2 cuts & speed ramps', spec: 'SMPTE NLE', kind: 'tool', icon: <Scissors className="w-4 h-4 text-[#F5E9EA]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[2].url },
+  { id: 'cube', title: '360° Video Cube', caption: '27-cubie interactive spatial video matrix', spec: '3D Spatial', kind: 'tool', icon: <Layers className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[1].url },
+  { id: 'storyboard', title: '3D Storyboard App', caption: 'Icosahedron shader pre-vis & shot beats', spec: '5-Shot Previs', kind: 'tool', icon: <Clapperboard className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
+  { id: 'animator', title: 'Action Animator', caption: 'Dual-subject clash choreography & motion', spec: 'Motion FX', kind: 'tool', icon: <Swords className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[4].url },
+  { id: 'lipsync', title: 'Lip Sync Rig', caption: 'Phoneme viseme & live mic reactivity', spec: 'Viseme Rig', kind: 'tool', icon: <Mic className="w-4 h-4 text-[#F5E9EA]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[4].url },
   { id: 'infinity', title: 'Infinity · Valerius (V)', caption: 'Sentinel of the Ten Galaxies orbital core', spec: '10 Galaxies', kind: 'section', icon: <Orbit className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[2].url },
   { id: 'soul', title: 'Soul · Cooling Forge', caption: 'Opus 4.7 thermal governor & frame pacing', spec: 'Opus 4.7', kind: 'section', icon: <Snowflake className="w-4 h-4 text-[#F5E9EA]" />, previewImage: STUDIO_IRON_GATES_IMG },
-  { id: 'school', title: 'Infinity School', caption: 'Coding School, Rendering School & AI Tutor', spec: 'Live Labs', kind: 'tool', icon: <GraduationCap className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[4].url },
+  { id: 'school', title: 'Infinity School', caption: 'Coding School, Rendering School & Labs', spec: 'Live Labs', kind: 'tool', icon: <GraduationCap className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[4].url },
   { id: 'merch', title: 'Printify Studio', caption: 'Custom apparel, mugs & posters synced to cloud', spec: 'POD Catalog', kind: 'tool', icon: <ShoppingBag className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
   { id: 'airradio', title: 'AirRadio FM', caption: 'Multi-channel synth broadcast & host mic', spec: '88–108 MHz', kind: 'tool', icon: <Radio className="w-4 h-4 text-[#F5E9EA]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[3].url },
-  { id: 'cube', title: '360° Video Cube', caption: '27-cubie interactive spatial video matrix', spec: '3D Spatial', kind: 'tool', icon: <Layers className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[1].url },
-  { id: 'picture', title: 'Picture & Color Suite', caption: 'LUT grading, cutouts & alpha framing', spec: 'RGBA 4K', kind: 'tool', icon: <ImageIcon className="w-4 h-4 text-[#F5E9EA]" />, previewImage: STUDIO_IRON_GATES_IMG },
-  { id: 'vfx', title: 'VFX Shader App', caption: 'Realtime trails, halftone & prism shaders', spec: '60 FPS FX', kind: 'tool', icon: <Sparkles className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[0].url },
-  { id: 'storyboard', title: '3D Storyboard App', caption: 'Icosahedron shader pre-vis & shot beats', spec: '5-Shot Previs', kind: 'tool', icon: <Clapperboard className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
-  { id: 'animator', title: 'Action Animator', caption: 'Dual-subject clash choreography & motion', spec: 'Motion FX', kind: 'tool', icon: <Swords className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[1].url },
-  { id: 'editor', title: 'Timeline Editor', caption: 'Multi-track V1/FX/A1 cuts & speed ramps', spec: '0.25x–2x', kind: 'tool', icon: <Scissors className="w-4 h-4 text-[#F5E9EA]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[2].url },
-  { id: 'audio', title: 'Audio Mastering', caption: 'DSP spectrum, beats & unified watermark stem', spec: '44.1 kHz', kind: 'tool', icon: <Volume2 className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_IRON_GATES_IMG },
-  { id: 'sound', title: 'Sound Foley', caption: 'Procedural impact & sub-boom matrix', spec: 'Foley DSP', kind: 'tool', icon: <Waves className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[3].url },
-  { id: 'lipsync', title: 'Lip Sync Rig', caption: 'Phoneme viseme & live mic reactivity', spec: 'Viseme Rig', kind: 'tool', icon: <Mic className="w-4 h-4 text-[#F5E9EA]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[4].url },
   { id: 'live', title: 'Live Cam & Stream', caption: 'Camera compositor & WebM recording', spec: 'Broadcast', kind: 'tool', icon: <Camera className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[0].url },
-  { id: 'bridge', title: 'Local Suite Bridge', caption: 'Open desktop mesh & paint pack interchange', spec: 'Local Sync', kind: 'tool', icon: <Cable className="w-4 h-4 text-[#F5E9EA]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
-  { id: 'intel', title: 'AI Vision & Geo Console', caption: 'Self-hosted vision analysis & geo-grid', spec: 'Private AI', kind: 'tool', icon: <Cpu className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[2].url },
+  { id: 'bridge', title: 'Desktop Bridge', caption: 'Open GLB, paint stack & socket interchange', spec: 'Local Sync', kind: 'tool', icon: <Cable className="w-4 h-4 text-[#F5E9EA]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
+  { id: 'intel', title: 'Optics & Vision Console', caption: 'Self-hosted pixel vision analysis & geo-grid', spec: 'Private Optics', kind: 'tool', icon: <Cpu className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[2].url },
   { id: 'connectors', title: 'MCP, SQL & Cloud Vault', caption: 'Verified databases, skills, artifacts & search', spec: 'Self-Hosted', kind: 'section', icon: <Database className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_IRON_GATES_IMG },
 ];
 
@@ -107,6 +121,11 @@ export function VortexHubModules({
   projects,
   artifacts,
   connectors,
+  activeFps = 60,
+  activeWidth = 3840,
+  activeHeight = 2160,
+  activeStyleLabel = '4K HDR Ultra',
+  cuts = [],
   onRefreshCloudData,
   onSelectTool,
   onOpenBilling,
@@ -122,6 +141,10 @@ export function VortexHubModules({
   const [blenderWireframe, setBlenderWireframe] = useState(false);
   const [blenderFocal, setBlenderFocal] = useState(45);
   const [blenderStatus, setBlenderStatus] = useState('Blender GLB Pipeline Ready');
+
+  // DaVinci Resolve Pipeline state
+  const [davinciColorProfile, setDavinciColorProfile] = useState<DaVinciColorProfile>('candy_gloss_dwg');
+  const [davinciStatus, setDavinciStatus] = useState('DaVinci Resolve XML · EDL · 3D LUT Bridge Ready');
 
   // Infinity & Valerius (V) state
   const galaxyMountRef = useRef<HTMLDivElement | null>(null);
@@ -471,12 +494,43 @@ export function VortexHubModules({
   };
 
   const activateHubTile = (id: HubSectionTarget) => {
-    if (id === 'blender' || id === 'infinity' || id === 'soul' || id === 'connectors') {
+    if (id === 'blender' || id === 'davinci' || id === 'infinity' || id === 'soul' || id === 'connectors') {
       onJumpSection(`vortex-${id}`);
       return;
     }
     onSelectTool(id);
     onJumpSection('page-tools');
+  };
+
+  const handleDaVinciXml = () => {
+    const fname = exportDaVinciFcpxml({
+      projectName: 'KAYA_KNOCKSSTUDiOS_MASTER',
+      fps: activeFps,
+      width: activeWidth,
+      height: activeHeight,
+      colorProfile: davinciColorProfile,
+      cuts,
+      audioCodec: 'DTS:X Cinema & Sony SDDS 7.1',
+    });
+    setDavinciStatus(`Exported DaVinci Timeline XML (${fname})`);
+  };
+
+  const handleDaVinciEdl = () => {
+    const fname = exportDaVinciEdl({
+      projectName: 'KAYA_KNOCKSSTUDiOS_MASTER',
+      fps: activeFps,
+      width: activeWidth,
+      height: activeHeight,
+      colorProfile: davinciColorProfile,
+      cuts,
+      audioCodec: 'DTS:X Cinema & Sony SDDS 7.1',
+    });
+    setDavinciStatus(`Exported DaVinci CMX 3600 EDL (${fname})`);
+  };
+
+  const handleDaVinciLut = () => {
+    const fname = exportDaVinciCubeLut(davinciColorProfile);
+    setDavinciStatus(`Exported DaVinci 3D LUT (${fname})`);
   };
 
   const galaxies = [
@@ -494,7 +548,7 @@ export function VortexHubModules({
 
   return (
     <div className="space-y-10">
-      {/* 1. VORTEX MAIN HUB — CLEAN FULL-TILE WINDOWS WITH SEE-THROUGH FONT */}
+      {/* 1. UNIFIED KAYA STUDIO HUB — ONE TILE PER TOOL / PIPELINE */}
       <section id="vortex-hub" className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -502,13 +556,13 @@ export function VortexHubModules({
               className="text-base sm:text-xl font-bold uppercase tracking-[0.24em] see-thru-font"
               style={{ fontFamily: 'var(--font-display)' }}
             >
-              Vortex Main Hub · Connected Studio Lineup
+              KAYA Studio Hub · Unified Connected Lineup
             </h2>
             <p className="text-xs text-[#F5E9EA]/65">
-              Every studio, shader tool, and pipeline wired cleanly inside one continuous workstation.
+              One unified KNOCKSSTUDiOS · KAYA workstation — Blender, DaVinci Resolve, VFX/BFX &amp; DTS/Sony all connected.
             </p>
           </div>
-          <LedStatusIndicator label={`${VORTEX_LINEUP.length} Connected Modules`} tone="red" pulse />
+          <LedStatusIndicator label={`${VORTEX_LINEUP.length} Unified Modules`} tone="red" pulse />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -675,6 +729,85 @@ export function VortexHubModules({
                 className="hw-capsule-slider flex-1"
               />
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2B. DAVINCI RESOLVE PIPELINE · TIMELINE XML, EDL & 3D LUT INTERCHANGE */}
+      <section id="vortex-davinci" className="candy-surface rounded-[18px] p-5 sm:p-6 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <Scissors className="w-5 h-5 text-[#FF0A3C]" />
+            <div>
+              <h2
+                className="text-sm sm:text-base font-bold uppercase tracking-[0.18em] text-[#F5E9EA]"
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                DaVinci Resolve Pipeline · Timeline XML, CMX 3600 EDL &amp; Color LUT
+              </h2>
+              <p className="text-xs text-[#F5E9EA]/60">{davinciStatus}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <LedStatusIndicator
+              label={`${activeWidth}×${activeHeight} · ${activeFps} FPS · ${cuts.length || 1} Cut(s)`}
+              tone="cyan"
+            />
+            <HardwareButton
+              size="sm"
+              tone="cyan"
+              active={false}
+              onClick={() => {
+                onSelectTool('editor');
+                onJumpSection('page-tools');
+              }}
+            >
+              <span>Open Timeline NLE</span>
+            </HardwareButton>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-4 items-center">
+          <div className="space-y-2">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-[#F5E9EA]/65 block">
+              DaVinci Color Pipeline &amp; 3D LUT Target ({activeStyleLabel})
+            </span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {(
+                [
+                  ['candy_gloss_dwg', 'DaVinci Wide · Candy-Gloss'],
+                  ['burnished_rust_aces', 'ACEScct · Burnished Rust'],
+                  ['cinemax_hdr_rec2020', 'Rec.2020 · 4K HDR'],
+                  ['obsidian_noir_dctl', 'DCTL · Obsidian Noir'],
+                ] as [DaVinciColorProfile, string][]
+              ).map(([k, lbl]) => (
+                <HardwareButton
+                  key={k}
+                  size="sm"
+                  fullWidth
+                  tone={k.includes('candy') ? 'red' : k.includes('rust') ? 'magenta' : 'cyan'}
+                  active={davinciColorProfile === k}
+                  onClick={() => setDavinciColorProfile(k)}
+                >
+                  <span className="truncate">{lbl}</span>
+                </HardwareButton>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <HardwareButton size="sm" tone="red" active onClick={handleDaVinciXml}>
+              <Download className="w-3.5 h-3.5" />
+              <span>Export .FCPXML Timeline</span>
+            </HardwareButton>
+            <HardwareButton size="sm" tone="magenta" active onClick={handleDaVinciEdl}>
+              <Download className="w-3.5 h-3.5" />
+              <span>Export .EDL (CMX 3600)</span>
+            </HardwareButton>
+            <HardwareButton size="sm" tone="cyan" active onClick={handleDaVinciLut}>
+              <Palette className="w-3.5 h-3.5" />
+              <span>Export .CUBE 3D LUT</span>
+            </HardwareButton>
           </div>
         </div>
       </section>
@@ -872,7 +1005,7 @@ export function VortexHubModules({
                   <option value="postgres">PostgreSQL</option>
                   <option value="mysql">MySQL</option>
                   <option value="sqlite">Committed SQLite</option>
-                  <option value="firebase">Firebase Firestore</option>
+                  <option value="firebase">Cloud Document Store</option>
                   <option value="quantum_storage">Quantum Vault</option>
                   <option value="mcp">Self-Hosted MCP</option>
                   <option value="self_hosted_llm">Self-Hosted LLM</option>
@@ -925,14 +1058,14 @@ export function VortexHubModules({
               <span className="flex items-center gap-1.5 font-bold">
                 <FolderKanban className="w-3.5 h-3.5 text-[#FF0A3C]" /> Cloud Projects ({projects.length})
               </span>
-              <span className="text-[10px] text-[#F5E9EA]/55">Firebase Committed</span>
+              <span className="text-[10px] text-[#F5E9EA]/55">Cloud Committed</span>
             </div>
             <p className="font-mono text-[11px] text-[#F5E9EA]/65">
               {projects.length > 0
                 ? projects.slice(0, 2).map((p) => p.label).join(' · ')
                 : userId
                 ? 'Rendered reels automatically commit to your cloud projects.'
-                : 'Sign in with Google Chrome to commit projects directly to Firebase.'}
+                : 'Sign in with Google or Username & Password to sync studio projects.'}
             </p>
           </div>
           <div className="candy-trace-tile p-4 space-y-1.5">

@@ -5,8 +5,10 @@ import { createServer as createViteServer } from 'vite';
 
 interface StudioMemberRecord {
   id: string;
+  username: string;
   handle: string;
   email: string;
+  passwordHash?: string;
   role: 'admin' | 'manager' | 'engineer' | 'instructor' | 'support' | 'member';
   tier: 'free' | 'beginner' | 'pro' | 'ultra' | 'business' | 'enterprise';
   status: 'active' | 'revoked';
@@ -33,14 +35,34 @@ interface VerifiedDbConnection {
 
 const OWNER_EMAIL = 'GTamayo36@gmail.com';
 const OWNER_HANDLE = 'KNOCKSSTUDiOS';
-const SERVER_HMAC_SECRET = process.env.VORTEX_SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+const SERVER_HMAC_SECRET =
+  process.env.KAYA_SESSION_SECRET ||
+  process.env.VORTEX_SESSION_SECRET ||
+  crypto.randomBytes(32).toString('hex');
 const SELF_HOSTED_LLM_URL = process.env.VORTEX_LOCAL_LLM_URL || 'http://127.0.0.1:11434/api/generate';
 
+function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
+  return `${salt}:${derived}`;
+}
+
+function verifyPassword(password: string, storedHash: string): boolean {
+  const parts = storedHash.split(':');
+  if (parts.length !== 2) return false;
+  const [salt, hexHash] = parts;
+  if (!salt || !hexHash) return false;
+  const derived = crypto.scryptSync(password, salt, 64);
+  const expected = Buffer.from(hexHash, 'hex');
+  if (derived.length !== expected.length) return false;
+  return crypto.timingSafeEqual(derived, expected);
+}
+
 const CAPTCHA_POOL = [
-  { id: 'c-vortex-1', question: 'Select thermal value for Candy Apple peak hue: 7 + 5 =', answer: '12' },
-  { id: 'c-vortex-2', question: 'Verify Opus 4.7 cooling cycle: 9 + 6 =', answer: '15' },
-  { id: 'c-vortex-3', question: 'Confirm Ten Galaxies Sentinel key: 8 + 4 =', answer: '12' },
-  { id: 'c-vortex-4', question: 'Studio optical shutter check: 10 + 7 =', answer: '17' },
+  { id: 'c-kaya-1', question: 'Select thermal value for Candy Apple peak hue: 7 + 5 =', answer: '12' },
+  { id: 'c-kaya-2', question: 'Verify Opus 4.7 cooling cycle: 9 + 6 =', answer: '15' },
+  { id: 'c-kaya-3', question: 'Confirm Ten Galaxies Sentinel key: 8 + 4 =', answer: '12' },
+  { id: 'c-kaya-4', question: 'Studio optical shutter check: 10 + 7 =', answer: '17' },
 ];
 
 const WORKSPACE_CATALOG = [
@@ -197,6 +219,7 @@ async function startServer() {
       OWNER_EMAIL.toLowerCase(),
       {
         id: 'owner-knocksstudios',
+        username: OWNER_HANDLE,
         handle: OWNER_HANDLE,
         email: OWNER_EMAIL,
         role: 'admin',
@@ -206,6 +229,22 @@ async function startServer() {
       },
     ],
   ]);
+
+  let claimedAdminHash: string | null = null;
+  let claimedAdminIdentity: string = OWNER_HANDLE;
+
+  const findMemberByIdentifier = (identifier: string): StudioMemberRecord | undefined => {
+    const clean = identifier.trim().toLowerCase();
+    if (!clean) return undefined;
+    const direct = memberRegistry.get(clean);
+    if (direct) return direct;
+    for (const rec of memberRegistry.values()) {
+      if (rec.username.toLowerCase() === clean || rec.email.toLowerCase() === clean) {
+        return rec;
+      }
+    }
+    return undefined;
+  };
 
   const dbConnections: VerifiedDbConnection[] = [
     {
@@ -258,7 +297,7 @@ async function startServer() {
   });
 
   // --------------------------------------------------------------------------
-  // Captcha Verification & Protected Staff / Member Flows
+  // Username / Email + Password Auth + Staff / Admin Protected Access
   // --------------------------------------------------------------------------
 
   app.get('/api/verify/challenge', (_req, res) => {
@@ -274,37 +313,233 @@ async function startServer() {
     };
 
     if (recaptchaToken && recaptchaToken.length > 20) {
-      const verifyTokenSig = signToken({ email: 'captcha@vortex.local', handle: 'verified', role: 'member' });
+      const verifyTokenSig = signToken({ email: 'verified@kaya.local', handle: 'verified', role: 'member' });
       res.json({ verified: true, verificationToken: verifyTokenSig });
       return;
     }
 
     const match = CAPTCHA_POOL.find((c) => c.id === challengeId);
     if (!match || String(answer || '').trim() !== match.answer) {
-      res.status(400).json({ verified: false, error: 'Captcha challenge answer did not match.' });
+      res.status(400).json({ verified: false, error: 'Verification answer did not match.' });
       return;
     }
 
-    const verifyTokenSig = signToken({ email: 'captcha@vortex.local', handle: 'verified', role: 'member' });
+    const verifyTokenSig = signToken({ email: 'verified@kaya.local', handle: 'verified', role: 'member' });
     res.json({ verified: true, verificationToken: verifyTokenSig });
   });
 
+  app.post('/api/auth/register', (req, res) => {
+    const { username, email, password } = req.body as {
+      username?: string;
+      email?: string;
+      password?: string;
+    };
+
+    const cleanUsername = String(username || '').trim();
+    const cleanEmail = String(email || '').trim();
+    const rawPass = String(password || '');
+
+    if (cleanUsername.length < 2 || cleanUsername.length > 36) {
+      res.status(400).json({ error: 'Enter a username between 2 and 36 characters.' });
+      return;
+    }
+    if (cleanEmail && !cleanEmail.includes('@')) {
+      res.status(400).json({ error: 'Enter a valid email address or leave email blank.' });
+      return;
+    }
+    if (rawPass.length < 6) {
+      res.status(400).json({ error: 'Password must be at least 6 characters.' });
+      return;
+    }
+    if (!adminConfig.allowPublicSignup) {
+      res.status(403).json({ error: 'Public account creation is currently paused by studio admin.' });
+      return;
+    }
+
+    const existingByUser = findMemberByIdentifier(cleanUsername);
+    const existingByEmail = cleanEmail ? findMemberByIdentifier(cleanEmail) : undefined;
+    if (existingByUser || existingByEmail) {
+      res.status(409).json({ error: 'An account with that username or email already exists. Switch to Sign In.' });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const accountEmail = cleanEmail || `${cleanUsername.toLowerCase().replace(/[^a-z0-9._-]/g, '') || 'member'}@kaya.studio`;
+    const key = accountEmail.toLowerCase();
+    const record: StudioMemberRecord = {
+      id: `mem-${crypto.randomBytes(4).toString('hex')}`,
+      username: cleanUsername,
+      handle: cleanUsername,
+      email: accountEmail,
+      passwordHash: hashPassword(rawPass),
+      role: 'member',
+      tier: 'free',
+      status: 'active',
+      lastSeen: now,
+    };
+    memberRegistry.set(key, record);
+
+    const token = signToken({ email: record.email, handle: record.handle, role: record.role });
+    res.status(201).json({
+      user: {
+        uid: record.id,
+        handle: record.handle,
+        email: record.email,
+        role: record.role,
+        tier: record.tier,
+        signedInAt: now,
+      },
+      token,
+    });
+  });
+
+  app.post('/api/auth/login', (req, res) => {
+    const { identifier, password } = req.body as {
+      identifier?: string;
+      password?: string;
+    };
+
+    const cleanId = String(identifier || '').trim();
+    const rawPass = String(password || '');
+    if (!cleanId || !rawPass) {
+      res.status(400).json({ error: 'Enter both your username/email and password.' });
+      return;
+    }
+
+    const record = findMemberByIdentifier(cleanId);
+    if (!record || !record.passwordHash) {
+      res.status(401).json({
+        error: 'Account not found or no password set yet. Switch to Create Account to register.',
+      });
+      return;
+    }
+    if (record.status === 'revoked') {
+      res.status(403).json({ error: 'Account access has been suspended by studio administration.' });
+      return;
+    }
+    if (!verifyPassword(rawPass, record.passwordHash)) {
+      res.status(401).json({ error: 'Incorrect username/email or password.' });
+      return;
+    }
+
+    record.lastSeen = new Date().toISOString();
+    const token = signToken({ email: record.email, handle: record.handle, role: record.role });
+    res.json({
+      user: {
+        uid: record.id,
+        handle: record.handle,
+        email: record.email,
+        role: record.role,
+        tier: record.tier,
+        signedInAt: record.lastSeen,
+      },
+      token,
+    });
+  });
+
+  app.get('/api/auth/me', (req, res) => {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+    const claims = token ? verifyToken(token) : null;
+    if (!claims) {
+      res.status(401).json({ error: 'Session expired or invalid.' });
+      return;
+    }
+    const rec = findMemberByIdentifier(claims.email);
+    res.json({
+      user: {
+        uid: rec?.id || claims.email,
+        handle: rec?.handle || claims.handle,
+        email: claims.email,
+        role: rec?.role || claims.role,
+        tier: rec?.tier || 'free',
+      },
+    });
+  });
+
+  app.get('/api/staff/status', (_req, res) => {
+    const envPasscode = (process.env.KAYA_ADMIN_PASSCODE || '').trim();
+    const adminPasswordConfigured = Boolean(envPasscode || claimedAdminHash);
+    res.json({
+      adminPasswordConfigured,
+      canClaim: !envPasscode && !claimedAdminHash,
+    });
+  });
+
+  app.post('/api/staff/claim', (req, res) => {
+    const envPasscode = (process.env.KAYA_ADMIN_PASSCODE || '').trim();
+    if (envPasscode || claimedAdminHash) {
+      res.status(409).json({ error: 'Admin password is already configured. Sign in with your Admin credentials.' });
+      return;
+    }
+    const { username, password } = req.body as { username?: string; password?: string };
+    const cleanUser = String(username || '').trim() || OWNER_HANDLE;
+    const rawPass = String(password || '');
+    if (rawPass.length < 8) {
+      res.status(400).json({ error: 'Choose an admin password of at least 8 characters.' });
+      return;
+    }
+
+    claimedAdminHash = hashPassword(rawPass);
+    claimedAdminIdentity = cleanUser;
+    const now = new Date().toISOString();
+    const ownerRec = memberRegistry.get(OWNER_EMAIL.toLowerCase())!;
+    ownerRec.username = cleanUser;
+    ownerRec.handle = cleanUser;
+    ownerRec.lastSeen = now;
+    const token = signToken({ email: ownerRec.email, handle: ownerRec.handle, role: 'admin' });
+    res.json({ verified: true, staff: ownerRec, token });
+  });
+
+  app.post('/api/staff/login', (req, res) => {
+    const { username, password } = req.body as { username?: string; password?: string };
+    const cleanUser = String(username || '').trim();
+    const rawPass = String(password || '');
+    const envPasscode = (process.env.KAYA_ADMIN_PASSCODE || '').trim();
+
+    if (!rawPass) {
+      res.status(400).json({ error: 'Enter the studio admin password.' });
+      return;
+    }
+
+    let ok = false;
+    if (envPasscode) {
+      const a = crypto.createHash('sha256').update(rawPass).digest();
+      const b = crypto.createHash('sha256').update(envPasscode).digest();
+      ok = crypto.timingSafeEqual(a, b);
+    } else if (claimedAdminHash) {
+      const userMatches =
+        !cleanUser ||
+        cleanUser.toLowerCase() === claimedAdminIdentity.toLowerCase() ||
+        cleanUser.toLowerCase() === OWNER_EMAIL.toLowerCase() ||
+        cleanUser.toLowerCase() === OWNER_HANDLE.toLowerCase();
+      ok = userMatches && verifyPassword(rawPass, claimedAdminHash);
+    } else {
+      res.status(400).json({ error: 'No admin password claimed yet. Set your initial admin password first.' });
+      return;
+    }
+
+    if (!ok) {
+      res.status(401).json({ error: 'Invalid administrator credentials.' });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const ownerRec = memberRegistry.get(OWNER_EMAIL.toLowerCase())!;
+    ownerRec.lastSeen = now;
+    const token = signToken({ email: ownerRec.email, handle: ownerRec.handle, role: 'admin' });
+    res.json({ verified: true, staff: ownerRec, token });
+  });
+
   app.post('/api/staff/verify', (req, res) => {
-    const { email, role, verificationToken } = req.body as {
+    const { email, role } = req.body as {
       email?: string;
       role?: StudioMemberRecord['role'];
-      verificationToken?: string;
     };
 
     const cleanEmail = String(email || '').trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
       res.status(400).json({ error: 'Verified Google email required.' });
-      return;
-    }
-
-    const captchaClaims = verificationToken ? verifyToken(verificationToken) : null;
-    if (!captchaClaims) {
-      res.status(403).json({ error: 'Complete verification captcha before staff portal access.' });
       return;
     }
 
@@ -319,13 +554,14 @@ async function startServer() {
         : 'member';
 
     if (assignedRole === 'member') {
-      res.status(403).json({ error: 'Account is not authorized in the Staff / Admin registry.' });
+      res.status(403).json({ error: 'Account is not authorized in the Studio Staff roster.' });
       return;
     }
 
     const now = new Date().toISOString();
     const record: StudioMemberRecord = {
       id: existing?.id || `staff-${crypto.randomBytes(4).toString('hex')}`,
+      username: cleanEmail === OWNER_EMAIL.toLowerCase() ? OWNER_HANDLE : cleanEmail.split('@')[0],
       handle: cleanEmail === OWNER_EMAIL.toLowerCase() ? OWNER_HANDLE : cleanEmail.split('@')[0],
       email: cleanEmail,
       role: assignedRole,
@@ -340,14 +576,15 @@ async function startServer() {
   });
 
   app.post('/api/auth/member', (req, res) => {
-    const { email, handle, mode } = req.body as {
+    const { email, handle, password, mode } = req.body as {
       email?: string;
       handle?: string;
+      password?: string;
       mode?: 'signin' | 'signup';
     };
 
     const cleanEmail = String(email || '').trim();
-    const cleanHandle = String(handle || '').trim() || cleanEmail.split('@')[0] || 'Vortex Creator';
+    const cleanHandle = String(handle || '').trim() || cleanEmail.split('@')[0] || 'Studio Member';
     if (!cleanEmail || !cleanEmail.includes('@')) {
       res.status(400).json({ error: 'Enter a valid email address.' });
       return;
@@ -363,14 +600,22 @@ async function startServer() {
       res.status(403).json({ error: 'Public sign-ups are currently invite-only.' });
       return;
     }
+    if (existing?.passwordHash) {
+      if (!password || !verifyPassword(password, existing.passwordHash)) {
+        res.status(401).json({ error: 'Incorrect password.' });
+        return;
+      }
+    }
 
     const now = new Date().toISOString();
     const record: StudioMemberRecord = existing
       ? { ...existing, handle: cleanHandle || existing.handle, lastSeen: now }
       : {
           id: `mem-${crypto.randomBytes(4).toString('hex')}`,
+          username: cleanHandle,
           handle: cleanHandle,
           email: cleanEmail,
+          passwordHash: password ? hashPassword(password) : undefined,
           role: key === OWNER_EMAIL.toLowerCase() ? 'admin' : 'member',
           tier: key === OWNER_EMAIL.toLowerCase() ? 'enterprise' : 'free',
           status: 'active',
@@ -381,6 +626,7 @@ async function startServer() {
     const token = signToken({ email: record.email, handle: record.handle, role: record.role });
     res.json({
       user: {
+        uid: record.id,
         handle: record.handle,
         email: record.email,
         role: record.role,
@@ -649,7 +895,7 @@ async function startServer() {
     ['/api/build-tree', '/api/file-content', '/api/download-file', '/api/download-code', '/assets/aistudio/*.html', '/assets/aistudio/Paste_*'],
     (_req, res) => {
       res.status(403).json({
-        error: 'Access denied: Proprietary source code protected © 2024–2026 VORTEX · KAYA™',
+        error: 'Access denied: Proprietary source code protected © 2024–2026 KAYA · KNOCKSSTUDiOS™',
       });
     }
   );
@@ -669,7 +915,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`VORTEX · KAYA server running on http://localhost:${PORT}`);
+    console.log(`KAYA · KNOCKSSTUDiOS server running on http://localhost:${PORT}`);
   });
 }
 
