@@ -14,23 +14,25 @@
 }
 
 :root {
-  --chassis-bg: #050304;
-  --plate-bg: #090405;
-  --module-bg: #100809;
-  --ink: #F5E9EA;
-  --ink-dim: rgba(245, 233, 234, 0.68);
-  --candy-red: #FF0A3C;
-  --candy-crimson: #9E0622;
-  --rust-amber: #B84323;
-  --rust-deep: #7C2A12;
-  --pro-chrome: #F5E9EA;
-  --candy-cherry: #FF2E63;
+  --chassis-bg: #0A0A0A;
+  --plate-bg: #121212;
+  --module-bg: #121212;
+  --ink: #F5FFFA;
+  --ink-dim: rgba(224, 255, 255, 0.72);
+  --bio-magenta: #FF007F;
+  --flamingo-pink: #FC8EAC;
+  --fresnel-peach: #FFDAB9;
+  --pearl-cyan: #E0FFFF;
+  --pearl-white: #F5FFFA;
+  --quantum-teal: #00D9C0;
+  --chrome-hi: #F5FFFA;
+  --chrome-lo: #2A2A2A;
 }
 
 html,
 body {
-  background-color: var(--chassis-bg);
-  color: var(--ink);
+  background-color: #0A0A0A;
+  color: #F5FFFA;
   font-family: var(--font-sans);
   overflow-x: hidden;
   scroll-behavior: smooth;
@@ -38,70 +40,87 @@ body {
 }
 
 ::selection {
-  background: var(--candy-red);
-  color: #FFFFFF;
+  background: #FF007F;
+  color: #F5FFFA;
 }
 
-/* Edge-to-Edge Continuous Dark Candy-Gloss & Rust Backdrop (Zero fragmented white lines) */
+/* Edge-to-Edge Continuous Void Black (#0A0A0A) & Gunmetal Dark (#121212) Studio Backdrop */
 .candy-chassis {
   background:
-    radial-gradient(circle at 12% 18%, rgba(255, 10, 60, 0.08) 0%, transparent 42%),
-    radial-gradient(circle at 86% 42%, rgba(184, 67, 35, 0.09) 0%, transparent 45%),
-    radial-gradient(circle at 30% 78%, rgba(158, 6, 34, 0.08) 0%, transparent 48%),
-    linear-gradient(180deg, #050304 0%, #090405 48%, #070304 100%);
+    radial-gradient(circle at 14% 14%, rgba(255, 0, 127, 0.11) 0%, transparent 42%),
+    radial-gradient(circle at 86% 34%, rgba(255, 218, 185, 0.09) 0%, transparent 44%),
+    radial-gradient(circle at 72% 70%, rgba(252, 142, 172, 0.08) 0%, transparent 46%),
+    radial-gradient(circle at 22% 84%, rgba(0, 217, 192, 0.08) 0%, transparent 44%),
+    linear-gradient(180deg, #0A0A0A 0%, #121212 50%, #0A0A0A 100%);
 }
 
-/* Seamless See-Through Section Surface (Zero hard borders or white divider lines) */
+/* Seamless Gunmetal Pearlescent Surface (Zero fragmented hard lines) */
 .candy-surface {
-  background: linear-gradient(180deg, rgba(16, 8, 9, 0.44) 0%, rgba(9, 4, 5, 0.28) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 200, 185, 0.04), 0 14px 40px rgba(0, 0, 0, 0.48);
+  background: linear-gradient(180deg, rgba(18, 18, 18, 0.86) 0%, rgba(10, 10, 10, 0.78) 100%);
+  box-shadow: inset 0 1px 0 rgba(245, 255, 250, 0.07), 0 16px 44px rgba(0, 0, 0, 0.65);
 }
 
-/* Legacy aliases remapped smoothly to seamless Candy-Gloss & Rust surfaces */
+/* High-Gloss Candy Pearlescent Iridescent Sheen */
+.pearlescent-sheen {
+  background-image: linear-gradient(
+    135deg,
+    rgba(245, 255, 250, 0.16),
+    rgba(252, 142, 172, 0.12),
+    rgba(255, 218, 185, 0.10),
+    rgba(224, 255, 255, 0.14)
+  );
+}
+
 .cnc-chassis {
-  background: #050304;
+  background: #0A0A0A;
 }
 
 .cnc-plate {
-  background: linear-gradient(180deg, rgba(16, 8, 9, 0.56) 0%, rgba(9, 4, 5, 0.34) 100%);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(180deg, rgba(18, 18, 18, 0.88) 0%, rgba(10, 10, 10, 0.72) 100%);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.62);
 }
 
 .cnc-module {
-  background: rgba(16, 8, 9, 0.38);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
+  background: rgba(18, 18, 18, 0.72);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.52);
 }
 
 .cnc-recess {
-  background: rgba(8, 3, 4, 0.52);
-  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.85);
+  background: rgba(10, 10, 10, 0.84);
+  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.9);
+}
+
+.capsule-track-housing {
+  background: linear-gradient(180deg, rgba(18, 18, 18, 0.92) 0%, rgba(10, 10, 10, 0.92) 100%);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.85), inset 0 -1px 0 rgba(224, 255, 255, 0.08);
 }
 
 /* Optical Glass Viewport */
 .optical-glass {
   background:
-    radial-gradient(circle at 20% 15%, rgba(255, 10, 60, 0.11) 0%, transparent 48%),
-    radial-gradient(circle at 85% 85%, rgba(184, 67, 35, 0.1) 0%, transparent 48%),
-    #060304;
-  box-shadow: inset 0 0 36px rgba(0, 0, 0, 0.92);
+    radial-gradient(circle at 20% 15%, rgba(255, 0, 127, 0.12) 0%, transparent 48%),
+    radial-gradient(circle at 85% 85%, rgba(0, 217, 192, 0.10) 0%, transparent 48%),
+    #0A0A0A;
+  box-shadow: inset 0 0 36px rgba(0, 0, 0, 0.94);
 }
 
-/* Sculpted Metallic Capsule Sheen */
+/* Sculpted High-Gloss Candy Pearlescent Glass Sheen */
 .hw-glass-sheen {
   background-image: linear-gradient(
-    145deg,
-    rgba(255, 232, 225, 0.18) 0%,
-    rgba(255, 255, 255, 0.03) 38%,
-    rgba(0, 0, 0, 0.52) 100%
+    135deg,
+    rgba(245, 255, 250, 0.2) 0%,
+    rgba(252, 142, 172, 0.12) 40%,
+    rgba(255, 218, 185, 0.10) 70%,
+    rgba(224, 255, 255, 0.16) 100%
   );
 }
 
-/* Single See-Through Seamless Tile with Animated Bioluminescent Racing Dot on Hover/Touch */
+/* Single See-Through Seamless Tile with #FF007F Magenta & #00D9C0 Quantum Teal Racing Trace */
 .candy-trace-tile {
   position: relative;
   border-radius: 14px;
-  background: linear-gradient(155deg, rgba(22, 10, 12, 0.42) 0%, rgba(10, 4, 6, 0.24) 100%);
-  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), background 220ms ease;
+  background: linear-gradient(155deg, rgba(18, 18, 18, 0.88) 0%, rgba(10, 10, 10, 0.78) 100%);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), background 200ms ease, box-shadow 200ms ease;
 }
 
 .candy-trace-tile::before {
@@ -109,23 +128,25 @@ body {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1.5px;
+  padding: 1.75px;
   opacity: 0;
   pointer-events: none;
+  z-index: 30;
   background: conic-gradient(
     from var(--trace-angle),
     transparent 0deg,
-    transparent 292deg,
-    rgba(184, 67, 35, 0.52) 322deg,
-    rgba(255, 10, 60, 0.95) 348deg,
-    #FFF0F3 357deg,
+    transparent 262deg,
+    rgba(252, 142, 172, 0.55) 295deg,
+    #FF007F 325deg,
+    #00D9C0 348deg,
+    #F5FFFA 358deg,
     transparent 360deg
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
-  transition: opacity 200ms ease;
+  transition: opacity 180ms ease;
 }
 
 .candy-trace-tile::after {
@@ -133,17 +154,19 @@ body {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  border: 1px solid rgba(255, 92, 120, 0.24);
+  border: 1px solid rgba(255, 0, 127, 0.28);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 200ms ease;
+  z-index: 25;
+  transition: opacity 180ms ease;
 }
 
 .candy-trace-tile:hover,
 .candy-trace-tile:focus-visible,
 .candy-trace-tile:active {
-  transform: translateY(-1px);
-  background: linear-gradient(155deg, rgba(32, 12, 15, 0.56) 0%, rgba(14, 6, 8, 0.38) 100%);
+  transform: translateY(-2px);
+  background: linear-gradient(155deg, rgba(22, 18, 22, 0.94) 0%, rgba(12, 12, 12, 0.88) 100%);
+  box-shadow: 0 12px 32px rgba(255, 0, 127, 0.16), 0 0 24px rgba(0, 217, 192, 0.14);
 }
 
 .candy-trace-tile:hover::before,
@@ -170,51 +193,51 @@ body {
   }
 }
 
-/* See-Through Etched Display Font (matches user's cut screenshots) */
+/* See-Through Etched Display Font */
 .see-thru-font {
-  color: rgba(245, 233, 234, 0.44);
-  -webkit-text-stroke: 0.75px rgba(255, 240, 242, 0.56);
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.65);
-  transition: color 220ms ease, -webkit-text-stroke-color 220ms ease, text-shadow 220ms ease;
+  color: rgba(245, 255, 250, 0.62);
+  -webkit-text-stroke: 0.7px rgba(224, 255, 255, 0.68);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.78);
+  transition: color 200ms ease, -webkit-text-stroke-color 200ms ease, text-shadow 200ms ease;
 }
 
 .group:hover .see-thru-font,
 .candy-trace-tile:hover .see-thru-font,
 .see-thru-font:hover,
 .see-thru-font:focus-visible {
-  color: rgba(255, 255, 255, 0.94);
-  -webkit-text-stroke: 0.75px rgba(255, 245, 246, 0.88);
-  text-shadow: 0 0 22px rgba(255, 10, 60, 0.42), 0 2px 14px rgba(0, 0, 0, 0.8);
+  color: #F5FFFA;
+  -webkit-text-stroke: 0.7px #E0FFFF;
+  text-shadow: 0 0 20px rgba(255, 0, 127, 0.36), 0 2px 14px rgba(0, 217, 192, 0.3);
 }
 
 .see-thru-font-subtle {
-  color: rgba(245, 233, 234, 0.52);
-  -webkit-text-stroke: 0.35px rgba(255, 235, 238, 0.34);
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.72);
-  transition: color 200ms ease;
+  color: rgba(224, 255, 255, 0.65);
+  -webkit-text-stroke: 0.25px rgba(245, 255, 250, 0.28);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.82);
+  transition: color 180ms ease;
 }
 
 .group:hover .see-thru-font-subtle,
 .candy-trace-tile:hover .see-thru-font-subtle {
-  color: rgba(255, 232, 235, 0.92);
+  color: #F5FFFA;
 }
 
-/* Minimal Cut-Screenshot Bottom Bar See-Through Glass Buttons */
+/* Minimal Bottom Bar See-Through Glass Buttons */
 .see-thru-bar-btn {
-  background: rgba(5, 3, 4, 0.24);
+  background: rgba(10, 10, 10, 0.42);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  color: rgba(245, 233, 234, 0.56);
-  border: 1px solid rgba(255, 240, 242, 0.16);
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.75);
+  color: rgba(245, 255, 250, 0.72);
+  border: 1px solid rgba(224, 255, 255, 0.22);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
   transition: color 180ms ease, border-color 180ms ease, background 180ms ease;
 }
 
 .see-thru-bar-btn:hover,
 .see-thru-bar-btn:focus-visible {
-  background: rgba(12, 4, 6, 0.58);
-  color: rgba(255, 255, 255, 0.96);
-  border-color: rgba(255, 10, 60, 0.58);
+  background: rgba(18, 18, 18, 0.82);
+  color: #F5FFFA;
+  border-color: rgba(255, 0, 127, 0.72);
 }
 
 /* Clean Edge-to-Edge Full-Tile Window */
@@ -226,10 +249,10 @@ body {
 }
 
 .machined-ring {
-  background: linear-gradient(145deg, #2D181A 0%, #090405 55%, #4A2318 100%);
+  background: linear-gradient(145deg, #2A101B 0%, #0A0A0A 55%, #121212 100%);
   box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.78),
-    inset 0 1px 1px rgba(255, 224, 214, 0.18),
+    0 4px 12px rgba(0, 0, 0, 0.85),
+    inset 0 1px 1px rgba(245, 255, 250, 0.24),
     inset 0 -1px 2px rgba(0, 0, 0, 0.9);
 }
 
@@ -243,7 +266,7 @@ input[type="range"].hw-capsule-slider {
 input[type="range"].hw-capsule-slider::-webkit-slider-runnable-track {
   height: 10px;
   border-radius: 9999px;
-  background: linear-gradient(180deg, #060304 0%, #1C0D10 100%);
+  background: linear-gradient(180deg, #0A0A0A 0%, #1C1C1C 100%);
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.92);
 }
 
@@ -254,9 +277,9 @@ input[type="range"].hw-capsule-slider::-webkit-slider-thumb {
   height: 20px;
   margin-top: -5px;
   border-radius: 9999px;
-  background: radial-gradient(circle at 32% 28%, #FFFFFF 0%, #FF8A9E 28%, #FF0A3C 68%, #7C2A12 100%);
+  background: radial-gradient(circle at 32% 28%, #F5FFFA 0%, #FC8EAC 32%, #FF007F 74%, #7A003D 100%);
   box-shadow:
-    0 0 14px rgba(255, 10, 60, 0.75),
+    0 0 14px rgba(255, 0, 127, 0.78),
     0 2px 6px rgba(0, 0, 0, 0.85);
   transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -265,17 +288,7 @@ input[type="range"].hw-capsule-slider:hover::-webkit-slider-thumb {
   transform: scale(1.1);
 }
 
-@keyframes ledPulse {
-  0%, 100% { opacity: 0.72; }
-  50% { opacity: 1; }
-}
-
-.animate-led-pulse {
-  animation: ledPulse 2.2s ease-in-out infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .animate-led-pulse,
   .animate-spin,
   .candy-trace-tile::before {
     animation: none !important;
@@ -284,7 +297,7 @@ input[type="range"].hw-capsule-slider:hover::-webkit-slider-thumb {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 10, 60, 0.38) #070405;
+  scrollbar-color: rgba(255, 0, 127, 0.5) #0A0A0A;
 }
 
 ::-webkit-scrollbar {
@@ -293,16 +306,16 @@ input[type="range"].hw-capsule-slider:hover::-webkit-slider-thumb {
 }
 
 ::-webkit-scrollbar-track {
-  background: #070405;
+  background: #0A0A0A;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(184, 67, 35, 0.45);
+  background: rgba(255, 0, 127, 0.5);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 10, 60, 0.72);
+  background: #FF007F;
 }
 
 .hide-scrollbar {

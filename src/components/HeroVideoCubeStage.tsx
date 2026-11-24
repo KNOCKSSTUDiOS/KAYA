@@ -17,7 +17,6 @@ interface HeroVideoCubeStageProps {
   onOpenAuth: () => void;
   onNavigateTool: (tool: StudioPageKey) => void;
   onNavigateGates: () => void;
-  onOpenPlans?: () => void;
   onAddWorkspaceMedia?: (asset: WorkspaceMediaAsset) => void;
   onJumpSection?: (sectionId: string, tool?: StudioPageKey) => void;
 }
@@ -73,7 +72,6 @@ export function HeroVideoCubeStage({
   onOpenAuth,
   onNavigateTool,
   onNavigateGates,
-  onOpenPlans,
   onAddWorkspaceMedia,
   onJumpSection,
 }: HeroVideoCubeStageProps) {
@@ -433,7 +431,8 @@ export function HeroVideoCubeStage({
     const PLAY_DURATION = 4.2;
     const TRANSITION_DURATION = 2.8;
 
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
+    timer.connect(document);
     let frameId = 0;
     let disposed = false;
     let totalTime = 0;
@@ -465,7 +464,8 @@ export function HeroVideoCubeStage({
 
     function tick() {
       if (disposed) return;
-      const delta = Math.min(0.05, clock.getDelta());
+      timer.update();
+      const delta = Math.min(0.05, timer.getDelta());
       totalTime += delta;
       phaseElapsed += delta;
       tickCounter++;
@@ -660,6 +660,7 @@ export function HeroVideoCubeStage({
       texA.dispose();
       texB.dispose();
       envTex.dispose();
+      timer.dispose();
       renderer.dispose();
       if (renderer.domElement.parentNode === container) {
         container.removeChild(renderer.domElement);
@@ -767,134 +768,115 @@ export function HeroVideoCubeStage({
             >
               <span>Menu</span>
               {menuOpen ? (
-                <ChevronDown className="w-3.5 h-3.5 text-[#FF3B5C]" />
+                <ChevronDown className="w-3.5 h-3.5 text-[#FF007F]" />
               ) : (
-                <ChevronUp className="w-3.5 h-3.5 text-[#F1F5F9]/75" />
+                <ChevronUp className="w-3.5 h-3.5 text-[#00D9C0]" />
               )}
             </button>
 
             {menuOpen && (
-              <div className="absolute right-0 bottom-full mb-2 w-60 rounded-[10px] bg-[#020203] border border-white/25 shadow-[0_12px_36px_rgba(0,0,0,0.98)] p-1.5 space-y-1 z-30">
+              <div className="absolute right-0 bottom-full mb-2 w-60 rounded-[10px] bg-[#0A0A0A] border border-[#FF007F]/30 shadow-[0_12px_36px_rgba(0,0,0,0.98)] p-1.5 space-y-1 z-30">
                 <button
                   type="button"
                   onClick={() => {
                     setMenuOpen(false);
                     onNavigateGates();
                   }}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#FF1E42]/60 font-mono text-xs text-white transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#FF007F]/60 font-mono text-xs text-[#F5FFFA] transition-colors cursor-pointer"
                 >
                   Studio Gates &amp; Gallery
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('cube')}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#F1F5F9]/60 font-mono text-xs text-white transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#00D9C0]/60 font-mono text-xs text-[#F5FFFA] transition-colors cursor-pointer"
                 >
                   360° Video Cube
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('picture')}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#F1F5F9]/60 font-mono text-xs text-white transition-colors cursor-pointer sm:hidden"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#00D9C0]/60 font-mono text-xs text-[#F5FFFA] transition-colors cursor-pointer sm:hidden"
                 >
                   Picture Tools
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('editor')}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#FF2E63]/60 font-mono text-xs text-white transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#FC8EAC]/60 font-mono text-xs text-[#F5FFFA] transition-colors cursor-pointer"
                 >
                   Timeline Tools
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('intel')}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#F1F5F9]/60 font-mono text-xs text-white transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#00D9C0]/60 font-mono text-xs text-[#F5FFFA] transition-colors cursor-pointer"
                 >
-                  AI Tools &amp; Connectors
+                  AI Tools &amp; Vision
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('vfx')}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#FF2E63]/60 font-mono text-xs text-white transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#FF007F]/60 font-mono text-xs text-[#F5FFFA] transition-colors cursor-pointer"
                 >
-                  VFX Shaders
+                  VFX · Shaders · Titles
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('sound')}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#F1F5F9]/60 font-mono text-xs text-white transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#00D9C0]/60 font-mono text-xs text-[#F5FFFA] transition-colors cursor-pointer"
                 >
                   Sound Foley
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('lipsync')}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#FF1E42]/60 font-mono text-xs text-white transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#FC8EAC]/60 font-mono text-xs text-[#F5FFFA] transition-colors cursor-pointer"
                 >
                   Lip Sync Rig
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('airradio')}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#F1F5F9]/60 font-mono text-xs text-white transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#00D9C0]/60 font-mono text-xs text-[#F5FFFA] transition-colors cursor-pointer"
                 >
                   AirRadio FM Broadcast
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('school')}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#FF2E63]/60 font-mono text-xs text-white transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#FC8EAC]/60 font-mono text-xs text-[#F5FFFA] transition-colors cursor-pointer"
                 >
                   Infinity School
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleMenuNavigate('merch')}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#FF1E42]/60 font-mono text-xs text-white transition-colors cursor-pointer"
-                >
-                  Printify Merch Studio
-                </button>
-                <button
-                  type="button"
                   onClick={() => handleMenuNavigate('live')}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#F1F5F9]/60 font-mono text-xs text-white transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#00D9C0]/60 font-mono text-xs text-[#F5FFFA] transition-colors cursor-pointer"
                 >
                   Live Camera &amp; Stream
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('animator')}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#FF1E42]/60 font-mono text-xs text-white transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#FF007F]/60 font-mono text-xs text-[#F5FFFA] transition-colors cursor-pointer"
                 >
                   Action Animator
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMenuNavigate('bridge')}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#F1F5F9]/60 font-mono text-xs text-white transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#00D9C0]/60 font-mono text-xs text-[#F5FFFA] transition-colors cursor-pointer"
                 >
-                  Blender &amp; Local Bridge
+                  3D Asset &amp; Local Bridge
                 </button>
-                {onOpenPlans && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onOpenPlans();
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#FF5C8A]/60 font-mono text-xs text-[#FF5C8A] transition-colors cursor-pointer"
-                  >
-                    Studio Plans &amp; Billing
-                  </button>
-                )}
 
                 <div className="h-[1px] bg-white/15 my-1" />
 
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#020203] hover:bg-black border border-transparent hover:border-[#F1F5F9]/60 font-mono text-xs text-[#F1F5F9] transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-[6px] bg-[#0A0A0A] hover:bg-[#121212] border border-transparent hover:border-[#00D9C0]/60 font-mono text-xs text-[#E0FFFF] transition-colors cursor-pointer"
                 >
                   + Load Workspace Videos / Media
                 </button>

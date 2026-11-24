@@ -1,13 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import {
   Box,
   Cpu,
   Database,
   Download,
   Film,
-  Flame,
   FolderKanban,
   GraduationCap,
   Layers,
@@ -17,7 +15,6 @@ import {
   Radio,
   Scissors,
   Search,
-  ShoppingBag,
   Snowflake,
   Sparkles,
   Swords,
@@ -41,11 +38,9 @@ import {
   saveStudioArtifact,
 } from '../lib/firebase.js';
 import { stampUnifiedCanvasWatermark } from '../lib/watermarkEngine.js';
-import {
-  BACKGROUND_CUBE_VIDEOS,
-  STUDIO_COLLAGE_BRAND_IMG,
-  STUDIO_IRON_GATES_IMG,
-} from '../data.js';
+import { TileVisualPreview, type PreviewTileId } from './TileVisualPreviews.js';
+import { Asset3DPipelineStage } from './Asset3DPipelineStage.js';
+import { Asset3DState } from '../lib/studioPipelineTypes.js';
 import {
   DaVinciColorProfile,
   DaVinciCutInput,
@@ -74,45 +69,214 @@ interface VortexHubModulesProps {
   activeHeight?: number;
   activeStyleLabel?: string;
   cuts?: DaVinciCutInput[];
+  asset3DState: Asset3DState;
+  onChangeAsset3DState: (patch: Partial<Asset3DState>) => void;
+  onSyncAsset3DToVideo?: (assetState: Asset3DState) => void;
   onRefreshCloudData: () => void;
   onSelectTool: (tool: StudioPageKey) => void;
-  onOpenBilling: (provider: 'stripe' | 'infinity_billing') => void;
   onJumpSection: (id: string) => void;
 }
 
 interface StudioTileDef {
   id: HubSectionTarget;
+  previewId: PreviewTileId;
   title: string;
   caption: string;
-  spec: string;
-  kind: 'section' | 'tool';
+  decal: string;
+  enginePair: string;
   icon: React.ReactNode;
-  previewVideo?: string;
-  previewImage?: string;
 }
 
-const VORTEX_LINEUP: StudioTileDef[] = [
-  { id: 'video', title: 'Video & Frames Studio', caption: '4K HDR compositor, Camera Rig & 19 shaders', spec: '24–144 FPS', kind: 'tool', icon: <Film className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[0].url },
-  { id: 'davinci', title: 'DaVinci Resolve Pipeline', caption: 'FCPXML timeline, CMX 3600 EDL & 3D .cube LUT bridge', spec: 'XML · EDL · LUT', kind: 'section', icon: <Scissors className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[2].url },
-  { id: 'blender', title: 'Blender 3D Pipeline', caption: 'Real-time PBR mesh clearcoat & GLB export', spec: 'GLB Viewport', kind: 'section', icon: <Box className="w-4 h-4 text-[#E06844]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
-  { id: 'vfx', title: 'VFX & BFX Compositor', caption: 'Visual FX trails & DTS/Sony broadcast scopes', spec: 'VFX + BFX', kind: 'tool', icon: <Sparkles className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[1].url },
-  { id: 'sound', title: 'Sound · DTS & Sony SDDS', caption: '16 sample foley pads & spatial cinema DSP', spec: 'DTS:X / 7.1', kind: 'tool', icon: <Waves className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[3].url },
-  { id: 'audio', title: 'Audio & Music Studio', caption: 'Stem library, 3-band EQ & stamped WAV master', spec: '44.1 kHz', kind: 'tool', icon: <Volume2 className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_IRON_GATES_IMG },
-  { id: 'picture', title: 'Picture & Color Suite', caption: 'Upload pics, LUT grading, cutouts & 4K alpha', spec: 'RGBA 4K', kind: 'tool', icon: <ImageIcon className="w-4 h-4 text-[#F5E9EA]" />, previewImage: STUDIO_IRON_GATES_IMG },
-  { id: 'editor', title: 'DaVinci NLE Timeline', caption: '5-track V1/V2/FX/A1/A2 cuts & speed ramps', spec: 'SMPTE NLE', kind: 'tool', icon: <Scissors className="w-4 h-4 text-[#F5E9EA]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[2].url },
-  { id: 'cube', title: '360° Video Cube', caption: '27-cubie interactive spatial video matrix', spec: '3D Spatial', kind: 'tool', icon: <Layers className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[1].url },
-  { id: 'storyboard', title: '3D Storyboard App', caption: 'Icosahedron shader pre-vis & shot beats', spec: '5-Shot Previs', kind: 'tool', icon: <Clapperboard className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
-  { id: 'animator', title: 'Action Animator', caption: 'Dual-subject clash choreography & motion', spec: 'Motion FX', kind: 'tool', icon: <Swords className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[4].url },
-  { id: 'lipsync', title: 'Lip Sync Rig', caption: 'Phoneme viseme & live mic reactivity', spec: 'Viseme Rig', kind: 'tool', icon: <Mic className="w-4 h-4 text-[#F5E9EA]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[4].url },
-  { id: 'infinity', title: 'Infinity · Valerius (V)', caption: 'Sentinel of the Ten Galaxies orbital core', spec: '10 Galaxies', kind: 'section', icon: <Orbit className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[2].url },
-  { id: 'soul', title: 'Soul · Cooling Forge', caption: 'Opus 4.7 thermal governor & frame pacing', spec: 'Opus 4.7', kind: 'section', icon: <Snowflake className="w-4 h-4 text-[#F5E9EA]" />, previewImage: STUDIO_IRON_GATES_IMG },
-  { id: 'school', title: 'Infinity School', caption: 'Coding School, Rendering School & Labs', spec: 'Live Labs', kind: 'tool', icon: <GraduationCap className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[4].url },
-  { id: 'merch', title: 'Printify Studio', caption: 'Custom apparel, mugs & posters synced to cloud', spec: 'POD Catalog', kind: 'tool', icon: <ShoppingBag className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
-  { id: 'airradio', title: 'AirRadio FM', caption: 'Multi-channel synth broadcast & host mic', spec: '88–108 MHz', kind: 'tool', icon: <Radio className="w-4 h-4 text-[#F5E9EA]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[3].url },
-  { id: 'live', title: 'Live Cam & Stream', caption: 'Camera compositor & WebM recording', spec: 'Broadcast', kind: 'tool', icon: <Camera className="w-4 h-4 text-[#FF0A3C]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[0].url },
-  { id: 'bridge', title: 'Desktop Bridge', caption: 'Open GLB, paint stack & socket interchange', spec: 'Local Sync', kind: 'tool', icon: <Cable className="w-4 h-4 text-[#F5E9EA]" />, previewImage: STUDIO_COLLAGE_BRAND_IMG },
-  { id: 'intel', title: 'Optics & Vision Console', caption: 'Self-hosted pixel vision analysis & geo-grid', spec: 'Private Optics', kind: 'tool', icon: <Cpu className="w-4 h-4 text-[#E06844]" />, previewVideo: BACKGROUND_CUBE_VIDEOS[2].url },
-  { id: 'connectors', title: 'MCP, SQL & Cloud Vault', caption: 'Verified databases, skills, artifacts & search', spec: 'Self-Hosted', kind: 'section', icon: <Database className="w-4 h-4 text-[#FF0A3C]" />, previewImage: STUDIO_IRON_GATES_IMG },
+interface PairedTileRow {
+  pairTitle: string;
+  left: [StudioTileDef, StudioTileDef, StudioTileDef];
+  right: [StudioTileDef, StudioTileDef, StudioTileDef];
+}
+
+const PAIRED_STUDIO_ROWS: PairedTileRow[] = [
+  {
+    pairTitle: '01 · Cinema Production & 3D Asset (V) Core',
+    left: [
+      {
+        id: 'video',
+        previewId: 'video',
+        title: 'VIDEO & FRAMES STUDIO',
+        caption: '4K HDR compositor, Camera Rig & live generators',
+        decal: '24–144 FPS · WEBM/MP4',
+        enginePair: 'INFINITY CORE ENGINE -- Cinema',
+        icon: <Film className="w-4 h-4 text-[#FF007F]" />,
+      },
+      {
+        id: 'vfx',
+        previewId: 'vfx',
+        title: 'VFX · SHADERS · TITLES',
+        caption: 'VFX Picture, VFX Sound, Shaders, Titles & Generators',
+        decal: '5 SUB-VIEWS · GLSL',
+        enginePair: 'INFINITY CORE ENGINE -- Tempest Studio',
+        icon: <Sparkles className="w-4 h-4 text-[#00D9C0]" />,
+      },
+      {
+        id: 'editor',
+        previewId: 'editor',
+        title: 'DAVINCI NLE TIMELINE',
+        caption: 'Multi-track V1/3D/FX/TTL/A1/A2 razor cut & zoom',
+        decal: 'SMPTE · RAZOR NLE',
+        enginePair: 'INFINITY CORE ENGINE -- Timeline NLE',
+        icon: <Scissors className="w-4 h-4 text-[#FC8EAC]" />,
+      },
+    ],
+    right: [
+      {
+        id: 'blender',
+        previewId: 'blender',
+        title: '3D ASSET (V) & BLENDER',
+        caption: 'GLB / FBX / OBJ loader & pearlescent shaders',
+        decal: '3D ASSET (V) · GLB',
+        enginePair: 'INFINITY CORE ENGINE -- Mesh Forge',
+        icon: <Box className="w-4 h-4 text-[#FFDAB9]" />,
+      },
+      {
+        id: 'davinci',
+        previewId: 'davinci',
+        title: 'DAVINCI RESOLVE PIPELINE',
+        caption: 'FCPXML timeline, CMX 3600 EDL & 3D .cube LUT',
+        decal: 'XML · EDL · .CUBE LUT',
+        enginePair: 'INFINITY CORE ENGINE -- Resolve Bridge',
+        icon: <Scissors className="w-4 h-4 text-[#FF007F]" />,
+      },
+      {
+        id: 'cube',
+        previewId: 'cube',
+        title: '360° VIDEO CUBE',
+        caption: '27-cubie spatial video matrix & camera choreography',
+        decal: '360 VIDEO CUBE',
+        enginePair: 'INFINITY CORE ENGINE -- Spatial Cube',
+        icon: <Layers className="w-4 h-4 text-[#00D9C0]" />,
+      },
+    ],
+  },
+  {
+    pairTitle: '02 · Sound, Music, Picture & Motion Suites',
+    left: [
+      {
+        id: 'audio',
+        previewId: 'audio',
+        title: 'AUDIO & MUSIC SUITE',
+        caption: 'SFX, Full Song, Acoustic, Vocals/Score & Sequencer',
+        decal: 'SFX · SONG · SCORE · BUSES',
+        enginePair: 'INFINITY CORE ENGINE -- Music Master',
+        icon: <Volume2 className="w-4 h-4 text-[#FC8EAC]" />,
+      },
+      {
+        id: 'sound',
+        previewId: 'sound',
+        title: 'SOUND · DTS:X & SONY SDDS',
+        caption: '16 foley sample pads & surround cinema buses',
+        decal: 'DTS:X / SONY SDDS 7.1',
+        enginePair: 'INFINITY CORE ENGINE -- Spatial DSP',
+        icon: <Waves className="w-4 h-4 text-[#00D9C0]" />,
+      },
+      {
+        id: 'picture',
+        previewId: 'picture',
+        title: 'PICTURE & COLOR SUITE',
+        caption: 'Upload pics, LUT grading, cutouts & 4K alpha PNG',
+        decal: 'RGBA 4K PLATE',
+        enginePair: 'INFINITY CORE ENGINE -- Color Suite',
+        icon: <ImageIcon className="w-4 h-4 text-[#F5FFFA]" />,
+      },
+    ],
+    right: [
+      {
+        id: 'storyboard',
+        previewId: 'storyboard',
+        title: '3D STORYBOARD & PREVIS',
+        caption: '3D camera pre-vis & shot sequence beats',
+        decal: 'SHOT PREVIS',
+        enginePair: 'INFINITY CORE ENGINE -- Previs Rig',
+        icon: <Clapperboard className="w-4 h-4 text-[#FC8EAC]" />,
+      },
+      {
+        id: 'animator',
+        previewId: 'animator',
+        title: 'ACTION ANIMATOR',
+        caption: 'Dual-subject motion choreography & optical trails',
+        decal: 'MOTION CHOREO',
+        enginePair: 'INFINITY CORE ENGINE -- Motion FX',
+        icon: <Swords className="w-4 h-4 text-[#FFDAB9]" />,
+      },
+      {
+        id: 'lipsync',
+        previewId: 'lipsync',
+        title: 'LIP SYNC RIG',
+        caption: 'Phoneme viseme & live mic reactivity',
+        decal: 'VISEME RIG',
+        enginePair: 'INFINITY CORE ENGINE -- Viseme Sync',
+        icon: <Mic className="w-4 h-4 text-[#00D9C0]" />,
+      },
+    ],
+  },
+  {
+    pairTitle: '03 · Live Broadcast, Orbital Core & Telemetry',
+    left: [
+      {
+        id: 'airradio',
+        previewId: 'airradio',
+        title: 'AIRRADIO FM',
+        caption: 'Multi-channel synth broadcast & host mic stereo carrier',
+        decal: '88-108 MHZ',
+        enginePair: 'INFINITY CORE ENGINE -- FM Broadcast',
+        icon: <Radio className="w-4 h-4 text-[#00D9C0]" />,
+      },
+      {
+        id: 'live',
+        previewId: 'live',
+        title: 'LIVE CAM & STREAM',
+        caption: 'Real camera reticle & WebM live stream capture',
+        decal: 'LIVE CAM · BROADCAST · STREAM',
+        enginePair: 'INFINITY CORE ENGINE -- Live Switcher',
+        icon: <Camera className="w-4 h-4 text-[#FF007F]" />,
+      },
+      {
+        id: 'bridge',
+        previewId: 'bridge',
+        title: 'DESKTOP BRIDGE',
+        caption: 'Local workstation socket, paint stack & GLB exchange',
+        decal: 'LOCAL SYNC',
+        enginePair: 'INFINITY CORE ENGINE -- Bridge Bus',
+        icon: <Cable className="w-4 h-4 text-[#E0FFFF]" />,
+      },
+    ],
+    right: [
+      {
+        id: 'infinity',
+        previewId: 'infinity',
+        title: 'INFINITY · VALERIUS (V)',
+        caption: 'Sentinel of the Ten Galaxies orbital core telemetry',
+        decal: '10 GALAXIES',
+        enginePair: 'INFINITY CORE ENGINE -- Valerius (V)',
+        icon: <Orbit className="w-4 h-4 text-[#FF007F]" />,
+      },
+      {
+        id: 'soul',
+        previewId: 'soul',
+        title: 'SOUL · COOLING FORGE',
+        caption: 'Opus 4.7 thermal governor & 144 FPS pacing lock',
+        decal: 'OPUS 4.7 CRYO',
+        enginePair: 'INFINITY CORE ENGINE -- Soul Cryo',
+        icon: <Snowflake className="w-4 h-4 text-[#00D9C0]" />,
+      },
+      {
+        id: 'school',
+        previewId: 'school',
+        title: 'INFINITY ACADEMY LAB',
+        caption: 'Shader coding, 3D rendering labs & optics analysis',
+        decal: 'LIVE LABS',
+        enginePair: 'INFINITY CORE ENGINE -- Academy Lab',
+        icon: <GraduationCap className="w-4 h-4 text-[#FFDAB9]" />,
+      },
+    ],
+  },
 ];
 
 export function VortexHubModules({
@@ -126,22 +290,13 @@ export function VortexHubModules({
   activeHeight = 2160,
   activeStyleLabel = '4K HDR Ultra',
   cuts = [],
+  asset3DState,
+  onChangeAsset3DState,
+  onSyncAsset3DToVideo,
   onRefreshCloudData,
   onSelectTool,
-  onOpenBilling,
   onJumpSection,
 }: VortexHubModulesProps) {
-  // Blender Pipeline state
-  const blenderMountRef = useRef<HTMLDivElement | null>(null);
-  const blenderMeshRef = useRef<THREE.Mesh | null>(null);
-  const blenderSceneRef = useRef<THREE.Scene | null>(null);
-  const blenderCamRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const [blenderPrimitive, setBlenderPrimitive] = useState<'torus' | 'cube' | 'sentinel' | 'sphere'>('torus');
-  const [blenderShader, setBlenderShader] = useState<'candy_gloss' | 'burnished_rust' | 'forged_obsidian'>('candy_gloss');
-  const [blenderWireframe, setBlenderWireframe] = useState(false);
-  const [blenderFocal, setBlenderFocal] = useState(45);
-  const [blenderStatus, setBlenderStatus] = useState('Blender GLB Pipeline Ready');
-
   // DaVinci Resolve Pipeline state
   const [davinciColorProfile, setDavinciColorProfile] = useState<DaVinciColorProfile>('candy_gloss_dwg');
   const [davinciStatus, setDavinciStatus] = useState('DaVinci Resolve XML · EDL · 3D LUT Bridge Ready');
@@ -181,102 +336,13 @@ export function VortexHubModules({
       .catch(() => {});
   }, []);
 
-  // Interactive Blender Three.js Viewport
-  useEffect(() => {
-    const container = blenderMountRef.current;
-    if (!container) return;
-
-    const w = container.clientWidth || 560;
-    const h = container.clientHeight || 260;
-    const scene = new THREE.Scene();
-    blenderSceneRef.current = scene;
-
-    const camera = new THREE.PerspectiveCamera(blenderFocal, w / h, 0.1, 100);
-    camera.position.set(0, 0.6, 4.2);
-    blenderCamRef.current = camera;
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    renderer.setSize(w, h);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    container.innerHTML = '';
-    container.appendChild(renderer.domElement);
-
-    const amb = new THREE.AmbientLight(0xf5e9ea, 0.8);
-    scene.add(amb);
-
-    const candyLight = new THREE.PointLight(0xff0a3c, 5.2, 40);
-    candyLight.position.set(3.5, 3, 4);
-    scene.add(candyLight);
-
-    const rustLight = new THREE.PointLight(0xb84323, 4.4, 40);
-    rustLight.position.set(-4, -2.5, 3);
-    scene.add(rustLight);
-
-    const geo =
-      blenderPrimitive === 'torus'
-        ? new THREE.TorusKnotGeometry(0.95, 0.3, 110, 18)
-        : blenderPrimitive === 'cube'
-        ? new THREE.BoxGeometry(1.65, 1.65, 1.65, 3, 3, 3)
-        : blenderPrimitive === 'sentinel'
-        ? new THREE.OctahedronGeometry(1.35, 1)
-        : new THREE.SphereGeometry(1.25, 32, 24);
-
-    const shaderColors =
-      blenderShader === 'candy_gloss'
-        ? { color: 0xb8062b, emissive: 0x260209, roughness: 0.14, metalness: 0.85, clearcoat: 1.0 }
-        : blenderShader === 'burnished_rust'
-        ? { color: 0xb84323, emissive: 0x1d0903, roughness: 0.28, metalness: 0.92, clearcoat: 0.72 }
-        : { color: 0x161113, emissive: 0x120306, roughness: 0.22, metalness: 0.95, clearcoat: 0.9 };
-
-    const mat = new THREE.MeshPhysicalMaterial({
-      color: shaderColors.color,
-      emissive: shaderColors.emissive,
-      roughness: shaderColors.roughness,
-      metalness: shaderColors.metalness,
-      clearcoat: shaderColors.clearcoat,
-      clearcoatRoughness: 0.1,
-      wireframe: blenderWireframe,
-    });
-
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.name = `Blender_${blenderPrimitive}_${blenderShader}`;
-    scene.add(mesh);
-    blenderMeshRef.current = mesh;
-
-    let raf = 0;
-    const renderLoop = () => {
-      raf = requestAnimationFrame(renderLoop);
-      mesh.rotation.y += 0.008;
-      mesh.rotation.x += 0.004;
-      renderer.render(scene, camera);
-    };
-    renderLoop();
-
-    const ro = new ResizeObserver(() => {
-      const nw = container.clientWidth || 560;
-      const nh = container.clientHeight || 260;
-      camera.aspect = nw / nh;
-      camera.updateProjectionMatrix();
-      renderer.setSize(nw, nh);
-    });
-    ro.observe(container);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      geo.dispose();
-      mat.dispose();
-      renderer.dispose();
-    };
-  }, [blenderPrimitive, blenderShader, blenderWireframe, blenderFocal]);
-
   // Interactive Infinity & Valerius (V) Sentinel of the Ten Galaxies Stage
   useEffect(() => {
     const container = galaxyMountRef.current;
     if (!container) return;
 
     const w = container.clientWidth || 560;
-    const h = container.clientHeight || 250;
+    const h = container.clientHeight || 220;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
     camera.position.set(0, 1.4, 5.2);
@@ -290,16 +356,16 @@ export function VortexHubModules({
 
     const coreGeo = new THREE.IcosahedronGeometry(0.82, 1);
     const coreMat = new THREE.MeshStandardMaterial({
-      color: 0xff0a3c,
-      emissive: 0x5c0416,
-      metalness: 0.85,
-      roughness: 0.18,
+      color: 0xff007f,
+      emissive: 0x3b001e,
+      metalness: 0.88,
+      roughness: 0.16,
     });
     const sentinelCore = new THREE.Mesh(coreGeo, coreMat);
     scene.add(sentinelCore);
 
-    const ringGeo = new THREE.TorusGeometry(2.1, 0.02, 12, 80);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0xb84323, transparent: true, opacity: 0.55 });
+    const ringGeo = new THREE.TorusGeometry(2.1, 0.025, 12, 80);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00d9c0, transparent: true, opacity: 0.6 });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.rotation.x = Math.PI / 2.4;
     scene.add(ring);
@@ -308,22 +374,25 @@ export function VortexHubModules({
     const satGeo = new THREE.SphereGeometry(0.11, 14, 14);
     for (let i = 0; i < 10; i++) {
       const sMat = new THREE.MeshBasicMaterial({
-        color: i === activeGalaxy ? 0xffffff : i % 2 === 0 ? 0xff0a3c : 0xd96138,
+        color: i === activeGalaxy ? 0xf5fffa : i % 3 === 0 ? 0xff007f : i % 3 === 1 ? 0x00d9c0 : 0xfc8eac,
       });
       const sat = new THREE.Mesh(satGeo, sMat);
       scene.add(sat);
       satellites.push(sat);
     }
 
-    const pLight = new THREE.PointLight(0xffffff, 4, 30);
+    const pLight = new THREE.PointLight(0xf5fffa, 4, 30);
     pLight.position.set(3, 4, 5);
     scene.add(pLight);
 
+    const timer = new THREE.Timer();
+    timer.connect(document);
     let raf = 0;
-    let t = 0;
+
     const animate = () => {
       raf = requestAnimationFrame(animate);
-      t += 0.014;
+      timer.update();
+      const t = timer.getElapsed() * 0.85;
       sentinelCore.rotation.y += 0.01;
       sentinelCore.rotation.z += 0.005;
       ring.rotation.z += 0.003;
@@ -340,6 +409,7 @@ export function VortexHubModules({
 
     return () => {
       cancelAnimationFrame(raf);
+      timer.dispose();
       coreGeo.dispose();
       coreMat.dispose();
       ringGeo.dispose();
@@ -362,11 +432,11 @@ export function VortexHubModules({
       pass += 1;
       const w = canvas.width;
       const h = canvas.height;
-      ctx.fillStyle = '#060304';
+      ctx.fillStyle = '#0A0A0A';
       ctx.fillRect(0, 0, w, h);
 
       const speed = coolingProfile === 'cryo_144' ? 0.006 : coolingProfile === 'opus_47' ? 0.004 : 0.0024;
-      ctx.strokeStyle = coolingProfile === 'cryo_144' || coolingProfile === 'opus_47' ? '#FF0A3C' : '#B84323';
+      ctx.strokeStyle = coolingProfile === 'cryo_144' || coolingProfile === 'opus_47' ? '#FF007F' : '#00D9C0';
       ctx.lineWidth = 2;
       ctx.beginPath();
       for (let x = 0; x <= w; x += 6) {
@@ -385,43 +455,6 @@ export function VortexHubModules({
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
   }, [coolingProfile]);
-
-  const handleExportBlenderGlb = () => {
-    if (!blenderSceneRef.current) return;
-    setBlenderStatus('Exporting Blender GLB scene…');
-    const exporter = new GLTFExporter();
-    exporter.parse(
-      blenderSceneRef.current,
-      (res) => {
-        const blob =
-          res instanceof ArrayBuffer
-            ? new Blob([res], { type: 'model/gltf-binary' })
-            : new Blob([JSON.stringify(res)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `vortex-blender-${blenderPrimitive}.glb`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 2500);
-        setBlenderStatus(`Exported ${blenderPrimitive} GLB with ${blenderShader.replace('_', ' ')} material`);
-        if (userId) {
-          saveStudioArtifact({
-            userId,
-            studioHub: 'blender',
-            title: `Blender ${blenderPrimitive} (${blenderShader})`,
-            kind: 'blender_scene',
-            summary: `Focal ${blenderFocal}mm · ${blenderWireframe ? 'Wireframe' : 'Solid Clearcoat'}`,
-          })
-            .then(onRefreshCloudData)
-            .catch(() => {});
-        }
-      },
-      () => setBlenderStatus('Export failed'),
-      { binary: true }
-    );
-  };
 
   const handleRunSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -504,7 +537,7 @@ export function VortexHubModules({
 
   const handleDaVinciXml = () => {
     const fname = exportDaVinciFcpxml({
-      projectName: 'KAYA_KNOCKSSTUDiOS_MASTER',
+      projectName: 'KNOCKSSTUDiOS_Hollywood_MOTiON_Pictures_MASTER',
       fps: activeFps,
       width: activeWidth,
       height: activeHeight,
@@ -517,7 +550,7 @@ export function VortexHubModules({
 
   const handleDaVinciEdl = () => {
     const fname = exportDaVinciEdl({
-      projectName: 'KAYA_KNOCKSSTUDiOS_MASTER',
+      projectName: 'KNOCKSSTUDiOS_Hollywood_MOTiON_Pictures_MASTER',
       fps: activeFps,
       width: activeWidth,
       height: activeHeight,
@@ -536,216 +569,137 @@ export function VortexHubModules({
   const galaxies = [
     '01 · Crimson Core',
     '02 · Obsidian Rim',
-    '03 · Rust Nebula',
+    '03 · Flamingo Aura',
     '04 · Vesper Forge',
     '05 · Chrono Belt',
     '06 · Solis Drift',
     '07 · Apex Crown',
-    '08 · Iron Halo',
-    '09 · Amber Rift',
+    '08 · Pearl Halo',
+    '09 · Peach Rift',
     '10 · Valerius Zenith',
   ];
 
+  const renderTileCard = (tile: StudioTileDef) => {
+    const isActive = activeTool === tile.id;
+    return (
+      <button
+        key={tile.id}
+        type="button"
+        data-active={isActive}
+        onClick={() => activateHubTile(tile.id)}
+        className="group candy-trace-tile full-tile-window min-h-[192px] text-left p-5 flex flex-col justify-between gap-3 cursor-pointer"
+      >
+        <TileVisualPreview id={tile.previewId} title={tile.title} />
+
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 pearlescent-sheen opacity-0 group-hover:opacity-65 transition-opacity duration-300"
+        />
+
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/95 via-[#121212]/48 to-[#0A0A0A]/25"
+        />
+
+        <div className="relative z-10 flex items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-2 opacity-90 group-hover:opacity-100 transition-opacity">
+            {tile.icon}
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#00D9C0]">
+              {tile.decal}
+            </span>
+          </span>
+          <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-[#E0FFFF]/60 truncate">
+            {tile.enginePair}
+          </span>
+        </div>
+
+        <div className="relative z-10 space-y-1">
+          <h3
+            className="text-base sm:text-lg font-bold uppercase tracking-[0.16em] see-thru-font truncate"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
+            {tile.title}
+          </h3>
+          <p className="text-xs see-thru-font-subtle leading-snug line-clamp-2">
+            {tile.caption}
+          </p>
+        </div>
+      </button>
+    );
+  };
+
   return (
     <div className="space-y-10">
-      {/* 1. UNIFIED KAYA STUDIO HUB — ONE TILE PER TOOL / PIPELINE */}
-      <section id="vortex-hub" className="space-y-4">
+      {/* 1. PAIRED STUDIO HUB — 3 LEFT / 3 RIGHT PER ROW DOWN THE PAGE */}
+      <section id="vortex-hub" className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2
-              className="text-base sm:text-xl font-bold uppercase tracking-[0.24em] see-thru-font"
+              className="text-base sm:text-xl font-bold uppercase tracking-[0.22em] see-thru-font"
               style={{ fontFamily: 'var(--font-display)' }}
             >
-              KAYA Studio Hub · Unified Connected Lineup
+              KNOCKSSTUDiOS · Hollywood MOTiON Pictures Hub
             </h2>
-            <p className="text-xs text-[#F5E9EA]/65">
-              One unified KNOCKSSTUDiOS · KAYA workstation — Blender, DaVinci Resolve, VFX/BFX &amp; DTS/Sony all connected.
+            <p className="text-xs text-[#E0FFFF]/68">
+              INFINITY CORE ENGINE · Paired 3-Left / 3-Right Studio Modules — 3D Asset (V), DaVinci Resolve, VFX Shaders &amp; DTS:X / Sony SDDS.
             </p>
           </div>
-          <LedStatusIndicator label={`${VORTEX_LINEUP.length} Unified Modules`} tone="red" pulse />
+          <LedStatusIndicator label="18 Paired Studio Modules · 3L / 3R" tone="cyan" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {VORTEX_LINEUP.map((tile) => {
-            const isActive = activeTool === tile.id;
-            return (
-              <button
-                key={tile.id}
-                type="button"
-                data-active={isActive}
-                onClick={() => activateHubTile(tile.id)}
-                className="group candy-trace-tile full-tile-window min-h-[172px] text-left p-4 flex flex-col justify-between gap-3 cursor-pointer"
-              >
-                {tile.previewVideo ? (
-                  <video
-                    src={tile.previewVideo}
-                    muted
-                    loop
-                    playsInline
-                    autoPlay
-                    preload="metadata"
-                    className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-55 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
-                  />
-                ) : tile.previewImage ? (
-                  <img
-                    src={tile.previewImage}
-                    alt={tile.title}
-                    className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-78 group-hover:scale-105 transition-all duration-500"
-                  />
-                ) : null}
-
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#050304]/95 via-[#090405]/45 to-[#050304]/25"
-                />
-
-                <div className="relative z-10 flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                    {tile.icon}
-                    <span className="font-mono text-[10px] uppercase tracking-[0.18em] see-thru-font-subtle">
-                      {tile.spec}
-                    </span>
-                  </span>
-                </div>
-
-                <div className="relative z-10 space-y-1">
-                  <h3
-                    className="text-sm sm:text-base font-bold uppercase tracking-[0.16em] see-thru-font truncate"
-                    style={{ fontFamily: 'var(--font-display)' }}
-                  >
-                    {tile.title}
-                  </h3>
-                  <p className="text-[11px] see-thru-font-subtle leading-snug line-clamp-2">
-                    {tile.caption}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
+        <div className="space-y-8">
+          {PAIRED_STUDIO_ROWS.map((row) => (
+            <div key={row.pairTitle} className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#FC8EAC]">
+                  {row.pairTitle}
+                </span>
+                <span className="font-mono text-[10px] text-[#E0FFFF]/50">
+                  3 Left · 3 Right Paired Deck
+                </span>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+                <div className="flex flex-col gap-3.5">{row.left.map(renderTileCard)}</div>
+                <div className="flex flex-col gap-3.5">{row.right.map(renderTileCard)}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* 2. BLENDER PIPELINE + INFINITY VALERIUS (V) + SOUL COOLING FORGE OPUS 4.7 */}
-      <section id="vortex-blender" className="candy-surface rounded-[18px] p-5 sm:p-6 space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <Box className="w-5 h-5 text-[#E06844]" />
-            <div>
-              <h2
-                className="text-sm sm:text-base font-bold uppercase tracking-[0.18em] text-[#F5E9EA]"
-                style={{ fontFamily: 'var(--font-display)' }}
-              >
-                Blender Pipeline · Interactive Shader &amp; Geometry Stage
-              </h2>
-              <p className="text-xs text-[#F5E9EA]/60">{blenderStatus}</p>
-            </div>
-          </div>
-          <HardwareButton size="sm" tone="red" active onClick={handleExportBlenderGlb}>
-            <Download className="w-3.5 h-3.5" />
-            <span>Export Scene Mesh</span>
-          </HardwareButton>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-center">
-          <div ref={blenderMountRef} className="w-full h-[260px] rounded-[14px] optical-glass overflow-hidden" />
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-[#F5E9EA]/65 block">
-                Geometry Armature
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    ['torus', 'Torus Knot'],
-                    ['cube', 'Rubik Sub-Mesh'],
-                    ['sentinel', 'Valerius Core'],
-                    ['sphere', 'Studio Sphere'],
-                  ] as const
-                ).map(([k, lbl]) => (
-                  <HardwareButton
-                    key={k}
-                    size="sm"
-                    tone="cyan"
-                    active={blenderPrimitive === k}
-                    onClick={() => setBlenderPrimitive(k)}
-                  >
-                    <span>{lbl}</span>
-                  </HardwareButton>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-[#F5E9EA]/65 block">
-                Clearcoat Surface Shader
-              </span>
-              <div className="flex flex-wrap gap-2">
-                <HardwareButton
-                  size="sm"
-                  tone="red"
-                  active={blenderShader === 'candy_gloss'}
-                  onClick={() => setBlenderShader('candy_gloss')}
-                >
-                  <Palette className="w-3.5 h-3.5" />
-                  <span>Candy Gloss</span>
-                </HardwareButton>
-                <HardwareButton
-                  size="sm"
-                  tone="magenta"
-                  active={blenderShader === 'burnished_rust'}
-                  onClick={() => setBlenderShader('burnished_rust')}
-                >
-                  <Flame className="w-3.5 h-3.5" />
-                  <span>Burnished Rust</span>
-                </HardwareButton>
-                <HardwareButton
-                  size="sm"
-                  tone="neutral"
-                  active={blenderShader === 'forged_obsidian'}
-                  onClick={() => setBlenderShader('forged_obsidian')}
-                >
-                  <span>Forged Obsidian</span>
-                </HardwareButton>
-                <HardwareButton
-                  size="sm"
-                  tone="cyan"
-                  active={blenderWireframe}
-                  onClick={() => setBlenderWireframe((w) => !w)}
-                >
-                  <span>{blenderWireframe ? 'Wireframe ON' : 'Wireframe'}</span>
-                </HardwareButton>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-xs text-[#F5E9EA]/70">Focal {blenderFocal}mm</span>
-              <input
-                type="range"
-                min={24}
-                max={85}
-                value={blenderFocal}
-                onChange={(e) => setBlenderFocal(Number(e.target.value))}
-                className="hw-capsule-slider flex-1"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 2. 3D ASSET (V) & BLENDER PIPELINE + GLB / FBX / OBJ LOADER & CUSTOM SHADERS */}
+      <Asset3DPipelineStage
+        assetState={asset3DState}
+        onChangeAssetState={onChangeAsset3DState}
+        onSendToVideoPipeline={onSyncAsset3DToVideo}
+        onExportArtifact={(title, summary) => {
+          if (userId) {
+            saveStudioArtifact({
+              userId,
+              studioHub: 'blender',
+              title,
+              kind: 'blender_scene',
+              summary,
+            })
+              .then(onRefreshCloudData)
+              .catch(() => {});
+          }
+        }}
+      />
 
       {/* 2B. DAVINCI RESOLVE PIPELINE · TIMELINE XML, EDL & 3D LUT INTERCHANGE */}
       <section id="vortex-davinci" className="candy-surface rounded-[18px] p-5 sm:p-6 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <Scissors className="w-5 h-5 text-[#FF0A3C]" />
+            <Scissors className="w-5 h-5 text-[#FF007F]" />
             <div>
               <h2
-                className="text-sm sm:text-base font-bold uppercase tracking-[0.18em] text-[#F5E9EA]"
+                className="text-sm sm:text-base font-bold uppercase tracking-[0.18em] text-[#F5FFFA]"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
                 DaVinci Resolve Pipeline · Timeline XML, CMX 3600 EDL &amp; Color LUT
               </h2>
-              <p className="text-xs text-[#F5E9EA]/60">{davinciStatus}</p>
+              <p className="text-xs text-[#E0FFFF]/65">{davinciStatus}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -769,16 +723,16 @@ export function VortexHubModules({
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-4 items-center">
           <div className="space-y-2">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-[#F5E9EA]/65 block">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-[#E0FFFF]/65 block">
               DaVinci Color Pipeline &amp; 3D LUT Target ({activeStyleLabel})
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {(
                 [
-                  ['candy_gloss_dwg', 'DaVinci Wide · Candy-Gloss'],
-                  ['burnished_rust_aces', 'ACEScct · Burnished Rust'],
-                  ['cinemax_hdr_rec2020', 'Rec.2020 · 4K HDR'],
-                  ['obsidian_noir_dctl', 'DCTL · Obsidian Noir'],
+                  ['candy_gloss_dwg', 'DaVinci Wide · Magenta'],
+                  ['burnished_rust_aces', 'ACEScct · Fresnel Peach'],
+                  ['cinemax_hdr_rec2020', 'Rec.2020 · 4K Pearl'],
+                  ['obsidian_noir_dctl', 'DCTL · Void Obsidian'],
                 ] as [DaVinciColorProfile, string][]
               ).map(([k, lbl]) => (
                 <HardwareButton
@@ -798,15 +752,15 @@ export function VortexHubModules({
           <div className="flex flex-wrap items-center gap-2.5">
             <HardwareButton size="sm" tone="red" active onClick={handleDaVinciXml}>
               <Download className="w-3.5 h-3.5" />
-              <span>Export .FCPXML Timeline</span>
+              <span>Export .FCPXML</span>
             </HardwareButton>
             <HardwareButton size="sm" tone="magenta" active onClick={handleDaVinciEdl}>
               <Download className="w-3.5 h-3.5" />
-              <span>Export .EDL (CMX 3600)</span>
+              <span>Export .EDL</span>
             </HardwareButton>
             <HardwareButton size="sm" tone="cyan" active onClick={handleDaVinciLut}>
               <Palette className="w-3.5 h-3.5" />
-              <span>Export .CUBE 3D LUT</span>
+              <span>Export .CUBE LUT</span>
             </HardwareButton>
           </div>
         </div>
@@ -817,17 +771,15 @@ export function VortexHubModules({
         <section id="vortex-infinity" className="candy-surface rounded-[18px] p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Orbit className="w-4 h-4 text-[#FF0A3C]" />
+              <Orbit className="w-4 h-4 text-[#FF007F]" />
               <h2
-                className="text-sm font-bold uppercase tracking-[0.16em] text-[#F5E9EA]"
+                className="text-sm font-bold uppercase tracking-[0.16em] text-[#F5FFFA]"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
-                Infinity · Valerius (V) · Sentinel of the Ten Galaxies
+                INFINITY · VALERIUS (V) · Sentinel of the Ten Galaxies
               </h2>
             </div>
-            <HardwareButton size="sm" tone="magenta" active onClick={() => onOpenBilling('infinity_billing')}>
-              <span>Infinity Billing</span>
-            </HardwareButton>
+            <LedStatusIndicator label={`Sector ${activeGalaxy + 1} / 10`} tone="magenta" />
           </div>
 
           <div ref={galaxyMountRef} className="w-full h-[220px] rounded-[14px] optical-glass overflow-hidden" />
@@ -839,7 +791,7 @@ export function VortexHubModules({
                 type="button"
                 data-active={activeGalaxy === i}
                 onClick={() => setActiveGalaxy(i)}
-                className="candy-trace-tile px-2.5 py-2 font-mono text-[10px] text-[#F5E9EA]/85 text-left truncate cursor-pointer"
+                className="candy-trace-tile px-2.5 py-2 font-mono text-[10px] text-[#F5FFFA]/85 text-left truncate cursor-pointer"
               >
                 {g}
               </button>
@@ -850,35 +802,33 @@ export function VortexHubModules({
         <section id="vortex-soul" className="candy-surface rounded-[18px] p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Snowflake className="w-4 h-4 text-[#FF5E7E]" />
+              <Snowflake className="w-4 h-4 text-[#00D9C0]" />
               <h2
-                className="text-sm font-bold uppercase tracking-[0.16em] text-[#F5E9EA]"
+                className="text-sm font-bold uppercase tracking-[0.16em] text-[#F5FFFA]"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
                 Soul · Cooling Forge &amp; Opus 4.7
               </h2>
             </div>
-            <HardwareButton size="sm" tone="red" active onClick={() => onOpenBilling('stripe')}>
-              <span>Stripe Billing</span>
-            </HardwareButton>
+            <LedStatusIndicator label={`${coolingSpecs.targetFps} FPS Lock`} tone="cyan" />
           </div>
 
           <canvas ref={coolingCanvasRef} width={520} height={150} className="w-full h-[150px] rounded-[14px]" />
 
           <div className="grid grid-cols-3 gap-2 font-mono text-xs">
             <div className="candy-trace-tile p-3">
-              <span className="text-[10px] text-[#F5E9EA]/55 flex items-center gap-1">
-                <Thermometer className="w-3 h-3 text-[#FF0A3C]" /> CORE TEMP
+              <span className="text-[10px] text-[#E0FFFF]/60 flex items-center gap-1">
+                <Thermometer className="w-3 h-3 text-[#FF007F]" /> CORE TEMP
               </span>
-              <span className="text-sm font-bold text-[#F5E9EA] tabular-nums">{coolingSpecs.tempC}°C</span>
+              <span className="text-sm font-bold text-[#F5FFFA] tabular-nums">{coolingSpecs.tempC}°C</span>
             </div>
             <div className="candy-trace-tile p-3">
-              <span className="text-[10px] text-[#F5E9EA]/55 block">COOLANT RPM</span>
-              <span className="text-sm font-bold text-[#E06844] tabular-nums">{coolingSpecs.fanRpm}</span>
+              <span className="text-[10px] text-[#E0FFFF]/60 block">COOLANT RPM</span>
+              <span className="text-sm font-bold text-[#FC8EAC] tabular-nums">{coolingSpecs.fanRpm}</span>
             </div>
             <div className="candy-trace-tile p-3">
-              <span className="text-[10px] text-[#F5E9EA]/55 block">FRAME LOCK</span>
-              <span className="text-sm font-bold text-white tabular-nums">{coolingSpecs.targetFps} fps</span>
+              <span className="text-[10px] text-[#E0FFFF]/60 block">FRAME LOCK</span>
+              <span className="text-sm font-bold text-[#00D9C0] tabular-nums">{coolingSpecs.targetFps} FPS</span>
             </div>
           </div>
 
@@ -909,29 +859,28 @@ export function VortexHubModules({
       <section id="vortex-connectors" className="candy-surface rounded-[18px] p-5 sm:p-6 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Workflow className="w-5 h-5 text-[#FF0A3C]" />
+            <Workflow className="w-5 h-5 text-[#FF007F]" />
             <h2
-              className="text-sm sm:text-base font-bold uppercase tracking-[0.18em] text-[#F5E9EA]"
+              className="text-sm sm:text-base font-bold uppercase tracking-[0.18em] text-[#F5FFFA]"
               style={{ fontFamily: 'var(--font-display)' }}
             >
               Self-Hosted Connectors, MCP Skills, Real-Time Search &amp; Committed Databases
             </h2>
           </div>
-          <LedStatusIndicator label="Zero Local Device / SD Writes" tone="emerald" />
+          <LedStatusIndicator label="Cloud Vault Synchronized" tone="emerald" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* Real-Time Search + MCP Connector Skills */}
           <div className="space-y-4">
             <form onSubmit={handleRunSearch} className="flex flex-wrap items-center gap-2">
               <div className="relative flex-1 min-w-[200px]">
-                <Search className="w-3.5 h-3.5 text-[#F5E9EA]/45 absolute left-3.5 top-3" />
+                <Search className="w-3.5 h-3.5 text-[#E0FFFF]/45 absolute left-3.5 top-3" />
                 <input
                   type="text"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Real-time studio & workspace query…"
-                  className="w-full rounded-full bg-[#070304] pl-9 pr-4 py-2 font-mono text-xs text-[#F5E9EA] focus:outline-none"
+                  className="w-full rounded-full bg-[#0A0A0A] pl-9 pr-4 py-2 font-mono text-xs text-[#F5FFFA] focus:outline-none"
                 />
               </div>
               <HardwareButton type="submit" size="sm" tone="red" active>
@@ -948,24 +897,23 @@ export function VortexHubModules({
                     onClick={() => activateHubTile(r.target as HubSectionTarget)}
                     className="candy-trace-tile p-3 text-left cursor-pointer"
                   >
-                    <div className="font-mono text-xs font-bold text-[#F5E9EA] truncate">{r.title}</div>
-                    <div className="font-mono text-[10px] text-[#FF5E7E] truncate">{r.spec}</div>
+                    <div className="font-mono text-xs font-bold text-[#F5FFFA] truncate">{r.title}</div>
+                    <div className="font-mono text-[10px] text-[#FC8EAC] truncate">{r.spec}</div>
                   </button>
                 ))}
               </div>
             )}
 
             <div className="space-y-2">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-[#F5E9EA]/65 block">
+              <span className="font-mono text-[11px] uppercase tracking-wider text-[#E0FFFF]/65 block">
                 Connector Skills &amp; MCP Dispatch
               </span>
               <div className="flex flex-wrap gap-2">
                 {[
-                  ['blender_sync', 'Blender Sync'],
+                  ['blender_sync', '3D Asset (V) Sync'],
                   ['opus_cool', 'Opus 4.7 Cool'],
                   ['valerius_nav', 'Valerius Vector'],
                   ['sql_inspector', 'SQL / Cloud Audit'],
-                  ['printify_sync', 'Printify Sync'],
                 ].map(([skillKey, label]) => (
                   <HardwareButton
                     key={skillKey}
@@ -979,15 +927,14 @@ export function VortexHubModules({
                   </HardwareButton>
                 ))}
               </div>
-              <p className="font-mono text-xs text-[#F5E9EA]/75 pt-1">{mcpLog}</p>
+              <p className="font-mono text-xs text-[#F5FFFA]/75 pt-1">{mcpLog}</p>
             </div>
           </div>
 
-          {/* Existing DB / SQL / Quantum Storage Connector Verifier */}
           <div className="space-y-3">
             <form onSubmit={handleVerifyDbConnection} className="space-y-2.5">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-[#F5E9EA]/65 block">
-                Verify Existing Cloud, SQL or Quantum Storage Endpoint (Zero Duplicate DBs)
+              <span className="font-mono text-[11px] uppercase tracking-wider text-[#E0FFFF]/65 block">
+                Verify Existing Cloud, SQL or Quantum Storage Endpoint
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <input
@@ -995,12 +942,12 @@ export function VortexHubModules({
                   value={dbName}
                   onChange={(e) => setDbName(e.target.value)}
                   placeholder="Label (e.g. Primary SQL)"
-                  className="rounded-full bg-[#070304] px-3.5 py-2 font-mono text-xs text-[#F5E9EA] focus:outline-none"
+                  className="rounded-full bg-[#0A0A0A] px-3.5 py-2 font-mono text-xs text-[#F5FFFA] focus:outline-none"
                 />
                 <select
                   value={dbType}
                   onChange={(e) => setDbType(e.target.value as StudioConnectorDoc['connectorType'])}
-                  className="rounded-full bg-[#070304] px-3.5 py-2 font-mono text-xs text-[#F5E9EA] focus:outline-none"
+                  className="rounded-full bg-[#0A0A0A] px-3.5 py-2 font-mono text-xs text-[#F5FFFA] focus:outline-none"
                 >
                   <option value="postgres">PostgreSQL</option>
                   <option value="mysql">MySQL</option>
@@ -1015,11 +962,11 @@ export function VortexHubModules({
                   value={dbEndpoint}
                   onChange={(e) => setDbEndpoint(e.target.value)}
                   placeholder="host:port or cluster URI"
-                  className="rounded-full bg-[#070304] px-3.5 py-2 font-mono text-xs text-[#F5E9EA] focus:outline-none"
+                  className="rounded-full bg-[#0A0A0A] px-3.5 py-2 font-mono text-xs text-[#F5FFFA] focus:outline-none"
                 />
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-mono text-[11px] text-[#E06844]">{dbVerifyMsg}</span>
+                <span className="font-mono text-[11px] text-[#FFDAB9]">{dbVerifyMsg}</span>
                 <HardwareButton type="submit" size="sm" tone="cyan" active>
                   <span>Verify &amp; Link Database</span>
                 </HardwareButton>
@@ -1030,37 +977,36 @@ export function VortexHubModules({
               {dbList.slice(0, 4).map((c) => (
                 <div key={c.id} className="candy-trace-tile p-3 flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="font-mono text-xs font-semibold text-[#F5E9EA] truncate">{c.name}</div>
-                    <div className="font-mono text-[10px] text-[#F5E9EA]/55 uppercase">
+                    <div className="font-mono text-xs font-semibold text-[#F5FFFA] truncate">{c.name}</div>
+                    <div className="font-mono text-[10px] text-[#E0FFFF]/55 uppercase">
                       {c.connectorType} · {c.latencyMs}ms
                     </div>
                   </div>
-                  <span className="font-mono text-[10px] text-emerald-400 uppercase shrink-0">{c.status}</span>
+                  <span className="font-mono text-[10px] text-[#00D9C0] uppercase shrink-0">{c.status}</span>
                 </div>
               ))}
               {connectors.slice(0, 2).map((fc) => (
                 <div key={fc.id} className="candy-trace-tile p-3 flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="font-mono text-xs font-semibold text-[#F5E9EA] truncate">{fc.name}</div>
-                    <div className="font-mono text-[10px] text-[#FF5E7E] uppercase">{fc.connectorType} · Cloud</div>
+                    <div className="font-mono text-xs font-semibold text-[#F5FFFA] truncate">{fc.name}</div>
+                    <div className="font-mono text-[10px] text-[#FC8EAC] uppercase">{fc.connectorType} · Cloud</div>
                   </div>
-                  <span className="font-mono text-[10px] text-emerald-400 uppercase shrink-0">{fc.status}</span>
+                  <span className="font-mono text-[10px] text-[#00D9C0] uppercase shrink-0">{fc.status}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Dedicated Cloud Projects & Artifacts */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <div className="candy-trace-tile p-4 space-y-1.5">
-            <div className="flex items-center justify-between font-mono text-xs text-[#F5E9EA]">
+            <div className="flex items-center justify-between font-mono text-xs text-[#F5FFFA]">
               <span className="flex items-center gap-1.5 font-bold">
-                <FolderKanban className="w-3.5 h-3.5 text-[#FF0A3C]" /> Cloud Projects ({projects.length})
+                <FolderKanban className="w-3.5 h-3.5 text-[#FF007F]" /> Cloud Projects ({projects.length})
               </span>
-              <span className="text-[10px] text-[#F5E9EA]/55">Cloud Committed</span>
+              <span className="text-[10px] text-[#E0FFFF]/55">Cloud Committed</span>
             </div>
-            <p className="font-mono text-[11px] text-[#F5E9EA]/65">
+            <p className="font-mono text-[11px] text-[#E0FFFF]/65">
               {projects.length > 0
                 ? projects.slice(0, 2).map((p) => p.label).join(' · ')
                 : userId
@@ -1069,16 +1015,16 @@ export function VortexHubModules({
             </p>
           </div>
           <div className="candy-trace-tile p-4 space-y-1.5">
-            <div className="flex items-center justify-between font-mono text-xs text-[#F5E9EA]">
+            <div className="flex items-center justify-between font-mono text-xs text-[#F5FFFA]">
               <span className="flex items-center gap-1.5 font-bold">
-                <Sparkles className="w-3.5 h-3.5 text-[#E06844]" /> Studio Artifacts ({artifacts.length})
+                <Sparkles className="w-3.5 h-3.5 text-[#00D9C0]" /> Studio Artifacts ({artifacts.length})
               </span>
-              <span className="text-[10px] text-[#F5E9EA]/55">GLB · Shaders · Printify</span>
+              <span className="text-[10px] text-[#E0FFFF]/55">GLB · Shaders · Cuts</span>
             </div>
-            <p className="font-mono text-[11px] text-[#F5E9EA]/65">
+            <p className="font-mono text-[11px] text-[#E0FFFF]/65">
               {artifacts.length > 0
                 ? artifacts.slice(0, 2).map((a) => a.title).join(' · ')
-                : 'Blender scenes, shader snapshots & Printify listings sync to cloud artifacts.'}
+                : '3D Asset (V) scenes, shader snapshots & cinema masters sync to cloud artifacts.'}
             </p>
           </div>
         </div>

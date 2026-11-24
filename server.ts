@@ -66,26 +66,26 @@ const CAPTCHA_POOL = [
 ];
 
 const WORKSPACE_CATALOG = [
-  { id: 'vortex-hub', title: 'Vortex Main Hub', category: 'Orchestrator', target: 'hub', spec: 'Unified Chrome & Studio Router' },
+  { id: 'kaya-hub', title: 'KNOCKSSTUDiOS · KAYA Hub', category: 'INFINITY CORE ENGINE', target: 'hub', spec: 'Unified Chrome & Studio Router' },
   { id: 'blender-pipeline', title: 'Blender Pipeline', category: '3D Mesh & GLB', target: 'blender', spec: 'Clearcoat Shader & Scene Export' },
-  { id: 'infinity-valerius', title: 'Infinity · Valerius (V)', category: 'Sentinel of Ten Galaxies', target: 'infinity', spec: 'Orbital Cosmos + Infinity Billing' },
+  { id: 'infinity-valerius', title: 'INFINITY · VALERIUS (V)', category: 'Sentinel of the Ten Galaxies', target: 'infinity', spec: 'Orbital Cosmos + Infinity Billing' },
   { id: 'soul-forge', title: 'Soul · Cooling Forge Opus 4.7', category: 'Thermal & Stripe', target: 'soul', spec: '144fps Cryo Loop + Stripe Billing' },
   { id: 'kaya-video', title: 'KAYA Video Studio', category: '4K HDR Cinema', target: 'video', spec: '24–144fps · 19 Render Styles' },
-  { id: 'kaya-cube', title: '360° Video Rubik Cube', category: 'Spatial 3D', target: 'cube', spec: '27-Cubie Three.js Matrix' },
-  { id: 'kaya-picture', title: 'KAYA Picture Tools', category: 'Color & Alpha', target: 'picture', spec: 'LUT Grading & Transparent Cutouts' },
-  { id: 'kaya-vfx', title: 'VFX Shader Studio', category: 'Realtime Shaders', target: 'vfx', spec: 'Motion Trails · Kaleidoscope · Halftone' },
-  { id: 'kaya-animator', title: 'Action Animator', category: 'Choreography', target: 'animator', spec: '60fps Dual Subject Clash' },
-  { id: 'kaya-storyboard', title: '3D Storyboard Studio', category: 'Pre-Vis', target: 'storyboard', spec: '5-Shot Icosahedron Cinema Pre-Vis' },
+  { id: 'kaya-cube', title: '360° Video Cube', category: 'Spatial 3D', target: 'cube', spec: '27-Cubie Three.js Matrix' },
+  { id: 'kaya-picture', title: 'KAYA Picture Tools', category: 'Tempest Studio', target: 'picture', spec: 'LUT Grading & Transparent Cutouts' },
+  { id: 'kaya-vfx', title: 'VFX Studio', category: 'Tempest Studio', target: 'vfx', spec: 'PICTURE · SOUND · SHADERS · TITLES' },
+  { id: 'kaya-animator', title: 'Action Animator', category: 'Tempest Studio', target: 'animator', spec: '60fps Dual Subject Clash' },
+  { id: 'kaya-storyboard', title: '3D Storyboard App', category: 'Pre-Vis', target: 'storyboard', spec: '5-Shot Icosahedron Cinema Pre-Vis' },
   { id: 'kaya-editor', title: 'Timeline & Audio Editor', category: 'Multi-Track', target: 'editor', spec: 'V1 / FX / A1 Trim & Retime' },
   { id: 'kaya-audio', title: 'Audio Mastering Studio', category: 'DSP & WAV', target: 'audio', spec: '44.1 kHz RIFF + Unified Watermark' },
-  { id: 'kaya-sound', title: 'Sound Foley Matrix', category: 'Procedural Audio', target: 'sound', spec: 'Sub Boom · Braam · Impact Stems' },
-  { id: 'kaya-lipsync', title: 'Lip Sync Rig', category: 'Viseme AI', target: 'lipsync', spec: 'Phoneme Sync · Mic Reactive' },
-  { id: 'kaya-airradio', title: 'AirRadio FM', category: 'Broadcast Synth', target: 'airradio', spec: '88–108 MHz Live Host Mic' },
-  { id: 'infinity-school', title: 'Infinity School', category: 'Coding & Rendering', target: 'school', spec: 'Coding School + Rendering School + AI Tutor' },
+  { id: 'kaya-sound', title: 'Sound · DTS & Sony SDDS', category: 'Procedural Audio', target: 'sound', spec: 'Sub Boom · Braam · Impact Stems' },
+  { id: 'kaya-lipsync', title: 'Lip Sync Rig', category: 'Viseme Rig', target: 'lipsync', spec: 'Phoneme Sync · Mic Reactive' },
+  { id: 'kaya-airradio', title: 'AirRadio FM', category: 'Broadcast Synth', target: 'airradio', spec: '88-108 MHz Live Host Mic' },
+  { id: 'infinity-school', title: 'Infinity School', category: 'LIVE LABS', target: 'school', spec: 'Coding School + Rendering School + AI Tutor' },
   { id: 'printify-studio', title: 'Printify Merch Studio', category: 'POD & Storefront', target: 'merch', spec: 'Hoodie / Tee / Mug / Poster Mockups' },
-  { id: 'live-stream', title: 'Live Cam & Broadcast', category: 'Webcam & Simulcast', target: 'live', spec: 'WebM Capture + Channel Relay' },
-  { id: 'local-bridge', title: 'Local Suite Bridge', category: 'Open Protocols', target: 'bridge', spec: '.GLB / Paint Bundle / WebSocket' },
-  { id: 'intel-console', title: 'Self-Hosted AI & Connectors', category: 'MCP & SQL', target: 'intel', spec: 'Private Server + DB Verifier' },
+  { id: 'live-stream', title: 'Live Cam & Stream', category: 'BROADCAST', target: 'live', spec: 'WebM Capture + Channel Relay' },
+  { id: 'local-bridge', title: 'Desktop Bridge', category: 'LOCAL SYNC', target: 'bridge', spec: '.GLB / Paint Bundle / WebSocket' },
+  { id: 'intel-console', title: 'Optics & Vision Console', category: 'PRIVATE OPTICS', target: 'intel', spec: 'Private Server + DB Verifier' },
 ];
 
 function signToken(payload: { email: string; handle: string; role: StudioMemberRecord['role'] }): string {
@@ -156,12 +156,12 @@ function buildSelfHostedInference(input: {
   const fps = input.fps || 60;
   const rig = (input.cameraMotion || 'orbit').replace(/_/g, ' ');
   return {
-    provider: 'Vortex Self-Hosted Server Engine',
+    provider: 'INFINITY CORE ENGINE -- KAYA Server',
     enhancedPrompt: base
-      ? `${base} — ${subject} framed inside ${env} with deep Candy Gloss Crimson (#FF0A3C) rim light, Burnished Rust (#B84323) metallic reflections, and damped ${rig} sweep at ${fps}fps (${style}).`
-      : `Anamorphic ${fps}fps ${rig} hero shot of ${subject} inside ${env}; obsidian floor depth, Candy Gloss Crimson (#FF0A3C) clearcoat edge flare, and Burnished Rust (#B84323) specular highlight (${style}).`,
-    directorNotes: `Lead 1.2s clean subject reveal on ${rig}, synchronize Opus 4.7 cooling lock, close with unified VORTEX · KAYA™ stamp.`,
-    lightingCue: '3200K Burnished Rust key light paired with 6500K Titanium rim and Candy Apple Red low kick.',
+      ? `${base} — ${subject} framed inside ${env} with Candy Gloss Crimson (#D91E36) rim light, Burnt Rust (#B84A27) metallic reflections, and damped ${rig} sweep at ${fps}fps (${style}).`
+      : `Anamorphic ${fps}fps ${rig} hero shot of ${subject} inside ${env}; obsidian floor depth, Candy Gloss Crimson (#D91E36) clearcoat edge flare, and Burnt Rust (#B84A27) specular highlight (${style}).`,
+    directorNotes: `Lead 1.2s clean subject reveal on ${rig}, synchronize Opus 4.7 cooling lock, close with unified KNOCKSSTUDiOS · KAYA™ stamp.`,
+    lightingCue: '3200K Burnt Rust key light paired with Liquid Metal Chrome rim and Candy Gloss Crimson low kick.',
     cameraTip: `35mm anamorphic T1.8 with ${fps}fps stabilized ${rig} motion path.`,
   };
 }
@@ -258,7 +258,7 @@ async function startServer() {
     },
     {
       id: 'db-vortex-mcp',
-      name: 'Vortex Self-Hosted MCP Router',
+      name: 'INFINITY CORE ENGINE -- MCP Router',
       connectorType: 'mcp',
       endpointUrl: 'http://127.0.0.1:3000/api/mcp/execute',
       status: 'verified',
@@ -644,7 +644,7 @@ async function startServer() {
         port: PORT,
         buildId: SERVER_BUILD_ID,
         aiReady: true,
-        aiModel: 'Vortex Self-Hosted Engine',
+        aiModel: 'INFINITY CORE ENGINE',
         swCache: 'kaya-v5',
       },
       config: adminConfig,
@@ -731,7 +731,7 @@ async function startServer() {
     const remote = await querySelfHostedModel(`Infinity ${mode} school question: ${q}`);
     res.json({
       track: mode,
-      provider: 'Vortex Self-Hosted Tutor',
+      provider: 'INFINITY CORE ENGINE -- Academy Tutor',
       reply: remote ? remote.trim() : buildTutorReply(mode, q, codeContext),
     });
   });
@@ -748,7 +748,7 @@ async function startServer() {
     );
     res.json({
       query: rawQ || '',
-      engine: 'Vortex Real-Time Workspace & Grounded Search',
+      engine: 'INFINITY CORE ENGINE -- Workspace Search',
       count: matches.length,
       results: matches,
     });
@@ -841,7 +841,7 @@ async function startServer() {
   app.get('/api/ai/status', (_req, res) => {
     res.json({
       ready: true,
-      model: 'Vortex Self-Hosted Engine',
+      model: 'INFINITY CORE ENGINE',
       capabilities: ['prompt-enhance', 'vision-analyze', 'chat', 'tutor', 'mcp'],
     });
   });
@@ -867,11 +867,11 @@ async function startServer() {
     const focus = (prompt || '').trim();
     res.json({
       analysis: focus
-        ? `Vortex Optical Analysis (${focus}): Strong subject isolation against deep studio floor; tuned for Candy-Gloss & Rust grading.`
-        : 'Vortex Optical Analysis: Clean subject luminance separation ready for 60–144fps Candy Crimson & Burnished Rust specular grading.',
-      recommendedStyle: 'HDR Ultra · Candy-Gloss & Rust Finish',
-      lightingSuggestion: '45° Titanium top-rim paired with Candy Apple Red (#FF0A3C) low kicker.',
-      colorNotes: 'Crush blacks gently to #050304, warm highlights to #F5E9EA, saturate crimson metallic bevels.',
+        ? `KAYA Optical Analysis (${focus}): Strong subject isolation against deep obsidian floor; tuned for Candy Gloss & Burnt Rust grading.`
+        : 'KAYA Optical Analysis: Clean subject luminance separation ready for 60–144fps Candy Crimson & Burnt Rust specular grading.',
+      recommendedStyle: 'HDR Ultra · Candy Gloss & Burnt Rust',
+      lightingSuggestion: '45° Liquid Metal Chrome rim paired with Candy Gloss Crimson (#D91E36) low kicker.',
+      colorNotes: 'Anchor darks at #07080B, warm highlights to #E6ECF5, saturate crimson metallic bevels.',
     });
   });
 

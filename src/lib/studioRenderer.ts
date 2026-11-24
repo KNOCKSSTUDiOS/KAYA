@@ -4,6 +4,11 @@
 // 100% self-contained, offline-capable, zero external APIs or third-party servers.
 
 import { createZipBlob, ZipEntryInput } from './zipBuilder.js';
+import type {
+  GeneratorPresetKey,
+  ShaderPresetKey,
+  TitleOverlayConfig,
+} from './studioPipelineTypes.js';
 
 export type ResolutionKey = '720p' | '1080p' | '4k_uhd' | 'cinemax_4k';
 export type HDRGradeKey = 'standard' | 'hdr_cinema' | 'ultra_cinemax';
@@ -245,6 +250,10 @@ export interface CompositionConfig {
   exposure?: number;
   contrast?: number;
   saturation?: number;
+  shaderPreset?: ShaderPresetKey;
+  generatorPreset?: GeneratorPresetKey;
+  titleOverlay?: TitleOverlayConfig;
+  asset3DName?: string;
   instructions?: string;
 }
 
@@ -260,6 +269,10 @@ interface RenderOptions {
   lensFocalMm?: number;
   shutterAngleDeg?: number;
   grainLevel?: number;
+  shaderPreset?: ShaderPresetKey;
+  generatorPreset?: GeneratorPresetKey;
+  titleOverlay?: TitleOverlayConfig;
+  asset3DName?: string;
   instructions?: string;
   onProgress?: (progress: number, logMessage: string) => void;
 }
@@ -639,9 +652,178 @@ interface FrameDrawParams {
   exposure?: number;
   contrast?: number;
   saturation?: number;
+  shaderPreset?: ShaderPresetKey;
+  generatorPreset?: GeneratorPresetKey;
+  titleOverlay?: TitleOverlayConfig;
   transparentBackground: boolean;
   includeShadow: boolean;
   instructions?: string;
+}
+
+function drawGeneratorBackdrop(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  t: number,
+  generator: GeneratorPresetKey
+) {
+  ctx.save();
+  if (generator === 'bio_aurora') {
+    for (let band = 0; band < 4; band++) {
+      ctx.beginPath();
+      ctx.moveTo(0, height);
+      for (let x = 0; x <= width; x += Math.max(18, Math.round(width / 36))) {
+        const y =
+          height * (0.28 + band * 0.14) +
+          Math.sin(x * 0.005 + t * Math.PI * 2 + band) * height * 0.09;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(width, height);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, 0, width, height);
+      grad.addColorStop(0, band % 2 === 0 ? 'rgba(255, 0, 127, 0.24)' : 'rgba(0, 217, 192, 0.20)');
+      grad.addColorStop(1, 'rgba(252, 142, 172, 0.08)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+  } else if (generator === 'quantum_matrix') {
+    ctx.strokeStyle = 'rgba(0, 217, 192, 0.24)';
+    ctx.lineWidth = Math.max(1, Math.round(height / 720));
+    const step = Math.round(width / 16);
+    for (let x = 0; x < width; x += step) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    for (let i = 0; i < 36; i++) {
+      const px = ((i * 197 + t * width * 0.25) % width);
+      const py = ((i * 113 + t * height * (0.35 + (i % 4) * 0.12)) % height);
+      ctx.fillStyle = i % 3 === 0 ? '#FF007F' : i % 3 === 1 ? '#00D9C0' : '#E0FFFF';
+      ctx.beginPath();
+      ctx.arc(px, py, Math.max(2, width * 0.0028), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (generator === 'candy_plasma') {
+    const cx = width * (0.5 + Math.cos(t * Math.PI * 2) * 0.22);
+    const cy = height * (0.5 + Math.sin(t * Math.PI * 2) * 0.16);
+    const radial = ctx.createRadialGradient(cx, cy, 10, width * 0.5, height * 0.5, width * 0.68);
+    radial.addColorStop(0, 'rgba(255, 0, 127, 0.34)');
+    radial.addColorStop(0.45, 'rgba(252, 142, 172, 0.22)');
+    radial.addColorStop(0.75, 'rgba(255, 218, 185, 0.14)');
+    radial.addColorStop(1, 'rgba(10, 10, 10, 0)');
+    ctx.fillStyle = radial;
+    ctx.fillRect(0, 0, width, height);
+  } else if (generator === 'optical_grid') {
+    const horizonY = height * 0.54;
+    ctx.strokeStyle = 'rgba(224, 255, 255, 0.24)';
+    ctx.lineWidth = Math.max(1, Math.round(height / 720));
+    for (let i = -10; i <= 10; i++) {
+      ctx.beginPath();
+      ctx.moveTo(width / 2 + i * (width * 0.025), horizonY);
+      ctx.lineTo(width / 2 + i * (width * 0.17), height);
+      ctx.stroke();
+    }
+    for (let r = 0; r < 6; r++) {
+      const progress = ((r / 6 + t) % 1);
+      const y = horizonY + Math.pow(progress, 1.8) * (height - horizonY);
+      ctx.strokeStyle = `rgba(255, 0, 127, ${0.15 + progress * 0.3})`;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawShaderGradePass(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  t: number,
+  shader: ShaderPresetKey
+) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  if (shader === 'bioluminescent_magenta') {
+    const g = ctx.createLinearGradient(0, 0, width, height);
+    g.addColorStop(0, 'rgba(255, 0, 127, 0.18)');
+    g.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
+    g.addColorStop(1, 'rgba(0, 217, 192, 0.14)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, width, height);
+  } else if (shader === 'candy_pearlescent') {
+    const shift = Math.sin(t * Math.PI * 2) * 0.15;
+    const g = ctx.createLinearGradient(0, 0, width, height);
+    g.addColorStop(0, 'rgba(252, 142, 172, 0.18)');
+    g.addColorStop(Math.max(0.1, Math.min(0.9, 0.5 + shift)), 'rgba(224, 255, 255, 0.12)');
+    g.addColorStop(1, 'rgba(255, 218, 185, 0.16)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, width, height);
+  } else if (shader === 'quantum_teal_holo') {
+    const g = ctx.createRadialGradient(width * 0.5, height * 0.5, 10, width * 0.5, height * 0.5, width * 0.65);
+    g.addColorStop(0, 'rgba(0, 217, 192, 0.16)');
+    g.addColorStop(1, 'rgba(224, 255, 255, 0.08)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, width, height);
+  } else if (shader === 'fresnel_peach_rim') {
+    const g = ctx.createLinearGradient(0, height, width, 0);
+    g.addColorStop(0, 'rgba(255, 218, 185, 0.18)');
+    g.addColorStop(1, 'rgba(255, 0, 127, 0.10)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, width, height);
+  }
+  ctx.restore();
+}
+
+function drawTitleOverlayPass(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  overlay: TitleOverlayConfig
+) {
+  if (!overlay.enabled || (!overlay.headline.trim() && !overlay.subline.trim())) return;
+  ctx.save();
+  const basePx = Math.max(18, Math.round(height * 0.044));
+  const subPx = Math.max(12, Math.round(height * 0.022));
+  const yBase =
+    overlay.placement === 'top'
+      ? height * 0.13
+      : overlay.placement === 'center'
+      ? height * 0.52
+      : height * 0.87;
+  const xPad = width * 0.055;
+  const boxW = Math.min(width * 0.72, Math.max(380, overlay.headline.length * basePx * 0.68));
+  const boxH = basePx + subPx + 28;
+  const boxX = overlay.placement === 'center' ? (width - boxW) / 2 : xPad;
+  const boxY = yBase - basePx - 6;
+
+  ctx.fillStyle = 'rgba(10, 10, 10, 0.74)';
+  ctx.beginPath();
+  ctx.roundRect(boxX, boxY, boxW, boxH, 12);
+  ctx.fill();
+
+  ctx.fillStyle = overlay.accentHex || '#FF007F';
+  ctx.fillRect(boxX, boxY + 8, 4, boxH - 16);
+
+  ctx.fillStyle = '#F5FFFA';
+  ctx.font =
+    overlay.typography === 'hollywood_serif'
+      ? `700 ${basePx}px Georgia, serif`
+      : overlay.typography === 'mono_broadcast'
+      ? `700 ${basePx}px monospace`
+      : `800 ${basePx}px "Chakra Petch", sans-serif`;
+  ctx.textAlign = overlay.placement === 'center' ? 'center' : 'left';
+  const textX = overlay.placement === 'center' ? width / 2 : boxX + 20;
+  ctx.fillText(overlay.headline, textX, yBase);
+
+  if (overlay.subline.trim()) {
+    ctx.fillStyle = overlay.accentHex || '#00D9C0';
+    ctx.font = `600 ${subPx}px monospace`;
+    ctx.fillText(overlay.subline, textX, yBase + subPx + 8);
+  }
+  ctx.restore();
 }
 
 function drawCompositionFrame(params: FrameDrawParams) {
@@ -664,6 +846,9 @@ function drawCompositionFrame(params: FrameDrawParams) {
     exposure = 1,
     contrast = 1,
     saturation = 1,
+    shaderPreset,
+    generatorPreset = 'none',
+    titleOverlay,
     transparentBackground,
     includeShadow,
     instructions = '',
@@ -731,7 +916,7 @@ function drawCompositionFrame(params: FrameDrawParams) {
   if (transparentBackground) {
     ctx.clearRect(0, 0, width, height);
   } else {
-    ctx.fillStyle = '#050304';
+    ctx.fillStyle = '#0A0A0A';
     ctx.fillRect(0, 0, width, height);
 
     if (atmoImg) {
@@ -762,9 +947,9 @@ function drawCompositionFrame(params: FrameDrawParams) {
       ctx.save();
       if (styleFilter) ctx.filter = styleFilter;
       const bgGrad = ctx.createLinearGradient(0, 0, width, height);
-      bgGrad.addColorStop(0, isCooler ? '#040812' : '#080305');
-      bgGrad.addColorStop(0.5, isWarmer ? '#281008' : '#19050B');
-      bgGrad.addColorStop(1, '#040203');
+      bgGrad.addColorStop(0, isCooler ? '#0A0A0A' : '#121212');
+      bgGrad.addColorStop(0.5, isWarmer ? '#281414' : '#1C0915');
+      bgGrad.addColorStop(1, '#0A0A0A');
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
@@ -775,7 +960,7 @@ function drawCompositionFrame(params: FrameDrawParams) {
         const py = ((i * 137 + Math.sin(t * Math.PI * 2 + i) * height * 0.14 + height) % height);
         const rad = (width * 0.008) * (1 + (i % 4) * 0.9);
         const pGrad = ctx.createRadialGradient(px, py, 1, px, py, rad);
-        pGrad.addColorStop(0, i % 3 === 0 ? 'rgba(255, 10, 60, 0.52)' : i % 3 === 1 ? 'rgba(224, 104, 68, 0.45)' : 'rgba(245, 233, 234, 0.35)');
+        pGrad.addColorStop(0, i % 3 === 0 ? 'rgba(255, 0, 127, 0.52)' : i % 3 === 1 ? 'rgba(0, 217, 192, 0.45)' : 'rgba(252, 142, 172, 0.35)');
         pGrad.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = pGrad;
         ctx.beginPath();
@@ -783,6 +968,14 @@ function drawCompositionFrame(params: FrameDrawParams) {
         ctx.fill();
       }
       ctx.restore();
+    }
+
+    if (generatorPreset && generatorPreset !== 'none') {
+      drawGeneratorBackdrop(ctx, width, height, t, generatorPreset);
+    }
+
+    if (shaderPreset) {
+      drawShaderGradePass(ctx, width, height, t, shaderPreset);
     }
 
     if (isHDR && renderStyle !== 'bw_noir') {
@@ -922,6 +1115,10 @@ function drawCompositionFrame(params: FrameDrawParams) {
     ctx.fillStyle = frameIndex % 2 === 0 ? `rgba(255, 255, 255, ${gAlpha})` : `rgba(0, 0, 0, ${gAlpha})`;
     ctx.fillRect(0, 0, width, height);
     ctx.restore();
+
+    if (titleOverlay) {
+      drawTitleOverlayPass(ctx, width, height, titleOverlay);
+    }
   }
 
   ctx.restore();
@@ -970,6 +1167,9 @@ export async function renderCinematicReel(
     lensFocalMm = 35,
     shutterAngleDeg = 180,
     grainLevel = 0.2,
+    shaderPreset,
+    generatorPreset = 'none',
+    titleOverlay,
     instructions,
     onProgress,
   } = options;
@@ -1105,6 +1305,9 @@ export async function renderCinematicReel(
         lensFocalMm,
         shutterAngleDeg,
         grainLevel,
+        shaderPreset,
+        generatorPreset,
+        titleOverlay,
         transparentBackground: false,
         includeShadow: true,
         instructions,
@@ -1219,6 +1422,9 @@ export async function exportCompositionStillFrame(
     exposure: config.exposure,
     contrast: config.contrast,
     saturation: config.saturation,
+    shaderPreset: config.shaderPreset,
+    generatorPreset: config.generatorPreset,
+    titleOverlay: config.titleOverlay,
     transparentBackground,
     includeShadow,
     instructions: config.instructions,

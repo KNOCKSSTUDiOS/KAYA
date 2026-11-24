@@ -52,10 +52,10 @@ interface VideoOutputProps {
 }
 
 const logColor = (type: LogType) =>
-  type === 'error' ? 'text-[#FF7088]' :
-  type === 'warn' ? 'text-amber-300' :
-  type === 'success' ? 'text-[#F1F5F9]' :
-  'text-[#E6ECF5]/75';
+  type === 'error' ? 'text-[#FF007F]' :
+  type === 'warn' ? 'text-[#FFDAB9]' :
+  type === 'success' ? 'text-[#00D9C0]' :
+  'text-[#E0FFFF]/80';
 
 const readableError = (raw: string): string => {
   const match = raw.match(/\{[\s\S]*\}/);
@@ -398,28 +398,40 @@ export function VideoOutput({
               {/* Technical Summary HUD Overlay when render is finished */}
               {showTechSummary && (
                 <div className="pointer-events-none absolute top-3 left-3 right-3 z-20 flex flex-wrap items-start justify-between gap-2">
-                  <div className="pointer-events-auto candy-trace-tile rounded-xl bg-[#050304]/82 backdrop-blur-md px-3.5 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 font-mono text-[11px] shadow-[0_8px_28px_rgba(0,0,0,0.85)]">
+                  <div className="pointer-events-auto candy-trace-tile rounded-xl bg-[#0A0A0A]/86 backdrop-blur-md px-3.5 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 font-mono text-[11px] shadow-[0_8px_28px_rgba(0,0,0,0.85)]">
                     <div>
-                      <span className="text-[#E06844] uppercase text-[9px] block tracking-widest">Cut Master</span>
-                      <span className="text-white font-bold">{versionLabel || 'Cut 1'} · {targetDuration}</span>
+                      <span className="text-[#00D9C0] uppercase text-[9px] block tracking-widest">Cut Master</span>
+                      <span className="text-[#F5FFFA] font-bold">{versionLabel || 'Cut 1'} · {targetDuration}</span>
                     </div>
                     <div>
-                      <span className="text-[#FF0A3C] uppercase text-[9px] block tracking-widest">Resolution</span>
-                      <span className="text-white font-semibold tabular-nums">
+                      <span className="text-[#FF007F] uppercase text-[9px] block tracking-widest">Resolution</span>
+                      <span className="text-[#F5FFFA] font-semibold tabular-nums">
                         {spec?.label || '4K Master'} ({baseWidth}×{baseHeight})
                       </span>
                     </div>
                     <div>
-                      <span className="text-[#E06844] uppercase text-[9px] block tracking-widest">Frame Rate</span>
-                      <span className="text-white font-semibold tabular-nums">{cutFps} fps</span>
+                      <span className="text-[#00D9C0] uppercase text-[9px] block tracking-widest">Frame Rate</span>
+                      <span className="text-[#F5FFFA] font-semibold tabular-nums">{cutFps} fps</span>
                     </div>
                     <div>
-                      <span className="text-[#FF5C8A] uppercase text-[9px] block tracking-widest">Render Style</span>
-                      <span className="text-white font-semibold">{cutStyleObj?.label || '4K HDR Ultra'}</span>
+                      <span className="text-[#FC8EAC] uppercase text-[9px] block tracking-widest">Render Style</span>
+                      <span className="text-[#F5FFFA] font-semibold">{cutStyleObj?.label || '4K HDR Ultra'}</span>
                     </div>
+                    {composition?.shaderPreset && (
+                      <div>
+                        <span className="text-[#FFDAB9] uppercase text-[9px] block tracking-widest">Shader</span>
+                        <span className="text-[#E0FFFF] font-semibold">{composition.shaderPreset.replace('_', ' ')}</span>
+                      </div>
+                    )}
+                    {composition?.asset3DName && (
+                      <div>
+                        <span className="text-[#00D9C0] uppercase text-[9px] block tracking-widest">3D Asset (V)</span>
+                        <span className="text-[#F5FFFA] font-semibold">{composition.asset3DName}</span>
+                      </div>
+                    )}
                     <div>
-                      <span className="text-[#F5E9EA]/55 uppercase text-[9px] block tracking-widest">Camera &amp; Grade</span>
-                      <span className="text-[#F5E9EA]/90">
+                      <span className="text-[#E0FFFF]/65 uppercase text-[9px] block tracking-widest">Camera &amp; Grade</span>
+                      <span className="text-[#F5FFFA]/90">
                         {cutCameraObj?.label || '360 Orbit'} {composition?.lensFocalMm ? `· ${composition.lensFocalMm}mm` : ''} · {cutHdrObj?.label || 'Ultra Cinema'}
                       </span>
                     </div>

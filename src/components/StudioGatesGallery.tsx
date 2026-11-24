@@ -20,21 +20,15 @@ import {
 } from 'lucide-react';
 import { PlateBezel, HardwareButton, LedStatusIndicator } from './HardwarePrimitives.js';
 import type { StudioPageKey } from './RubiksCubeHubPage.js';
-import {
-  BACKGROUND_CUBE_VIDEOS,
-  STUDIO_COLLAGE_BRAND_IMG,
-  STUDIO_IRON_GATES_IMG,
-} from '../data.js';
+import { TileVisualPreview, type PreviewTileId } from './TileVisualPreviews.js';
 
 interface GalleryTileSpec {
   id: StudioPageKey;
+  previewId: PreviewTileId;
   index: string;
+  decal: string;
   title: string;
   subtitle: string;
-  specs: string[];
-  previewImage?: string;
-  previewVideo?: string;
-  tone: 'red' | 'cyan' | 'magenta';
   icon: React.ReactNode;
 }
 
@@ -49,8 +43,6 @@ interface StudioGatesGalleryProps {
 
 export function StudioGatesGallery({
   activeTool,
-  subjectImage,
-  environmentImage,
   formatSummary,
   cutsCount,
   onSelectTool,
@@ -59,7 +51,6 @@ export function StudioGatesGallery({
   const [gatesOpen, setGatesOpen] = useState(false);
   const [galleryDeck, setGalleryDeck] = useState<0 | 1 | 2>(0);
 
-  // Automatically unlock and swing open the Aerospace Grade-7 Titanium Studio Gates on scroll into Page 2
   useEffect(() => {
     const el = sectionRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') {
@@ -81,133 +72,117 @@ export function StudioGatesGallery({
   const deckZeroTiles: GalleryTileSpec[] = [
     {
       id: 'audio',
+      previewId: 'audio',
       index: '01',
-      title: 'Audio Studio',
+      decal: '44.1 KHZ MASTER',
+      title: 'AUDIO STUDIO',
       subtitle: 'Web Audio Synth · Spectrum · WAV Master',
-      specs: ['44.1 / 48 kHz', 'Low-Pass Filter', 'Live Spectrum', 'WAV Export'],
-      previewVideo: BACKGROUND_CUBE_VIDEOS[3].url,
-      tone: 'cyan',
-      icon: <Volume2 className="w-4 h-4 text-[#F1F5F9]" />,
+      icon: <Volume2 className="w-4 h-4 text-[#18F2D8]" />,
     },
     {
       id: 'video',
+      previewId: 'video',
       index: '02',
-      title: 'Video Tools · 4K 60fps',
+      decal: formatSummary,
+      title: 'VIDEO TOOLS · 4K 60FPS',
       subtitle: 'Ultra Cinema · Multi-Style Reel Compositor',
-      specs: ['4096×1716 Scope', '24 / 30 / 60 fps', '19 Render Engines', formatSummary],
-      previewVideo: BACKGROUND_CUBE_VIDEOS[0].url,
-      previewImage: environmentImage,
-      tone: 'red',
-      icon: <Film className="w-4 h-4 text-[#FF3B5C]" />,
+      icon: <Film className="w-4 h-4 text-[#FF4D6A]" />,
     },
     {
       id: 'picture',
+      previewId: 'picture',
       index: '03',
-      title: 'Picture Tools · 4K Still',
+      decal: 'RGBA 4K',
+      title: 'PICTURE TOOLS · 4K STILL',
       subtitle: 'Color Suite · Aspect Framing · Alpha RGBA',
-      specs: ['PNG / JPG / Alpha', '16:9 · 2.39 · 9:16', 'Exposure & LUTs', 'Transparent Cutout'],
-      previewImage: STUDIO_COLLAGE_BRAND_IMG || subjectImage,
-      tone: 'cyan',
-      icon: <ImageIcon className="w-4 h-4 text-[#F1F5F9]" />,
+      icon: <ImageIcon className="w-4 h-4 text-[#E6ECF5]" />,
     },
     {
       id: 'editor',
+      previewId: 'editor',
       index: '04',
-      title: 'Timeline Tools',
+      decal: `${cutsCount} CUTS · NLE`,
+      title: 'TIMELINE TOOLS',
       subtitle: 'Multi-Track Ruler · In/Out Trim · Retiming',
-      specs: [`${cutsCount} Recorded Cuts`, '0.25x – 2x Speed', 'V1 / FX / A1 Tracks', 'LUT Grade Preview'],
-      previewVideo: BACKGROUND_CUBE_VIDEOS[2].url,
-      tone: 'magenta',
-      icon: <Scissors className="w-4 h-4 text-[#FF5C8A]" />,
+      icon: <Scissors className="w-4 h-4 text-[#C84BFF]" />,
     },
   ];
 
   const deckOneTiles: GalleryTileSpec[] = [
     {
       id: 'intel',
+      previewId: 'intel',
       index: '05',
-      title: 'Smart Voice & AI Tools',
-      subtitle: 'Voice Trigger · Pixel Vision · Code Grounding',
-      specs: ['Zero API Keys', 'Voice Trigger', 'Swatch Analysis', 'Build Grounding'],
-      previewImage: STUDIO_IRON_GATES_IMG || subjectImage,
-      tone: 'cyan',
-      icon: <Cpu className="w-4 h-4 text-[#F1F5F9]" />,
+      decal: 'PRIVATE OPTICS',
+      title: 'OPTICS & VISION CONSOLE',
+      subtitle: 'Voice Trigger · Pixel Vision · Geo-Grid',
+      icon: <Cpu className="w-4 h-4 text-[#18F2D8]" />,
     },
     {
       id: 'vfx',
+      previewId: 'vfx',
       index: '06',
-      title: 'VFX & Motion Trails',
-      subtitle: '60 fps Realtime Effects, Halftone & .ZIP Export',
-      specs: ['Motion Trails', '2D Halftone', 'Kaleidoscope', '.ZIP Sequence'],
-      previewVideo: BACKGROUND_CUBE_VIDEOS[1].url,
-      previewImage: environmentImage,
-      tone: 'magenta',
-      icon: <Sparkles className="w-4 h-4 text-[#FF5C8A]" />,
+      decal: 'PICTURE · SOUND · SHADERS · TITLES',
+      title: 'VFX STUDIO',
+      subtitle: 'Tempest Studio · Halftone & .ZIP Export',
+      icon: <Sparkles className="w-4 h-4 text-[#C84BFF]" />,
     },
     {
       id: 'animator',
+      previewId: 'animator',
       index: '07',
-      title: 'Action Animator · 60fps',
-      subtitle: 'Picture-to-Fight & Hero Motion Choreography',
-      specs: ['Dual Photo Clash', 'Power Aura & Trails', 'Cartoon 3D Squash', '4s Video + .ZIP'],
-      previewVideo: BACKGROUND_CUBE_VIDEOS[4].url,
-      previewImage: subjectImage,
-      tone: 'red',
-      icon: <Swords className="w-4 h-4 text-[#FF3B5C]" />,
+      decal: 'MOTION FX',
+      title: 'ACTION ANIMATOR · 60FPS',
+      subtitle: 'Tempest Studio Clash & Hero Choreography',
+      icon: <Swords className="w-4 h-4 text-[#E06D44]" />,
     },
     {
       id: 'sound',
+      previewId: 'sound',
       index: '08',
-      title: 'Sound Foley & Lip Sync',
+      decal: 'DTS:X / 7.1',
+      title: 'SOUND FOLEY & LIP SYNC',
       subtitle: 'Procedural Impact Matrix · Viseme Rig',
-      specs: ['Sub Boom & Braam', '0.5x – 2x Pitch', 'WAV Pad Export', '60fps Visemes'],
-      previewImage: STUDIO_COLLAGE_BRAND_IMG,
-      tone: 'cyan',
-      icon: <Waves className="w-4 h-4 text-[#F1F5F9]" />,
+      icon: <Waves className="w-4 h-4 text-[#18F2D8]" />,
     },
   ];
 
   const deckTwoTiles: GalleryTileSpec[] = [
     {
       id: 'airradio',
+      previewId: 'airradio',
       index: '09',
-      title: 'KAYA AirRadio · FM',
+      decal: '88-108 MHZ',
+      title: 'AIRRADIO FM',
       subtitle: 'Multi-Channel Synth Broadcast & Live Host Mic',
-      specs: ['88–108 MHz Tuner', '5 Live Channels', 'Live Spectrum', 'Host Mic Feed'],
-      previewVideo: BACKGROUND_CUBE_VIDEOS[0].url,
-      tone: 'cyan',
-      icon: <Radio className="w-4 h-4 text-[#F1F5F9]" />,
+      icon: <Radio className="w-4 h-4 text-[#18F2D8]" />,
     },
     {
       id: 'school',
+      previewId: 'school',
       index: '10',
-      title: 'Coding & Render School',
-      subtitle: 'Rust Systems · Three.js UVs · Shader Lab',
-      specs: ['Rust & WASM', 'Mesh 3D Math', 'Telemetry HUD', 'Interactive Sandbox'],
-      previewImage: STUDIO_IRON_GATES_IMG,
-      tone: 'magenta',
-      icon: <GraduationCap className="w-4 h-4 text-[#FF5C8A]" />,
+      decal: 'LIVE LABS',
+      title: 'INFINITY SCHOOL',
+      subtitle: 'Coding School · Rendering School · AI Tutor',
+      icon: <GraduationCap className="w-4 h-4 text-[#E06D44]" />,
     },
     {
       id: 'merch',
+      previewId: 'merch',
       index: '11',
-      title: 'Creator Merch & Print',
-      subtitle: 'Mockup Studio · Margin Builder · Local Store',
-      specs: ['Hoodie / Tee / Mug', 'Custom Print Art', 'Profit Calculator', 'Mockup PNG Export'],
-      previewImage: STUDIO_COLLAGE_BRAND_IMG || subjectImage,
-      tone: 'red',
-      icon: <ShoppingBag className="w-4 h-4 text-[#FF3B5C]" />,
+      decal: 'POD CATALOG',
+      title: 'PRINTIFY STUDIO',
+      subtitle: 'Mockup Studio · Margin Builder · Cloud Store',
+      icon: <ShoppingBag className="w-4 h-4 text-[#FF4D6A]" />,
     },
     {
       id: 'live',
+      previewId: 'live',
       index: '12',
-      title: 'Live Cam & Social Stream',
+      decal: 'BROADCAST',
+      title: 'LIVE CAM & STREAM',
       subtitle: 'Camera Recorder & Multi-Platform Simulcast',
-      specs: ['Webcam + Mic Live', 'On-Air Lower 3rd', 'Record .WebM', 'Social Share Mesh'],
-      previewVideo: BACKGROUND_CUBE_VIDEOS[2].url,
-      previewImage: environmentImage,
-      tone: 'cyan',
-      icon: <Camera className="w-4 h-4 text-[#F1F5F9]" />,
+      icon: <Camera className="w-4 h-4 text-[#18F2D8]" />,
     },
   ];
 
@@ -216,8 +191,7 @@ export function StudioGatesGallery({
 
   return (
     <section id="page-gates" ref={sectionRef} className="relative">
-      <PlateBezel accent="red" className="relative overflow-hidden p-4 sm:p-6 min-h-[560px] flex flex-col justify-between gap-4">
-        {/* TOP STUDIO GATES HEADER + LEFT/RIGHT GALLERY CONTROLS */}
+      <PlateBezel accent="red" className="relative overflow-hidden p-5 sm:p-6 min-h-[620px] flex flex-col justify-between gap-5">
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <LedStatusIndicator
@@ -225,10 +199,10 @@ export function StudioGatesGallery({
               tone={gatesOpen ? 'cyan' : 'red'}
             />
             <h2
-              className="text-sm sm:text-base font-bold uppercase tracking-[0.16em] text-white"
+              className="text-sm sm:text-base font-bold uppercase tracking-[0.18em] text-[#E6ECF5]"
               style={{ fontFamily: 'var(--font-display)' }}
             >
-              KAYA Studio Gates &amp; Lineup
+              KNOCKSSTUDiOS · KAYA Gates &amp; Lineup
             </h2>
           </div>
 
@@ -238,13 +212,12 @@ export function StudioGatesGallery({
               tone={gatesOpen ? 'cyan' : 'red'}
               active
               onClick={() => setGatesOpen((g) => !g)}
-              title="Open or seal the Grade-7 titanium entrance gates"
+              title="Open or seal the obsidian titanium studio gates"
             >
-              {gatesOpen ? <Unlock className="w-3.5 h-3.5 text-[#F1F5F9]" /> : <Lock className="w-3.5 h-3.5 text-[#FF3B5C]" />}
+              {gatesOpen ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
               <span>{gatesOpen ? 'Seal Gates' : 'Open Gates'}</span>
             </HardwareButton>
 
-            {/* Left / Right 4-Tile Gallery Carousel Arrows */}
             <HardwareButton
               size="sm"
               tone="neutral"
@@ -253,7 +226,7 @@ export function StudioGatesGallery({
               disabled={galleryDeck === 0}
               aria-label="Previous 4 studio tiles"
             >
-              <ChevronLeft className="w-4 h-4 text-[#F1F5F9]" />
+              <ChevronLeft className="w-4 h-4" />
               <span>Prev</span>
             </HardwareButton>
 
@@ -270,13 +243,12 @@ export function StudioGatesGallery({
               aria-label="Next 4 studio tiles"
             >
               <span>Next</span>
-              <ChevronRight className="w-4 h-4 text-[#FF5C8A]" />
+              <ChevronRight className="w-4 h-4 text-[#FF4D6A]" />
             </HardwareButton>
           </div>
         </div>
 
-        {/* CLEAN FULL-TILE WINDOWS 4-UP STUDIO GALLERY (ONE TILE PER ITEM) */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-5 flex-1">
           {visibleTiles.map((tile) => {
             const isSelected = activeTool === tile.id;
 
@@ -286,37 +258,24 @@ export function StudioGatesGallery({
                 type="button"
                 data-active={isSelected}
                 onClick={() => onSelectTool(tile.id)}
-                className={`group candy-trace-tile full-tile-window p-5 text-left flex flex-col justify-between min-h-[218px] cursor-pointer ${
-                  isSelected ? 'shadow-[0_0_24px_rgba(255,10,60,0.22)]' : ''
-                }`}
+                className="group candy-trace-tile full-tile-window p-6 text-left flex flex-col justify-between min-h-[280px] cursor-pointer"
               >
-                {tile.previewVideo ? (
-                  <video
-                    src={tile.previewVideo}
-                    muted
-                    loop
-                    playsInline
-                    autoPlay
-                    preload="metadata"
-                    className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-58 group-hover:opacity-84 group-hover:scale-105 transition-all duration-500"
-                  />
-                ) : tile.previewImage ? (
-                  <img
-                    src={tile.previewImage}
-                    alt={tile.title}
-                    className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-52 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
-                  />
-                ) : null}
+                <TileVisualPreview id={tile.previewId} title={tile.title} />
 
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#050304]/95 via-[#090405]/40 to-[#050304]/25"
+                  className="pointer-events-none absolute inset-0 pearlescent-sheen opacity-0 group-hover:opacity-60 transition-opacity duration-300"
+                />
+
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07080B]/95 via-[#0E1117]/45 to-[#07080B]/25"
                 />
 
                 <div className="relative z-10 flex items-center justify-between gap-3">
-                  <span className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.22em] see-thru-font-subtle">
+                  <span className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] see-thru-font-subtle">
                     {tile.icon}
-                    <span>Station {tile.index}</span>
+                    <span>{tile.decal}</span>
                   </span>
 
                   <span className="inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.16em] see-thru-font-subtle group-hover:translate-x-0.5 transition-transform">
@@ -339,7 +298,7 @@ export function StudioGatesGallery({
           })}
         </div>
 
-        {/* HEAVY OBSIDIAN BLACK GRADE-7 TITANIUM ENTRANCE GATES OVERLAY */}
+        {/* Obsidian Vault Gates Overlay */}
         <div
           aria-hidden={gatesOpen}
           className={`pointer-events-none absolute inset-y-0 left-0 w-1/2 z-30 candy-chassis flex items-center justify-end pr-5 transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] ${
@@ -347,11 +306,11 @@ export function StudioGatesGallery({
           }`}
         >
           <div className="text-right space-y-1">
-            <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-[#FF3B5C] block">
-              Grade-7 Titanium Vault
+            <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-[#FF4D6A] block">
+              KNOCKSSTUDiOS
             </span>
             <span
-              className="text-2xl sm:text-3xl font-bold uppercase tracking-[0.28em] text-white"
+              className="text-2xl sm:text-3xl font-bold uppercase tracking-[0.28em] text-[#E6ECF5]"
               style={{ fontFamily: 'var(--font-display)' }}
             >
               KA
@@ -366,11 +325,11 @@ export function StudioGatesGallery({
           }`}
         >
           <div className="text-left space-y-1">
-            <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-[#F1F5F9] block">
-              Enter Studio Stage
+            <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-[#18F2D8] block">
+              INFINITY CORE ENGINE
             </span>
             <span
-              className="text-2xl sm:text-3xl font-bold uppercase tracking-[0.28em] text-white"
+              className="text-2xl sm:text-3xl font-bold uppercase tracking-[0.28em] text-[#E6ECF5]"
               style={{ fontFamily: 'var(--font-display)' }}
             >
               YA

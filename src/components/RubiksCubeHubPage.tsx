@@ -644,7 +644,8 @@ export function RubiksCubeHubPage({
 
     if (!isSoftwareGl) renderer.compile(scene, camera);
 
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
+    timer.connect(document);
     let frameId = 0;
     let disposed = false;
     let bgTickCounter = 0;
@@ -675,8 +676,9 @@ export function RubiksCubeHubPage({
 
     function tick() {
       if (disposed) return;
-      const delta = Math.min(0.05, clock.getDelta());
-      const elapsed = clock.getElapsedTime();
+      timer.update();
+      const delta = Math.min(0.05, timer.getDelta());
+      const elapsed = timer.getElapsed();
 
       if (isPlayingRef.current) {
         videoClock += delta;
@@ -797,6 +799,7 @@ export function RubiksCubeHubPage({
       bgScreenMat.dispose();
       bgTex.dispose();
       envTex.dispose();
+      timer.dispose();
       renderer.dispose();
       if (renderer.domElement.parentNode === container) {
         container.removeChild(renderer.domElement);

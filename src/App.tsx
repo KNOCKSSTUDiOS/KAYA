@@ -21,10 +21,8 @@ import {
   User,
   Cable,
   Swords,
-  Crown,
   Radio,
   GraduationCap,
-  ShoppingBag,
   Camera,
   ShieldCheck,
   Clapperboard,
@@ -51,15 +49,10 @@ import { usePWAInstall } from './hooks/usePWAInstall.js';
 import { MasterControlDeck } from './components/MasterControlDeck.js';
 import { HeroVideoCubeStage } from './components/HeroVideoCubeStage.js';
 import { KayaAuthModal, KayaUserProfile } from './components/KayaAuthModal.js';
-import { ProtectedAdminModal } from './components/ProtectedAdminModal.js';
 import { LocalSuiteBridgePage } from './components/LocalSuiteBridgePage.js';
 import { PictureAnimatorPage } from './components/PictureAnimatorPage.js';
 import { AirRadioPage, CodingRenderingSchoolPage } from './components/AirRadioSchoolPage.js';
-import { MerchPrintPage, LiveBroadcastStreamPage } from './components/MerchStoreLivePage.js';
-import {
-  StudioMembershipModal,
-  StudioSubscriptionState,
-} from './components/StudioMembershipModal.js';
+import { LiveBroadcastStreamPage } from './components/MerchStoreLivePage.js';
 import { StudioLegalModal, LegalTabKey } from './components/StudioLegalModal.js';
 import {
   RubiksCubeHubPage,
@@ -67,10 +60,12 @@ import {
   WorkspaceMediaAsset,
 } from './components/RubiksCubeHubPage.js';
 import { AudioStudioPage, SoundFoleyPage } from './components/AudioSoundPages.js';
-import { PictureStudioPage, VfxStudioPage } from './components/PictureVfxPages.js';
+import { PictureStudioPage, VfxStudioPage, VfxSubView } from './components/PictureVfxPages.js';
 import { LipSyncPage, EditorPage, IntelCodePage } from './components/LipSyncEditorIntelPages.js';
 import { StoryboardLogoPage } from './components/StoryboardLogoPage.js';
 import { VortexHubModules } from './components/VortexHubModules.js';
+import { StudioWorkspaceRibbon } from './components/StudioWorkspaceRibbon.js';
+import { StudioSideScrollMenu } from './components/StudioSideScrollMenu.js';
 import {
   GeometricMark,
   PlateBezel,
@@ -79,6 +74,7 @@ import {
 } from './components/HardwarePrimitives.js';
 import {
   renderCinematicReel,
+  exportCompositionSequenceArchive,
   RESOLUTION_PRESETS,
   HDR_GRADE_PRESETS,
   FPS_PRESETS,
@@ -92,10 +88,17 @@ import {
   CompositionConfig,
 } from './lib/studioRenderer.js';
 import {
+  Asset3DState,
+  GeneratorPresetKey,
+  ShaderPresetKey,
+  STUDIO_SHADER_PRESETS,
+  TitleOverlayConfig,
+  VideoExportFormat,
+} from './lib/studioPipelineTypes.js';
+import {
   StudioArtifactDoc,
   StudioConnectorDoc,
   StudioProjectDoc,
-  fetchBillingRecord,
   fetchConnectors,
   fetchStudioArtifacts,
   fetchStudioProjects,
@@ -104,7 +107,6 @@ import {
   saveStudioProject,
   subscribeAuth,
   testFirestoreConnection,
-  verifyStaffAccess,
 } from './lib/firebase.js';
 import { UNIFIED_WATERMARK_TEXT } from './lib/watermarkEngine.js';
 
@@ -135,22 +137,21 @@ const WORKBENCH_TOOLS: {
   tone: 'red' | 'cyan' | 'magenta' | 'neutral';
   icon: React.ReactNode;
 }[] = [
-  { key: 'video', label: 'Video & Frames', tone: 'red', icon: <Film className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
-  { key: 'vfx', label: 'VFX & BFX', tone: 'magenta', icon: <Sparkles className="w-3.5 h-3.5 text-[#E06844]" /> },
-  { key: 'sound', label: 'Sound · DTS / Sony', tone: 'cyan', icon: <Waves className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
-  { key: 'audio', label: 'Audio & Music', tone: 'cyan', icon: <Volume2 className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
-  { key: 'editor', label: 'Timeline NLE', tone: 'magenta', icon: <Scissors className="w-3.5 h-3.5 text-[#E06844]" /> },
-  { key: 'picture', label: 'Picture Suite', tone: 'cyan', icon: <ImageIcon className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
-  { key: 'cube', label: '360° Video Cube', tone: 'red', icon: <Box className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
-  { key: 'storyboard', label: '3D Storyboard', tone: 'magenta', icon: <Clapperboard className="w-3.5 h-3.5 text-[#E06844]" /> },
-  { key: 'intel', label: 'KAYA Vision', tone: 'cyan', icon: <Cpu className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
-  { key: 'lipsync', label: 'Lip Sync Rig', tone: 'magenta', icon: <Mic className="w-3.5 h-3.5 text-[#E06844]" /> },
-  { key: 'animator', label: 'Action Animator', tone: 'red', icon: <Swords className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
-  { key: 'airradio', label: 'AirRadio FM', tone: 'cyan', icon: <Radio className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
-  { key: 'school', label: 'Infinity School', tone: 'magenta', icon: <GraduationCap className="w-3.5 h-3.5 text-[#E06844]" /> },
-  { key: 'merch', label: 'Printify Studio', tone: 'red', icon: <ShoppingBag className="w-3.5 h-3.5 text-[#FF0A3C]" /> },
-  { key: 'live', label: 'Live Stream', tone: 'cyan', icon: <Camera className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
-  { key: 'bridge', label: 'Suite Bridge', tone: 'cyan', icon: <Cable className="w-3.5 h-3.5 text-[#F5E9EA]" /> },
+  { key: 'video', label: 'Video & Frames', tone: 'red', icon: <Film className="w-3.5 h-3.5 text-[#FF007F]" /> },
+  { key: 'vfx', label: 'VFX · Shaders · Titles', tone: 'magenta', icon: <Sparkles className="w-3.5 h-3.5 text-[#FC8EAC]" /> },
+  { key: 'sound', label: 'Sound · DTS / Sony', tone: 'cyan', icon: <Waves className="w-3.5 h-3.5 text-[#E0FFFF]" /> },
+  { key: 'audio', label: 'Audio & Music', tone: 'cyan', icon: <Volume2 className="w-3.5 h-3.5 text-[#00D9C0]" /> },
+  { key: 'editor', label: 'DaVinci Timeline NLE', tone: 'magenta', icon: <Scissors className="w-3.5 h-3.5 text-[#FC8EAC]" /> },
+  { key: 'picture', label: 'Picture Suite', tone: 'cyan', icon: <ImageIcon className="w-3.5 h-3.5 text-[#E0FFFF]" /> },
+  { key: 'cube', label: '360° Video Cube', tone: 'red', icon: <Box className="w-3.5 h-3.5 text-[#FF007F]" /> },
+  { key: 'storyboard', label: '3D Storyboard', tone: 'magenta', icon: <Clapperboard className="w-3.5 h-3.5 text-[#FFDAB9]" /> },
+  { key: 'intel', label: 'Optics & Vision', tone: 'cyan', icon: <Cpu className="w-3.5 h-3.5 text-[#00D9C0]" /> },
+  { key: 'lipsync', label: 'Lip Sync Rig', tone: 'magenta', icon: <Mic className="w-3.5 h-3.5 text-[#FC8EAC]" /> },
+  { key: 'animator', label: 'Action Animator', tone: 'red', icon: <Swords className="w-3.5 h-3.5 text-[#FF007F]" /> },
+  { key: 'airradio', label: '88-108 MHz Radio', tone: 'cyan', icon: <Radio className="w-3.5 h-3.5 text-[#00D9C0]" /> },
+  { key: 'school', label: 'Infinity School', tone: 'magenta', icon: <GraduationCap className="w-3.5 h-3.5 text-[#FFDAB9]" /> },
+  { key: 'live', label: 'Live Cam & Stream', tone: 'cyan', icon: <Camera className="w-3.5 h-3.5 text-[#00D9C0]" /> },
+  { key: 'bridge', label: 'Local Sync Bridge', tone: 'cyan', icon: <Cable className="w-3.5 h-3.5 text-[#E0FFFF]" /> },
 ];
 
 const SUITE_MENU_ENTRIES: {
@@ -160,42 +161,24 @@ const SUITE_MENU_ENTRIES: {
   targetType: 'section' | 'tool';
   target: string;
 }[] = [
-  { id: 'kaya-hub', label: 'KAYA Unified Studio Hub', category: 'Hub', targetType: 'section', target: 'vortex-hub' },
+  { id: 'kaya-hub', label: 'KNOCKSSTUDiOS · Hollywood MOTiON Pictures Hub', category: 'Hub', targetType: 'section', target: 'vortex-hub' },
   { id: 'davinci', label: 'DaVinci Resolve Pipeline · XML, EDL & 3D LUT', category: 'Pipeline', targetType: 'section', target: 'vortex-davinci' },
-  { id: 'blender', label: 'Blender 3D Pipeline & Shaders', category: '3D Suite', targetType: 'section', target: 'vortex-blender' },
-  { id: 'infinity', label: 'Infinity · Valerius (V) Sentinel of Ten Galaxies', category: 'Core', targetType: 'section', target: 'vortex-infinity' },
-  { id: 'soul', label: 'Soul · Cooling Forge Opus 4.7 & Billing', category: 'Cooling', targetType: 'section', target: 'vortex-soul' },
-  { id: 'connectors', label: 'MCP Skills, SQL, Search & Artifacts', category: 'Backend', targetType: 'section', target: 'vortex-connectors' },
+  { id: 'blender', label: '3D Asset (V) & Shader Pipeline', category: '3D Suite', targetType: 'section', target: 'vortex-blender' },
+  { id: 'infinity', label: 'INFINITY · VALERIUS (V) Sentinel of the Ten Galaxies', category: 'Core', targetType: 'section', target: 'vortex-infinity' },
+  { id: 'soul', label: 'Soul · Cooling Forge Opus 4.7', category: 'Cooling', targetType: 'section', target: 'vortex-soul' },
+  { id: 'connectors', label: 'MCP Skills, SQL, Search & Cloud Vault', category: 'Backend', targetType: 'section', target: 'vortex-connectors' },
   ...WORKBENCH_TOOLS.map((t) => ({
     id: `tool-${t.key}`,
     label: t.label,
-    category: 'Workbench',
+    category: 'Tempest Studio',
     targetType: 'tool' as const,
     target: t.key,
   })),
 ];
 
-function formatTierLabel(tier: StudioSubscriptionState['tier']): string {
-  switch (tier) {
-    case 'enterprise':
-      return 'Enterprise';
-    case 'business':
-      return 'Business';
-    case 'ultra':
-      return 'Ultra';
-    case 'pro':
-      return 'Pro';
-    case 'beginner':
-      return 'Beginner';
-    default:
-      return 'Free Tier';
-  }
-}
-
 export default function App() {
   const [activeTool, setActiveTool] = useState<StudioPageKey>('video');
   const [activeModule, setActiveModule] = useState<ActiveModule>('video');
-  // Pure prompt cinema by default (no forced still cutout floating over the scene)
   const [product, setProduct] = useState<MediaSelection | null>(null);
   const [atmosphere, setAtmosphere] = useState<MediaSelection | null>({
     id: `preset-${ATMOSPHERES[0].id}`,
@@ -207,6 +190,7 @@ export default function App() {
   const [resolution, setResolution] = useState<ResolutionKey>('cinemax_4k');
   const [hdrGrade, setHdrGrade] = useState<HDRGradeKey>('ultra_cinemax');
   const [fps, setFps] = useState<FPSKey>(60);
+  const [exportFormat, setExportFormat] = useState<VideoExportFormat>('webm');
   const [renderStyle, setRenderStyle] = useState<RenderStyleKey>('hdr_ultra');
   const [cameraMotion, setCameraMotion] = useState<CameraMotionKey>('orbit');
   const [lensFocalMm, setLensFocalMm] = useState<number>(35);
@@ -219,32 +203,40 @@ export default function App() {
   const [videoDuration, setVideoDuration] = useState<number>(0);
   const [seekToTime, setSeekToTime] = useState<number | null>(null);
 
+  const [vfxSubView, setVfxSubView] = useState<VfxSubView>('vfx_picture');
+  const [activeShader, setActiveShader] = useState<ShaderPresetKey>('bioluminescent_magenta');
+  const [activeGenerator, setActiveGenerator] = useState<GeneratorPresetKey>('none');
+  const [titleOverlay, setTitleOverlay] = useState<TitleOverlayConfig>({
+    enabled: false,
+    headline: 'KNOCKSSTUDiOS',
+    subline: 'Hollywood MOTiON Pictures · KAYA',
+    typography: 'chakra_etch',
+    accentHex: '#FF007F',
+    placement: 'bottom',
+  });
+  const [asset3DState, setAsset3DState] = useState<Asset3DState>({
+    assetName: 'Valerius V Crest',
+    sourceKind: 'procedural_v',
+    shader: 'bioluminescent_magenta',
+    wireframe: false,
+    focalMm: 35,
+    scalePct: 100,
+  });
+
   const { isInstalled } = usePWAInstall();
-  // Never auto-popup install modal on Screen 1
   const [installModalOpen, setInstallModalOpen] = useState<boolean>(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState<'signin' | 'signup'>('signin');
-  const [adminPortalOpen, setAdminPortalOpen] = useState(false);
-  const [plansModalOpen, setPlansModalOpen] = useState(false);
   const [legalModalOpen, setLegalModalOpen] = useState(false);
   const [legalInitialTab, setLegalInitialTab] = useState<LegalTabKey>('brand');
 
-  // Navigation bar Search & Dropdown Menu state
   const [suiteSearch, setSuiteSearch] = useState('');
   const [suiteMenuOpen, setSuiteMenuOpen] = useState(false);
 
-  // Firebase Auth & Dedicated Cloud Workspace State (Zero localStorage)
   const [kayaUser, setKayaUser] = useState<KayaUserProfile | null>(null);
   const [cloudProjects, setCloudProjects] = useState<StudioProjectDoc[]>([]);
   const [cloudArtifacts, setCloudArtifacts] = useState<StudioArtifactDoc[]>([]);
   const [cloudConnectors, setCloudConnectors] = useState<StudioConnectorDoc[]>([]);
-
-  const [studioPlan, setStudioPlan] = useState<StudioSubscriptionState>({
-    tier: 'free',
-    billingCycle: 'monthly',
-    provider: 'stripe',
-    addons: [],
-  });
 
   const [voiceActive, setVoiceActive] = useState(false);
   const [isOnline, setIsOnline] = useState(() =>
@@ -301,30 +293,21 @@ export default function App() {
 
   const hydrateCloudWorkspace = useCallback(async (uid: string) => {
     try {
-      const [profile, projects, artifacts, connectors, billing] = await Promise.all([
+      const [, projects, artifacts, connectors] = await Promise.all([
         fetchUserProfile(uid),
         fetchStudioProjects(uid),
         fetchStudioArtifacts(uid),
         fetchConnectors(uid),
-        fetchBillingRecord(uid),
       ]);
       setCloudProjects(projects);
       setCloudArtifacts(artifacts);
       setCloudConnectors(connectors);
-      if (billing || profile) {
-        setStudioPlan((prev) => ({
-          ...prev,
-          tier: billing?.tier || profile?.tier || prev.tier,
-          billingCycle: billing?.billingCycle || profile?.billingCycle || prev.billingCycle,
-          provider: billing?.provider || prev.provider,
-        }));
-      }
     } catch {
       // Cloud read fallback stays silent without creating device copies
     }
   }, []);
 
-  // Verify Firestore connection and subscribe to Chrome Google Firebase Auth on boot
+  // Verify Firestore connection and subscribe to Firebase Auth on boot
   useEffect(() => {
     testFirestoreConnection().catch(() => false);
     const unsub = subscribeAuth(async (fbUser) => {
@@ -335,14 +318,13 @@ export default function App() {
         setCloudConnectors([]);
         return;
       }
-      const staff = await verifyStaffAccess(fbUser).catch(() => null);
       const profile = await fetchUserProfile(fbUser.uid).catch(() => null);
       setKayaUser({
         uid: fbUser.uid,
         handle: profile?.displayName || fbUser.displayName || fbUser.email?.split('@')[0] || 'Creator',
         email: fbUser.email || '',
         signedInAt: new Date().toISOString(),
-        role: staff?.role || 'member',
+        role: 'member',
         tier: profile?.tier || 'free',
         billingCycle: profile?.billingCycle || 'monthly',
       });
@@ -354,18 +336,6 @@ export default function App() {
   useEffect(() => {
     if (isInstalled) setInstallModalOpen(false);
   }, [isInstalled]);
-
-  // Discreet protected Staff Portal keyboard shortcut: Ctrl+Shift+K
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setAdminPortalOpen(true);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
 
   useEffect(() => {
     const onOnline = () => {
@@ -519,22 +489,22 @@ export default function App() {
         lightingCue: data.lightingCue,
         cameraTip: data.cameraTip,
       });
-      addLog('Vortex self-hosted director enhanced scene prompt & lighting cues.', 'success');
+      addLog('INFINITY CORE ENGINE director enhanced scene prompt & lighting cues.', 'success');
     } catch {
       const subj = product ? describe(product) : 'Hero Subject';
       const env = atmosphere ? describe(atmosphere) : 'Obsidian Studio Stage';
       const base = editText.trim();
       setEditText(
         base
-          ? `${base} — ${subj} inside ${env}, Candy-Gloss (#FF0A3C) specular clearcoat & Burnished Rust (#B84323) rim at ${fps}fps.`
-          : `Anamorphic ${fps}fps ${cameraMotion} hero reel of ${subj} inside ${env}, Candy-Gloss & Burnished Rust optical contrast.`
+          ? `${base} — ${subj} inside ${env}, Candy Gloss Crimson (#D91E36) specular clearcoat & Burnt Rust (#B84A27) rim at ${fps}fps.`
+          : `Anamorphic ${fps}fps ${cameraMotion} hero reel of ${subj} inside ${env}, Candy Gloss & Burnt Rust optical contrast.`
       );
       setAiDirectorMeta({
-        directorNotes: `Self-hosted director locked ${fps}fps cinematic curve.`,
-        lightingCue: 'Burnished Rust side fill + Candy-Gloss primary rim.',
+        directorNotes: `INFINITY CORE ENGINE locked ${fps}fps cinematic curve.`,
+        lightingCue: 'Burnt Rust side fill + Candy Gloss primary rim.',
         cameraTip: `Smooth ${cameraMotion} sweep.`,
       });
-      addLog('Vortex local scene director updated prompt cues.', 'success');
+      addLog('INFINITY CORE ENGINE local director updated prompt cues.', 'success');
     } finally {
       setAiEnhancing(false);
     }
@@ -629,17 +599,12 @@ export default function App() {
     scrollToSection('page-tools');
   };
 
-  const handleOpenBillingFromHub = (provider: 'stripe' | 'infinity_billing') => {
-    setStudioPlan((prev) => ({ ...prev, provider }));
-    setPlansModalOpen(true);
-  };
-
   // Real-Time Voice Command -> Executes actual studio/render/navigation actions
   const triggerGlobalSmartVoice = () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
       handleSelectToolFromGalleryOrNav('intel');
-      addLog('Opened Vortex Vision & Voice Console (browser SpeechRecognition needed for mic capture).', 'info');
+      addLog('Opened Optics & Vision Console (browser SpeechRecognition needed for mic capture).', 'info');
       return;
     }
     if (voiceActive) return;
@@ -647,7 +612,7 @@ export default function App() {
     rec.lang = 'en-US';
     rec.interimResults = false;
     setVoiceActive(true);
-    addLog('Voice action listener active (say "Render", "Blender", "Infinity", "Cooling", "School", "Printify", "Radio")…', 'info');
+    addLog('Voice action listener active (say "Render", "Shaders", "Generators", "Titles", "Infinity", "Radio")…', 'info');
     rec.onresult = (ev: any) => {
       const phrase = String(ev.results?.[0]?.[0]?.transcript || '').toLowerCase();
       if (phrase.includes('render') || phrase.includes('action') || phrase.includes('shoot')) {
@@ -659,9 +624,9 @@ export default function App() {
         addLog(`Voice jumped to DaVinci Resolve Pipeline from "${phrase}".`, 'success');
         return;
       }
-      if (phrase.includes('blender')) {
+      if (phrase.includes('blender') || phrase.includes('3d asset')) {
         scrollToSection('vortex-blender');
-        addLog(`Voice jumped to Blender Pipeline from "${phrase}".`, 'success');
+        addLog(`Voice jumped to 3D Asset (V) Pipeline from "${phrase}".`, 'success');
         return;
       }
       if (phrase.includes('infinity') || phrase.includes('valerius') || phrase.includes('galaxy')) {
@@ -679,13 +644,28 @@ export default function App() {
         addLog(`Voice jumped to Connectors & Databases from "${phrase}".`, 'success');
         return;
       }
+      if (phrase.includes('shader')) {
+        setVfxSubView('shaders');
+        handleSelectToolFromGalleryOrNav('vfx');
+        addLog(`Voice opened VFX Shaders from "${phrase}".`, 'success');
+        return;
+      }
+      if (phrase.includes('generator')) {
+        setVfxSubView('generators');
+        handleSelectToolFromGalleryOrNav('vfx');
+        addLog(`Voice opened VFX Generators from "${phrase}".`, 'success');
+        return;
+      }
+      if (phrase.includes('title')) {
+        setVfxSubView('titles');
+        handleSelectToolFromGalleryOrNav('vfx');
+        addLog(`Voice opened Titles / Typography from "${phrase}".`, 'success');
+        return;
+      }
       const map: [string, StudioPageKey][] = [
         ['radio', 'airradio'],
         ['school', 'school'],
         ['coding', 'school'],
-        ['printify', 'merch'],
-        ['merch', 'merch'],
-        ['print', 'merch'],
         ['live', 'live'],
         ['stream', 'live'],
         ['camera', 'live'],
@@ -779,6 +759,10 @@ export default function App() {
         lensFocalMm,
         shutterAngleDeg,
         grainLevel,
+        shaderPreset: activeShader,
+        generatorPreset: activeGenerator,
+        titleOverlay,
+        asset3DName: asset3DState.assetName,
         instructions: promptInstructions,
       };
       const result = await renderCinematicReel({
@@ -793,6 +777,10 @@ export default function App() {
         lensFocalMm,
         shutterAngleDeg,
         grainLevel,
+        shaderPreset: activeShader,
+        generatorPreset: activeGenerator,
+        titleOverlay,
+        asset3DName: asset3DState.assetName,
         instructions: promptInstructions,
         onProgress: (percent, msg) => {
           setRenderProgress(percent);
@@ -869,6 +857,10 @@ export default function App() {
         lensFocalMm,
         shutterAngleDeg,
         grainLevel,
+        shaderPreset: activeShader,
+        generatorPreset: activeGenerator,
+        titleOverlay,
+        asset3DName: asset3DState.assetName,
         instructions,
       };
       const result = await renderCinematicReel({
@@ -883,6 +875,10 @@ export default function App() {
         lensFocalMm,
         shutterAngleDeg,
         grainLevel,
+        shaderPreset: activeShader,
+        generatorPreset: activeGenerator,
+        titleOverlay,
+        asset3DName: asset3DState.assetName,
         instructions,
         onProgress: (percent, msg) => {
           setRenderProgress(percent);
@@ -914,17 +910,37 @@ export default function App() {
     setVideoTime(0);
   };
 
-  const downloadVideo = (version: Pick<VideoVersion, 'label' | 'videoUrl' | 'mimeType'>) => {
+  const downloadVideo = async (version: Pick<VideoVersion, 'label' | 'videoUrl' | 'mimeType' | 'composition'>) => {
     try {
       setDownloading(true);
-      const ext = version.mimeType.includes('mp4') ? 'mp4' : 'webm';
-      const a = document.createElement('a');
-      a.href = version.videoUrl;
-      a.download = `vortex-kaya-4k-${version.label.toLowerCase().replace(/\s+/g, '-')}.${ext}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      addLog(`Exported ${version.label} (.${ext}).`, 'success');
+      if (exportFormat === 'png_seq' && version.composition) {
+        const archive = await exportCompositionSequenceArchive(version.composition, {
+          fps,
+          transparentBackground: false,
+          maxWidth: 1920,
+          onProgress: (_cur, _tot, pct) => {
+            if (pct === 100) addLog(`PNG Sequence pack ready (${fps} FPS).`, 'success');
+          },
+        });
+        const seqUrl = URL.createObjectURL(archive.blob);
+        const a = document.createElement('a');
+        a.href = seqUrl;
+        a.download = `knocksstudios-kaya-${version.label.toLowerCase().replace(/\s+/g, '-')}-png-seq.zip`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(seqUrl), 4000);
+        addLog(`Exported ${version.label} PNG Sequence (${archive.frameCount} frames).`, 'success');
+      } else {
+        const ext = exportFormat === 'mp4' ? 'mp4' : version.mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const a = document.createElement('a');
+        a.href = version.videoUrl;
+        a.download = `knocksstudios-kaya-4k-${version.label.toLowerCase().replace(/\s+/g, '-')}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        addLog(`Exported ${version.label} (.${ext}).`, 'success');
+      }
     } catch (e: any) {
       addLog(`Export failed: ${e.message}`, 'error');
     } finally {
@@ -945,7 +961,7 @@ export default function App() {
   const showFramesStation = activeModule === 'frames' || activeModule === 'all';
 
   return (
-    <div className="min-h-screen w-full bg-[#050304] text-[#F5E9EA] p-0">
+    <div className="min-h-screen w-full bg-[#0A0A0A] text-[#F5FFFA] p-0">
       <div className="relative w-full mx-auto candy-chassis flex flex-col">
         {/* ====================================================================
             SCREEN 1: UNTOUCHED THREE.JS FLIPPING RUBIK'S CUBES STAGE
@@ -960,7 +976,6 @@ export default function App() {
           onOpenAuth={() => setAuthModalOpen(true)}
           onNavigateTool={handleSelectToolFromGalleryOrNav}
           onNavigateGates={() => scrollToSection('vortex-hub')}
-          onOpenPlans={() => setPlansModalOpen(true)}
           onAddWorkspaceMedia={(asset) => setUploadedCubeAssets((prev) => [asset, ...prev])}
           onJumpSection={handleJumpSection}
         />
@@ -1071,19 +1086,8 @@ export default function App() {
                 onClick={triggerGlobalSmartVoice}
                 title="Voice Command: executes studio navigation or rendering directly"
               >
-                <Mic className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                <Mic className="w-3.5 h-3.5 text-[#F5FFFA]" />
                 <span className="hidden sm:inline">{voiceActive ? 'Listening…' : 'Voice'}</span>
-              </HardwareButton>
-
-              <HardwareButton
-                size="sm"
-                tone="magenta"
-                active={plansModalOpen}
-                onClick={() => setPlansModalOpen(true)}
-                title="Membership Tiers (Free, Beginner, Pro, Ultra, Business, Enterprise)"
-              >
-                <Crown className="w-3.5 h-3.5 text-[#FF5C8A]" />
-                <span>{formatTierLabel(studioPlan.tier)}</span>
               </HardwareButton>
 
               <HardwareButton
@@ -1095,7 +1099,7 @@ export default function App() {
                   setAuthModalOpen(true);
                 }}
               >
-                <User className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                <User className="w-3.5 h-3.5 text-[#F5FFFA]" />
                 <span>{kayaUser ? kayaUser.handle : 'Sign In'}</span>
               </HardwareButton>
 
@@ -1110,7 +1114,7 @@ export default function App() {
                 }}
                 title="Automatic background build & Service Worker update checker"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${syncingApp ? 'animate-spin text-[#FF0A3C]' : 'text-[#F1F5F9]'}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${syncingApp ? 'animate-spin text-[#FF007F]' : 'text-[#F5FFFA]'}`} />
                 <span className="hidden md:inline">
                   Auto-Update: {autoUpdateEnabled ? 'ON' : 'OFF'}
                 </span>
@@ -1124,7 +1128,7 @@ export default function App() {
                   onClick={() => window.location.reload()}
                   title="Apply newly detected KAYA studio update"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#FF007F]" />
                   <span>Apply Update</span>
                 </HardwareButton>
               ) : (
@@ -1135,9 +1139,9 @@ export default function App() {
                   onClick={handleManualAutoSync}
                 >
                   {isOnline ? (
-                    <Wifi className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                    <Wifi className="w-3.5 h-3.5 text-[#E0FFFF]" />
                   ) : (
-                    <WifiOff className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                    <WifiOff className="w-3.5 h-3.5 text-[#FF007F]" />
                   )}
                   <span className="hidden lg:inline">
                     {syncingApp ? 'Checking…' : isOnline ? 'Sync Now' : 'Offline Ready'}
@@ -1155,13 +1159,13 @@ export default function App() {
             <div className="flex items-center gap-3 shrink-0 ml-auto">
               <div className="text-right leading-tight">
                 <h1
-                  className="text-base sm:text-xl font-bold uppercase tracking-[0.28em] see-thru-font whitespace-nowrap"
+                  className="text-base sm:text-xl font-bold tracking-[0.2em] see-thru-font whitespace-nowrap"
                   style={{ fontFamily: 'var(--font-display)' }}
                 >
-                  KAYA
+                  KNOCKSSTUDiOS · Hollywood MOTiON Pictures
                 </h1>
-                <span className="font-mono text-[10px] uppercase tracking-[0.18em] see-thru-font-subtle block whitespace-nowrap">
-                  KNOCKSSTUDiOS · 4K HDR Studio Suite
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#00D9C0]/90 block whitespace-nowrap">
+                  INFINITY CORE ENGINE -- Tempest Studio · KAYA
                 </span>
               </div>
               <GeometricMark />
@@ -1172,41 +1176,41 @@ export default function App() {
           <div className="flex flex-wrap items-center justify-between gap-2 px-1">
             <div className="flex flex-wrap items-center gap-2">
               <HardwareButton size="sm" tone="red" active onClick={() => scrollToSection('vortex-hub')}>
-                <Layers className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                <Layers className="w-3.5 h-3.5 text-[#FC8EAC]" />
                 <span>KAYA Hub</span>
               </HardwareButton>
               <HardwareButton size="sm" tone="red" active={false} onClick={() => scrollToSection('vortex-davinci')}>
-                <Scissors className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                <Scissors className="w-3.5 h-3.5 text-[#FC8EAC]" />
                 <span>DaVinci Pipeline</span>
               </HardwareButton>
               <HardwareButton size="sm" tone="cyan" active={false} onClick={() => scrollToSection('vortex-blender')}>
-                <Box className="w-3.5 h-3.5 text-[#E06844]" />
-                <span>Blender Pipeline</span>
+                <Box className="w-3.5 h-3.5 text-[#00D9C0]" />
+                <span>3D Asset (V)</span>
               </HardwareButton>
               <HardwareButton size="sm" tone="red" active={false} onClick={() => scrollToSection('vortex-infinity')}>
-                <Orbit className="w-3.5 h-3.5 text-[#FF0A3C]" />
-                <span>Infinity · Valerius (V)</span>
+                <Orbit className="w-3.5 h-3.5 text-[#FF007F]" />
+                <span>INFINITY · VALERIUS (V)</span>
               </HardwareButton>
               <HardwareButton size="sm" tone="cyan" active={false} onClick={() => scrollToSection('vortex-soul')}>
-                <Snowflake className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                <Snowflake className="w-3.5 h-3.5 text-[#00D9C0]" />
                 <span>Soul Cooling Opus 4.7</span>
               </HardwareButton>
               <HardwareButton size="sm" tone="magenta" active={false} onClick={() => scrollToSection('vortex-connectors')}>
-                <Database className="w-3.5 h-3.5 text-[#E06844]" />
+                <Database className="w-3.5 h-3.5 text-[#FFDAB9]" />
                 <span>MCP &amp; Databases</span>
               </HardwareButton>
               <HardwareButton size="sm" tone="neutral" active={false} onClick={() => scrollToSection('page-tools')}>
-                <Sliders className="w-3.5 h-3.5 text-[#F1F5F9]" />
-                <span>Workbench</span>
+                <Sliders className="w-3.5 h-3.5 text-[#E0FFFF]" />
+                <span>Tempest Studio Workbench</span>
               </HardwareButton>
             </div>
-            <span className="font-mono text-[10px] text-[#E06844]/85 uppercase tracking-widest">
-              {UNIFIED_WATERMARK_TEXT}
+            <span className="font-mono text-[10px] text-[#FFDAB9]/90 uppercase tracking-widest">
+              {UNIFIED_WATERMARK_TEXT} · {fps} FPS
             </span>
           </div>
 
           {/* ====================================================================
-              UNIFIED KAYA STUDIO HUB: SINGLE LINEUP, DAVINCI, BLENDER, INFINITY, SOUL, CONNECTORS
+              UNIFIED KAYA STUDIO HUB: PAIRED 3-LEFT / 3-RIGHT TILES + 3D ASSET (V)
               ==================================================================== */}
           <VortexHubModules
             activeTool={activeTool}
@@ -1225,23 +1229,32 @@ export default function App() {
               prompt: v.prompt,
               specLabel: v.specLabel,
             }))}
+            asset3DState={asset3DState}
+            onChangeAsset3DState={(patch) => setAsset3DState((prev) => ({ ...prev, ...patch }))}
+            onSyncAsset3DToVideo={(st) => {
+              setActiveShader(st.shader);
+              setLensFocalMm(st.focalMm);
+              setRenderStyle(st.wireframe ? 'mesh_3d' : 'raytrace_pbr');
+              setActiveTool('video');
+              scrollToSection('studio-display');
+              addLog(`Synced 3D Asset "${st.assetName}" (${st.shader}) into Video Pipeline.`, 'success');
+            }}
             onRefreshCloudData={() => kayaUser?.uid && hydrateCloudWorkspace(kayaUser.uid)}
             onSelectTool={handleSelectToolFromGalleryOrNav}
-            onOpenBilling={handleOpenBillingFromHub}
             onJumpSection={scrollToSection}
           />
 
           {/* ====================================================================
-              COMPLETE ACTIVE STUDIO WORKBENCH (ALL CONNECTED STUDIOS & SHADERS)
+              COMPLETE ACTIVE STUDIO WORKBENCH + STICKY SIDE PIPELINE RACK
               ==================================================================== */}
           <section id="page-tools" className="space-y-4">
             <PlateBezel screws={false} accent="cyan" className="px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2.5">
                 <span
-                  className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#E6ECF5]/75"
+                  className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#E0FFFF]/90"
                   style={{ fontFamily: 'var(--font-display)' }}
                 >
-                  Active Studio &amp; Shader Workbench
+                  INFINITY CORE ENGINE -- Tempest Studio Workbench ({fps} FPS · {activeResSpec.label})
                 </span>
                 <nav aria-label="Workbench tool selector" className="flex flex-wrap items-center gap-2">
                   {WORKBENCH_TOOLS.map((tool) => (
@@ -1259,6 +1272,37 @@ export default function App() {
                 </nav>
               </div>
             </PlateBezel>
+
+            {(activeTool === 'video' || activeTool === 'vfx' || activeTool === 'audio' || activeTool === 'picture') && (
+              <StudioWorkspaceRibbon
+                position="top"
+                activeTool={activeTool}
+                fps={fps}
+                onChangeFps={setFps}
+                resolution={resolution}
+                onChangeResolution={setResolution}
+                exportFormat={exportFormat}
+                onChangeExportFormat={setExportFormat}
+                timelineProgress={
+                  (parseInt(duration, 10) || 10) > 0
+                    ? Math.min(100, (videoTime / (parseInt(duration, 10) || 10)) * 100)
+                    : 0
+                }
+                onScrubTimeline={(pct) => {
+                  const targetSec = (pct / 100) * (parseInt(duration, 10) || 10);
+                  setVideoTime(targetSec);
+                  setSeekToTime(targetSec);
+                }}
+                durationSec={parseInt(duration, 10) || 10}
+                canRender={canSubmit}
+                isRendering={isGenerating}
+                onRender={handleSubmit}
+                onSwitchWorkspace={setActiveTool}
+              />
+            )}
+
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_270px] gap-4 items-start">
+              <div className="space-y-4 min-w-0">
 
             {activeTool === 'video' && (
               <>
@@ -1891,6 +1935,11 @@ export default function App() {
                   logs={logs}
                   activeStyleLabel={activeStyleSpec.label}
                   activeFps={fps}
+                  activeResolutionTag={activeResSpec.tag}
+                  activeFormat={exportFormat}
+                  activeShader={activeShader}
+                  asset3DName={asset3DState.assetName}
+                  titleHeadline={titleOverlay.headline}
                   onOpenFullTimeline={() => {
                     setActiveTool('editor');
                     scrollToSection('page-tools');
@@ -1904,6 +1953,7 @@ export default function App() {
                 productUrl={uploadedPics[0]?.url || selectedProductUrl}
                 transparentProductUrl={selectedProductTransparentUrl}
                 atmosphereUrl={selectedAtmosphereUrl}
+                activeShader={activeShader}
                 onUploadPic={(url, name) => {
                   const entry = {
                     id: `pic-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -1936,6 +1986,15 @@ export default function App() {
                 onSelectVersion={selectVersion}
                 onDownloadVersion={downloadVideo}
                 onGoToVideo={() => setActiveTool('video')}
+                activeFps={fps}
+                onChangeFps={setFps}
+                resolutionLabel={activeResSpec.tag}
+                formatLabel={exportFormat.toUpperCase()}
+                shaderLabel={
+                  STUDIO_SHADER_PRESETS.find((s) => s.key === activeShader)?.label ??
+                  'Bioluminescent Magenta'
+                }
+                titleHeadline={titleOverlay.headline}
               />
             )}
 
@@ -1952,6 +2011,19 @@ export default function App() {
               <VfxStudioPage
                 productUrl={selectedProductUrl}
                 atmosphereUrl={selectedAtmosphereUrl}
+                activeSubView={vfxSubView}
+                onChangeSubView={setVfxSubView}
+                activeShader={activeShader}
+                onChangeShader={setActiveShader}
+                activeGenerator={activeGenerator}
+                onChangeGenerator={setActiveGenerator}
+                titleOverlay={titleOverlay}
+                onChangeTitleOverlay={(patch) => setTitleOverlay((prev) => ({ ...prev, ...patch }))}
+                onApplyToVideo={(summary) => {
+                  setActiveTool('video');
+                  scrollToSection('studio-display');
+                  addLog(summary, 'success');
+                }}
               />
             )}
 
@@ -1971,10 +2043,6 @@ export default function App() {
 
             {activeTool === 'school' && <CodingRenderingSchoolPage />}
 
-            {activeTool === 'merch' && (
-              <MerchPrintPage defaultArtworkUrl={selectedProductUrl} userId={kayaUser?.uid} />
-            )}
-
             {activeTool === 'live' && <LiveBroadcastStreamPage fallbackBackdropUrl={selectedAtmosphereUrl} />}
 
             {activeTool === 'bridge' && (
@@ -1992,27 +2060,80 @@ export default function App() {
                 formatSummary={currentFormatLabel}
               />
             )}
+              </div>
+
+              <StudioSideScrollMenu
+                activeTool={activeTool}
+                activeShader={activeShader}
+                onSelectShader={(shader) => {
+                  setActiveShader(shader);
+                  setAsset3DState((prev) => ({ ...prev, shader }));
+                  addLog(`Bound active pipeline shader: ${shader}.`, 'success');
+                }}
+                activeGenerator={activeGenerator}
+                onSelectGenerator={(gen) => {
+                  setActiveGenerator(gen);
+                  addLog(`Updated procedural motion generator: ${gen}.`, 'info');
+                }}
+                titleOverlay={titleOverlay}
+                onChangeTitleOverlay={(patch) => setTitleOverlay((prev) => ({ ...prev, ...patch }))}
+                onOpenVfxSubView={(sub) => {
+                  setVfxSubView(sub);
+                  setActiveTool('vfx');
+                  scrollToSection('page-tools');
+                }}
+                onJumpTo3DAsset={() => scrollToSection('vortex-blender')}
+              />
+            </div>
+
+            {(activeTool === 'video' || activeTool === 'vfx' || activeTool === 'audio' || activeTool === 'picture') && (
+              <StudioWorkspaceRibbon
+                position="bottom"
+                activeTool={activeTool}
+                fps={fps}
+                onChangeFps={setFps}
+                resolution={resolution}
+                onChangeResolution={setResolution}
+                exportFormat={exportFormat}
+                onChangeExportFormat={setExportFormat}
+                timelineProgress={
+                  (parseInt(duration, 10) || 10) > 0
+                    ? Math.min(100, (videoTime / (parseInt(duration, 10) || 10)) * 100)
+                    : 0
+                }
+                onScrubTimeline={(pct) => {
+                  const targetSec = (pct / 100) * (parseInt(duration, 10) || 10);
+                  setVideoTime(targetSec);
+                  setSeekToTime(targetSec);
+                }}
+                durationSec={parseInt(duration, 10) || 10}
+                canRender={canSubmit}
+                isRendering={isGenerating}
+                onRender={handleSubmit}
+                onSwitchWorkspace={setActiveTool}
+              />
+            )}
           </section>
 
-          {/* FOOTER: CONTACT INFO, PHONE NUMBERS, UNIFIED WATERMARK, POLICIES & DISCREET STAFF ACCESS */}
+          {/* FOOTER: CONTACT INFO, PHONE NUMBERS, UNIFIED WATERMARK & POLICIES */}
           <footer className="candy-surface rounded-2xl px-5 py-5 space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-1.5">
-                <div className="flex items-center gap-2 font-mono text-xs text-white font-semibold">
-                  <ShieldCheck className="w-4 h-4 text-[#FF0A3C] shrink-0" />
+                <div className="flex items-center gap-2 font-mono text-xs text-[#F5FFFA] font-semibold">
+                  <ShieldCheck className="w-4 h-4 text-[#FF007F] shrink-0" />
                   <span>{UNIFIED_WATERMARK_TEXT} · Dedicated Studio Cloud</span>
                 </div>
-                <div className="flex flex-wrap items-center gap-4 font-mono text-[11px] text-[#F5E9EA]/75">
+                <div className="flex flex-wrap items-center gap-4 font-mono text-[11px] text-[#E0FFFF]/80">
                   <span className="inline-flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-[#E06844]" />
+                    <Phone className="w-3.5 h-3.5 text-[#FC8EAC]" />
                     <span>Studio Desk: +1 (415) 890-4720</span>
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-[#FF0A3C]" />
+                    <Phone className="w-3.5 h-3.5 text-[#FF007F]" />
                     <span>Enterprise Line: +1 (415) 890-4729</span>
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                    <Mail className="w-3.5 h-3.5 text-[#00D9C0]" />
                     <span>GTamayo36@gmail.com</span>
                   </span>
                 </div>
@@ -2044,24 +2165,17 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 font-mono text-[10px] text-[#E6ECF5]/45">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 font-mono text-[10px] text-[#E0FFFF]/50">
               <span>
-                Dedicated Cloud Persistence Active · Self-Hosted MCP &amp; Inference Routing · Zero Local/SD Copies
+                KNOCKSSTUDiOS · Hollywood MOTiON Pictures · KAYA Dedicated Studio Workstation
               </span>
-              <button
-                type="button"
-                onClick={() => setAdminPortalOpen(true)}
-                className="text-[#E6ECF5]/35 hover:text-[#E06844] transition-colors cursor-pointer"
-                title="Staff & Administrator Portal (Ctrl+Shift+K)"
-              >
-                Staff Portal
-              </button>
+              <span>{fps} FPS · {activeResSpec.label}</span>
             </div>
           </footer>
         </div>
       </div>
 
-      {/* MEMBER AUTH MODAL (Chrome Google Sign-In + Server Captcha Verification) */}
+      {/* MEMBER AUTH MODAL (User & Password + Captcha Verification) */}
       <KayaAuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
@@ -2073,33 +2187,13 @@ export default function App() {
         initialMode={authInitialMode}
       />
 
-      {/* DISCREET PROTECTED STAFF & ADMIN PORTAL (Firebase Verified Roles + Captcha) */}
-      <ProtectedAdminModal
-        isOpen={adminPortalOpen}
-        onClose={() => setAdminPortalOpen(false)}
-        user={kayaUser}
-        onAuthChange={(nextUser) => {
-          setKayaUser(nextUser);
-          if (nextUser.uid) hydrateCloudWorkspace(nextUser.uid);
-        }}
-      />
-
-      {/* 6-TIER MEMBERSHIP MODAL (Stripe + Infinity Billing, Monthly & Yearly) */}
-      <StudioMembershipModal
-        isOpen={plansModalOpen}
-        onClose={() => setPlansModalOpen(false)}
-        userId={kayaUser?.uid}
-        subscription={studioPlan}
-        onUpdateSubscription={setStudioPlan}
-      />
-
       {/* STUDIO POLICIES, BRAND™, WATERMARK & PROTECTION MODAL */}
       <StudioLegalModal
         isOpen={legalModalOpen}
         initialTab={legalInitialTab}
         onClose={() => setLegalModalOpen(false)}
         activeFps={fps}
-        activeTierLabel={formatTierLabel(studioPlan.tier)}
+        activeTierLabel="KNOCKSSTUDiOS Pro"
       />
     </div>
   );

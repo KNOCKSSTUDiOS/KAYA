@@ -39,7 +39,7 @@ export function MerchPrintPage({
 }) {
   const [productType, setProductType] = useState<MerchProductType>('hoodie');
   const [artworkUrl, setArtworkUrl] = useState(defaultArtworkUrl);
-  const [itemTitle, setItemTitle] = useState('VORTEX · KAYA Signature Print');
+  const [itemTitle, setItemTitle] = useState('KNOCKSSTUDiOS · KAYA Signature Print');
   const [retailPrice, setRetailPrice] = useState(54);
   const [garmentHex, setGarmentHex] = useState('#14080A');
   const [printScale, setPrintScale] = useState(0.56);
@@ -188,7 +188,7 @@ export function MerchPrintPage({
     const url = canvas.toDataURL('image/png');
     const a = document.createElement('a');
     a.href = url;
-    a.download = `vortex-printify-${productType}.png`;
+    a.download = `knocksstudios-kaya-printify-${productType}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -349,7 +349,7 @@ export function MerchPrintPage({
 }
 
 const STREAM_DESTINATIONS = [
-  'Vortex Live Portal',
+  'KAYA Live Portal',
   'Short-Form Feed',
   'Broadcast Channel',
   'Creator Social Mesh',
@@ -365,7 +365,7 @@ export function LiveBroadcastStreamPage({ fallbackBackdropUrl }: { fallbackBackd
 
   const [camActive, setCamActive] = useState(false);
   const [recording, setRecording] = useState(false);
-  const [bannerText, setBannerText] = useState('LIVE · VORTEX · KAYA STAGE');
+  const [bannerText, setBannerText] = useState('LIVE · KNOCKSSTUDiOS · KAYA STAGE');
   const [selectedTargets, setSelectedTargets] = useState<string[]>([STREAM_DESTINATIONS[0]]);
   const [statusMsg, setStatusMsg] = useState('Camera Standby');
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
@@ -406,9 +406,9 @@ export function LiveBroadcastStreamPage({ fallbackBackdropUrl }: { fallbackBackd
 
           ctx.fillStyle = 'rgba(8, 3, 4, 0.78)';
           ctx.fillRect(24, h - 72, w - 48, 44);
-          ctx.fillStyle = '#F5E9EA';
+          ctx.fillStyle = '#E6ECF5';
           ctx.font = 'bold 15px monospace';
-          ctx.fillText(bannerText || 'VORTEX LIVE', 42, h - 44);
+          ctx.fillText(bannerText || 'KNOCKSSTUDiOS · KAYA LIVE', 42, h - 44);
 
           stampUnifiedCanvasWatermark(ctx, w, h, { passToken: pass, opacity: 0.5 });
         }
@@ -472,7 +472,7 @@ export function LiveBroadcastStreamPage({ fallbackBackdropUrl }: { fallbackBackd
     const summary = `${bannerText} · Targets: ${selectedTargets.join(', ')}`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'VORTEX · KAYA Live', text: summary, url: window.location.href });
+        await navigator.share({ title: 'KNOCKSSTUDiOS · KAYA Live', text: summary, url: window.location.href });
         setStatusMsg('Shared stream');
         return;
       } catch {

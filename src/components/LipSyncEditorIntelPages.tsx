@@ -17,9 +17,11 @@ import {
   Sparkles,
   Send,
   Loader2,
+  ZoomIn,
+  EyeOff,
 } from 'lucide-react';
 import { PlateBezel, HardwareButton, LedStatusIndicator } from './HardwarePrimitives.js';
-import { RENDER_STYLE_PRESETS, FPS_PRESETS, RenderStyleKey } from '../lib/studioRenderer.js';
+import { RENDER_STYLE_PRESETS, FPS_PRESETS, FPSKey, RenderStyleKey } from '../lib/studioRenderer.js';
 import { createZipBlob, ZipEntryInput } from '../lib/zipBuilder.js';
 import { PRODUCTS, ATMOSPHERES } from '../data.js';
 import type { StudioPageKey } from './RubiksCubeHubPage.js';
@@ -493,6 +495,25 @@ interface EditorPageProps {
   onSelectVersion: (label: string) => void;
   onDownloadVersion: (v: CutVersionItem) => void;
   onGoToVideo: () => void;
+  activeFps?: FPSKey;
+  onChangeFps?: (fps: FPSKey) => void;
+  resolutionLabel?: string;
+  formatLabel?: string;
+  shaderLabel?: string;
+  titleHeadline?: string;
+}
+
+type EditorTrackKey = 'v1' | '3d' | 'fx' | 'ttl' | 'a1';
+
+function formatEditorSmpte(sec: number, fps: number): string {
+  if (!Number.isFinite(sec) || sec < 0) return '00:00:00:00';
+  const totalFrames = Math.floor(sec * fps);
+  const f = totalFrames % fps;
+  const totalSec = Math.floor(sec);
+  const s = totalSec % 60;
+  const m = Math.floor(totalSec / 60) % 60;
+  const h = Math.floor(totalSec / 3600);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}:${String(f).padStart(2, '0')}`;
 }
 
 export function EditorPage({
@@ -501,6 +522,12 @@ export function EditorPage({
   onSelectVersion,
   onDownloadVersion,
   onGoToVideo,
+  activeFps = 60,
+  onChangeFps,
+  resolutionLabel = '4096×1716',
+  formatLabel = 'WEBM',
+  shaderLabel = 'Bioluminescent Magenta',
+  titleHeadline = 'KNOCKSSTUDiOS',
 }: EditorPageProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [trimInPct, setTrimInPct] = useState(0);
@@ -511,6 +538,16 @@ export function EditorPage({
   const [speed, setSpeed] = useState<number>(1);
   const [gradeCss, setGradeCss] = useState<string>('none');
   const [playing, setPlaying] = useState(true);
+  const [zoom, setZoom] = useState<1 | 1.5 | 2 | 4>(1);
+  const [splitMarkers, setSplitMarkers] = useState<number[]>([0, 100]);
+  const [selectedSegIdx, setSelectedSegIdx] = useState(0);
+  const [mutedTracks, setMutedTracks] = useState<Record<EditorTrackKey, boolean>>({
+    v1: false,
+    '3d': false,
+    fx: false,
+    ttl: false,
+    a1: false,
+  });
 
   const activeCut = versions.find((v) => v.label === selectedLabel) || versions[0] || null;
 
@@ -528,26 +565,55 @@ export function EditorPage({
     setPlayheadPct(clamped);
   };
 
+  const handleRazorSplit = () => {
+    const pct = Math.round(playheadPct);
+    if (pct <= trimInPct + 3 || pct >= trimOutPct - 3) return;
+    setSplitMarkers((prev) => {
+      if (prev.some((m) => Math.abs(m - pct) < 4)) return prev;
+      return [...prev, pct].sort((a, b) => a - b);
+    });
+  };
+
+  const segments = splitMarkers.slice(0, -1).map((inP, idx) => ({
+    idx,
+    label: `Cut ${idx + 1}`,
+    inP,
+    outP: splitMarkers[idx + 1],
+  }));
+  const currentSeg = segments[Math.min(selectedSegIdx, Math.max(0, segments.length - 1))] ?? {
+    idx: 0,
+    label: 'Cut 1',
+    inP: 0,
+    outP: 100,
+  };
+
+  const toggleTrack = (k: EditorTrackKey) => {
+    setMutedTracks((prev) => ({ ...prev, [k]: !prev[k] }));
+  };
+
   return (
     <PlateBezel accent="cyan" className="p-5 sm:p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <Scissors className="w-4 h-4 text-[#F1F5F9]" />
+          <Scissors className="w-4 h-4 text-[#FF007F]" />
           <h2
-            className="text-sm sm:text-base font-bold uppercase tracking-wider text-white"
+            className="text-sm sm:text-base font-bold uppercase tracking-wider text-[#F5FFFA]"
             style={{ fontFamily: 'var(--font-display)' }}
           >
-            Timeline Tools · Multi-Track NLE &amp; Retiming
+            DaVinci Multi-Track Timeline NLE &amp; Retiming
           </h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <span className="px-3 py-1 rounded-full bg-[#0A0A0A] border border-[#FF007F]/40 font-mono text-[11px] font-bold text-[#FC8EAC] tabular-nums">
+            {formatEditorSmpte(currentTimeSec, activeFps)} · {activeFps} FPS
+          </span>
           {activeCut && (
-            <span className="px-2.5 py-1 rounded-full bg-[#090405] font-mono text-[10px] text-[#E6ECF5]/80 tabular-nums">
+            <span className="px-2.5 py-1 rounded-full bg-[#0A0A0A] font-mono text-[10px] text-[#E0FFFF]/85 tabular-nums">
               {activeCut.specLabel}
             </span>
           )}
           <LedStatusIndicator
-            label={activeCut ? `${activeCut.label} · ${currentTimeSec.toFixed(2)}s / ${durationSec.toFixed(1)}s · ${speed}x` : 'No Cut Loaded'}
+            label={activeCut ? `${activeCut.label} · ${speed}x` : 'No Cut Loaded'}
             tone="cyan"
           />
         </div>
@@ -555,8 +621,8 @@ export function EditorPage({
 
       {!activeCut ? (
         <div className="cnc-recess rounded-[10px] p-10 text-center space-y-4">
-          <p className="font-mono text-xs text-[#E6ECF5]/70 max-w-md mx-auto leading-relaxed">
-            No rendered reels loaded into the multi-track timeline yet. Render a 4K 60fps cut in Video Tools first to inspect V1/FX/A1 tracks, trim In/Out points, retime speed, and preview grade LUTs.
+          <p className="font-mono text-xs text-[#E0FFFF]/75 max-w-md mx-auto leading-relaxed">
+            No rendered reels loaded into the multi-track timeline yet. Render a {activeFps} FPS cut in Video Tools first to inspect V1/3D-V/FX/TTL/A1 tracks, razor cut splits, timeline zoom, trim In/Out points, and preview LUTs.
           </p>
           <HardwareButton tone="red" active onClick={onGoToVideo}>
             <Film className="w-3.5 h-3.5" />
@@ -596,57 +662,148 @@ export function EditorPage({
 
           {/* Interactive Multi-Track Visual Timeline */}
           <div className="cnc-recess rounded-[8px] p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-[#E6ECF5]/60">
-              <span>Multi-Track Timeline Ruler (Click Track to Scrub)</span>
-              <span className="text-[#F1F5F9] tabular-nums">
-                In {trimInPct}% · Playhead {Math.round(playheadPct)}% · Out {trimOutPct}%
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-wider text-[#E0FFFF]/70">
+              <span>5-Track NLE Ruler (Click Track to Scrub · Razor Split · Zoom)</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <ZoomIn className="w-3.5 h-3.5 text-[#00D9C0]" />
+                  {([1, 1.5, 2, 4] as const).map((z) => (
+                    <button
+                      key={z}
+                      type="button"
+                      onClick={() => setZoom(z)}
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer ${
+                        zoom === z ? 'bg-[#00D9C0] text-[#0A0A0A]' : 'bg-[#121212] text-[#E0FFFF]/70'
+                      }`}
+                    >
+                      {z}x
+                    </button>
+                  ))}
+                </div>
+                <HardwareButton size="sm" tone="red" active={splitMarkers.length > 2} onClick={handleRazorSplit}>
+                  <Scissors className="w-3 h-3 text-[#FF007F]" />
+                  <span>Razor Split</span>
+                </HardwareButton>
+                <span className="text-[#F5FFFA] tabular-nums">
+                  In {trimInPct}% · Playhead {Math.round(playheadPct)}% · Out {trimOutPct}%
+                </span>
+              </div>
             </div>
 
-            <div
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const pct = Math.round(((e.clientX - rect.left) / rect.width) * 100);
-                seekTimeline(pct);
-              }}
-              className="relative rounded-xl bg-[#050304] p-2 space-y-1.5 cursor-pointer select-none overflow-hidden"
-            >
-              {/* Active Trim Selection Range Highlight */}
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute top-0 bottom-0 bg-[#FF0A3C]/10 border-x border-[#FF0A3C]/50"
-                style={{ left: `${trimInPct}%`, width: `${Math.max(2, trimOutPct - trimInPct)}%` }}
-              />
-              {/* Playhead Needle */}
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute top-0 bottom-0 w-0.5 bg-[#FF1E42] z-20 shadow-[0_0_8px_#FF1E42]"
-                style={{ left: `${playheadPct}%` }}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-[125px_minmax(0,1fr)] gap-2 rounded-xl bg-[#0A0A0A] p-2">
+              <div className="hidden md:flex flex-col justify-between gap-1.5">
+                {(
+                  [
+                    ['v1', 'V1 VIDEO'],
+                    ['3d', '3D ASSET V'],
+                    ['fx', 'FX SHADER'],
+                    ['ttl', 'TTL TITLE'],
+                    ['a1', 'A1 AUDIO'],
+                  ] as [EditorTrackKey, string][]
+                ).map(([k, lbl]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => toggleTrack(k)}
+                    className={`h-6 rounded-lg px-2 flex items-center justify-between font-mono text-[10px] cursor-pointer ${
+                      mutedTracks[k]
+                        ? 'bg-[#121212] opacity-45 text-[#E0FFFF]/50'
+                        : 'bg-[#121212] text-[#F5FFFA]'
+                    }`}
+                  >
+                    <span className="font-bold truncate">{lbl}</span>
+                    {mutedTracks[k] ? (
+                      <EyeOff className="w-3 h-3 text-[#FC8EAC]" />
+                    ) : (
+                      <Eye className="w-3 h-3 text-[#00D9C0]" />
+                    )}
+                  </button>
+                ))}
+              </div>
 
-              {/* V1 Video Track */}
-              <div className="relative z-10 h-6 rounded-lg bg-[#14070B] flex items-center px-2.5 font-mono text-[10px] text-[#F1F5F9]">
-                V1 VIDEO · {activeCut.label} ({activeCut.duration || '10s'})
+              <div className="overflow-x-auto">
+                <div
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const pct = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+                    seekTimeline(pct);
+                  }}
+                  style={{ width: `${zoom * 100}%`, minWidth: '100%' }}
+                  className="relative space-y-1.5 cursor-pointer select-none overflow-hidden"
+                >
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute top-0 bottom-0 bg-[#FF007F]/10 border-x border-[#FF007F]/50"
+                    style={{ left: `${trimInPct}%`, width: `${Math.max(2, trimOutPct - trimInPct)}%` }}
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute top-0 bottom-0 w-0.5 bg-[#FF007F] z-20 shadow-[0_0_8px_#FF007F]"
+                    style={{ left: `${playheadPct}%` }}
+                  />
+                  {splitMarkers.slice(1, -1).map((pct) => (
+                    <div
+                      key={pct}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute top-0 bottom-0 w-px bg-[#00D9C0]/80 z-10"
+                      style={{ left: `${pct}%` }}
+                    />
+                  ))}
+
+                  <div className={`relative z-10 h-6 rounded-lg bg-[#121212] flex items-center px-2.5 font-mono text-[10px] text-[#F5FFFA] ${mutedTracks.v1 ? 'opacity-30' : ''}`}>
+                    V1 VIDEO · {activeCut.label} ({activeCut.duration || '10s'} · {activeFps} FPS)
+                  </div>
+                  <div className={`relative z-10 h-6 rounded-lg bg-[#170D16] flex items-center px-2.5 font-mono text-[10px] text-[#FFDAB9] ${mutedTracks['3d'] ? 'opacity-30' : ''}`}>
+                    3D ASSET (V) · Valerius Crest · {shaderLabel}
+                  </div>
+                  <div className={`relative z-10 h-6 rounded-lg bg-[#1E0A16] flex items-center px-2.5 font-mono text-[10px] text-[#FF007F] ${mutedTracks.fx ? 'opacity-30' : ''}`}>
+                    FX LUT / GRADE · {gradeCss === 'none' ? 'Bypass' : 'Custom Grade Active'}
+                  </div>
+                  <div className={`relative z-10 h-6 rounded-lg bg-[#14161D] flex items-center px-2.5 font-mono text-[10px] text-[#FC8EAC] ${mutedTracks.ttl ? 'opacity-30' : ''}`}>
+                    TTL TYPOGRAPHY · "{titleHeadline}"
+                  </div>
+                  <div className={`relative z-10 h-6 rounded-lg bg-[#0D1414] flex items-center px-2.5 font-mono text-[10px] text-[#00D9C0] ${mutedTracks.a1 ? 'opacity-30' : ''}`}>
+                    A1 AUDIO SYNC BED · Speed {speed}x
+                  </div>
+                </div>
               </div>
-              {/* FX Color LUT Track */}
-              <div className="relative z-10 h-5 rounded-lg bg-[#1D090F] flex items-center px-2.5 font-mono text-[10px] text-[#FF5C8A]">
-                FX LUT / GRADE · {gradeCss === 'none' ? 'Bypass' : 'Custom Grade Active'}
+            </div>
+
+            {/* Clip Inspector */}
+            <div className="rounded-xl bg-[#0A0A0A] px-3 py-2 flex flex-wrap items-center justify-between gap-2 font-mono text-[10px]">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[#00D9C0] uppercase font-bold">Inspector:</span>
+                {segments.map((seg) => (
+                  <button
+                    key={seg.idx}
+                    type="button"
+                    onClick={() => setSelectedSegIdx(seg.idx)}
+                    className={`px-2 py-0.5 rounded-full cursor-pointer ${
+                      currentSeg.idx === seg.idx
+                        ? 'bg-[#FF007F] text-[#F5FFFA] font-bold'
+                        : 'bg-[#121212] text-[#E0FFFF]/70'
+                    }`}
+                  >
+                    {seg.label}
+                  </button>
+                ))}
               </div>
-              {/* A1 Audio Sync Track */}
-              <div className="relative z-10 h-5 rounded-lg bg-[#0D0507] flex items-center px-2.5 font-mono text-[10px] text-[#E6ECF5]/70">
-                A1 AUDIO SYNC BED · Speed {speed}x
+              <div className="flex flex-wrap items-center gap-3 text-[#E0FFFF]/80 tabular-nums">
+                <span>Span: <strong className="text-[#F5FFFA]">{currentSeg.inP}%–{currentSeg.outP}%</strong></span>
+                <span>Spec: <strong className="text-[#00D9C0]">{resolutionLabel} · {activeFps} FPS · {formatLabel}</strong></span>
+                <span>Shader: <strong className="text-[#FC8EAC]">{shaderLabel}</strong></span>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Trim Range */}
+            {/* Trim Range & FPS Lock */}
             <div className="cnc-recess rounded-[8px] p-3.5 space-y-3">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/65 block">
-                Timeline In / Out Trim ({trimInPct}% – {trimOutPct}%)
+              <span className="font-mono text-[11px] uppercase tracking-wider text-[#E0FFFF]/70 block">
+                In / Out Trim ({trimInPct}% – {trimOutPct}%) &amp; Synced FPS
               </span>
               <div className="space-y-2">
-                <div className="flex items-center gap-2 font-mono text-xs text-[#F1F5F9]">
+                <div className="flex items-center gap-2 font-mono text-xs text-[#F5FFFA]">
                   <span className="w-10">IN</span>
                   <input
                     type="range"
@@ -657,7 +814,7 @@ export function EditorPage({
                     className="hw-capsule-slider flex-1"
                   />
                 </div>
-                <div className="flex items-center gap-2 font-mono text-xs text-[#FF2E63]">
+                <div className="flex items-center gap-2 font-mono text-xs text-[#FF007F]">
                   <span className="w-10">OUT</span>
                   <input
                     type="range"
@@ -669,11 +826,27 @@ export function EditorPage({
                   />
                 </div>
               </div>
+              {onChangeFps && (
+                <div className="grid grid-cols-3 gap-1.5 pt-1">
+                  {FPS_PRESETS.map((f) => (
+                    <HardwareButton
+                      key={f.key}
+                      size="sm"
+                      fullWidth
+                      tone={f.key >= 90 ? 'red' : 'cyan'}
+                      active={activeFps === f.key}
+                      onClick={() => onChangeFps(f.key)}
+                    >
+                      <span className="tabular-nums">{f.label}</span>
+                    </HardwareButton>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Playback Speed & Grade */}
             <div className="cnc-recess rounded-[8px] p-3.5 space-y-3">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/65 block">
+              <span className="font-mono text-[11px] uppercase tracking-wider text-[#E0FFFF]/70 block">
                 Retiming Speed &amp; Grade Preview
               </span>
               <div className="grid grid-cols-5 gap-1.5">
@@ -694,7 +867,7 @@ export function EditorPage({
                 {[
                   { lbl: 'Original', css: 'none' },
                   { lbl: '4K HDR', css: 'contrast(1.18) saturate(1.22)' },
-                  { lbl: 'Cyberpunk', css: 'contrast(1.26) saturate(1.45) hue-rotate(-10deg)' },
+                  { lbl: 'Candy Bio', css: 'contrast(1.26) saturate(1.45) hue-rotate(-10deg)' },
                   { lbl: 'B&W Noir', css: 'grayscale(1) contrast(1.36)' },
                 ].map((g) => (
                   <HardwareButton
@@ -714,7 +887,7 @@ export function EditorPage({
             {/* Cuts & Actions */}
             <div className="cnc-recess rounded-[8px] p-3.5 flex flex-col justify-between gap-3">
               <div className="space-y-2">
-                <span className="font-mono text-[11px] uppercase tracking-wider text-[#E6ECF5]/65 block">
+                <span className="font-mono text-[11px] uppercase tracking-wider text-[#E0FFFF]/70 block">
                   Rendered Cuts ({versions.length})
                 </span>
                 <div className="flex flex-wrap gap-1.5">
@@ -752,7 +925,7 @@ export function EditorPage({
                   <span>{playing ? 'Pause' : 'Play'}</span>
                 </HardwareButton>
                 <HardwareButton size="sm" tone="cyan" active onClick={() => onDownloadVersion(activeCut)}>
-                  <Download className="w-3.5 h-3.5 text-[#F1F5F9]" />
+                  <Download className="w-3.5 h-3.5 text-[#00D9C0]" />
                   <span>Save Cut</span>
                 </HardwareButton>
               </div>
@@ -1045,9 +1218,6 @@ export function IntelCodePage({ productUrl, onNavigatePage }: IntelCodePageProps
       ['radio', 'airradio'],
       ['school', 'school'],
       ['coding', 'school'],
-      ['merch', 'merch'],
-      ['print', 'merch'],
-      ['store', 'merch'],
       ['live', 'live'],
       ['stream', 'live'],
       ['camera', 'live'],

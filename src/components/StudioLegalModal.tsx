@@ -108,16 +108,16 @@ export function StudioLegalModal({
       <PlateBezel accent="red" className="w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-4 sm:p-6 gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3">
-            <ShieldCheck className="w-5 h-5 text-[#FF0A3C]" />
+            <ShieldCheck className="w-5 h-5 text-[#FF007F]" />
             <div>
               <h2
-                className="text-base sm:text-lg font-bold uppercase tracking-wider text-[#F5E9EA]"
+                className="text-base sm:text-lg font-bold uppercase tracking-wider text-[#F5FFFA]"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
-                KAYA · KNOCKSSTUDiOS™ Governance, Policies &amp; Unified Watermark
+                KNOCKSSTUDiOS · Hollywood MOTiON Pictures™ Governance &amp; Watermark
               </h2>
-              <p className="font-mono text-[11px] text-[#F5E9EA]/60">
-                Active Plan: {activeTierLabel} · {activeFps} fps · Cloud Workspace Sync
+              <p className="font-mono text-[11px] text-[#E0FFFF]/70">
+                Active Studio Master · {activeFps} FPS · {activeTierLabel}
               </p>
             </div>
           </div>
@@ -145,12 +145,12 @@ export function StudioLegalModal({
           ))}
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4 text-xs sm:text-sm text-[#F5E9EA]/85">
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4 text-xs sm:text-sm text-[#F5FFFA]/85">
           {tab === 'brand' && (
             <div className="space-y-4">
               <div className="candy-trace-tile p-4 space-y-2.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#FF5E7E]">
+                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#FC8EAC]">
                     Unified Studio Watermark Controller
                   </span>
                   <HardwareButton size="sm" tone="red" active={watermarkEnabled} onClick={toggleUnifiedWatermark}>
@@ -164,15 +164,15 @@ export function StudioLegalModal({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="candy-trace-tile p-4 space-y-1.5">
-                  <h3 className="font-mono text-xs font-bold uppercase text-[#F5E9EA]">Creator Ownership</h3>
-                  <p className="text-xs text-[#F5E9EA]/75 leading-relaxed">
-                    Every 4K HDR reel, Blender GLB export, Printify mockup, and audio master authored inside KAYA · KNOCKSSTUDiOS™ belongs cleanly to its creator.
+                  <h3 className="font-mono text-xs font-bold uppercase text-[#F5FFFA]">Creator Ownership</h3>
+                  <p className="text-xs text-[#E0FFFF]/75 leading-relaxed">
+                    Every 4K HDR reel, 3D Asset (V) / GLB export, and audio master authored inside KNOCKSSTUDiOS · Hollywood MOTiON Pictures™ belongs cleanly to its creator.
                   </p>
                 </div>
                 <div className="candy-trace-tile p-4 space-y-1.5">
-                  <h3 className="font-mono text-xs font-bold uppercase text-[#E06844]">Protected Marks</h3>
-                  <p className="text-xs text-[#F5E9EA]/75 leading-relaxed">
-                    KAYA™, KNOCKSSTUDiOS™, Infinity · Valerius (V) Sentinel of the Ten Galaxies™, and Soul Cooling Forge Opus 4.7™ are protected studio marks.
+                  <h3 className="font-mono text-xs font-bold uppercase text-[#FFDAB9]">Protected Marks</h3>
+                  <p className="text-xs text-[#E0FFFF]/75 leading-relaxed">
+                    KNOCKSSTUDiOS™, Hollywood MOTiON Pictures™, KAYA™, INFINITY · VALERIUS (V) Sentinel of the Ten Galaxies™, and Soul Cooling Forge Opus 4.7™ are protected studio marks.
                   </p>
                 </div>
               </div>
@@ -182,12 +182,12 @@ export function StudioLegalModal({
           {tab === 'security' && (
             <div className="space-y-3">
               <div className="candy-trace-tile p-4 space-y-2">
-                <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase text-[#F5E9EA]">
-                  <Lock className="w-4 h-4 text-[#FF0A3C]" />
+                <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase text-[#F5FFFA]">
+                  <Lock className="w-4 h-4 text-[#FF007F]" />
                   <span>Committed Cloud Storage &amp; Zero-Device-Leak Policy</span>
                 </div>
                 <p className="text-xs leading-relaxed">
-                  All user profiles, projects, Printify listings, billing states, and verified database connectors persist strictly to dedicated cloud servers and committed self-hosted endpoints—zero records are routed to phone storage or SD card space.
+                  All user profiles, projects, artifacts, and verified database connectors persist strictly to dedicated cloud servers without exposing third-party credentials.
                 </p>
               </div>
             </div>
@@ -195,11 +195,10 @@ export function StudioLegalModal({
 
           {tab === 'policies' && (
             <div className="candy-trace-tile p-4 space-y-2 text-xs leading-relaxed">
-              <h3 className="font-mono text-xs font-bold uppercase text-[#E06844]">Acceptable Use &amp; Billing Policy</h3>
-              <ul className="space-y-1.5 list-disc list-inside text-[#F5E9EA]/80">
-                <li>Self-hosted inference, MCP tools, and SQL endpoints operate without exposing third-party keys.</li>
-                <li>Printify merch designs must use original or cleared studio artwork.</li>
-                <li>Switch Monthly &amp; Yearly tiers across Soul Stripe and Infinity Billing anytime with no lock-in fees.</li>
+              <h3 className="font-mono text-xs font-bold uppercase text-[#FFDAB9]">Studio Production &amp; Asset Policy</h3>
+              <ul className="space-y-1.5 list-disc list-inside text-[#E0FFFF]/80">
+                <li>Self-hosted inference, 3D asset loaders (.glb/.fbx/.obj), and audio synthesis run directly inside the KNOCKSSTUDiOS environment.</li>
+                <li>Published reels preserve the unified KNOCKSSTUDiOS · Hollywood MOTiON Pictures™ metadata stamp.</li>
               </ul>
             </div>
           )}

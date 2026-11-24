@@ -1,10 +1,10 @@
 /**
  * Unified Studio Watermark Engine
- * Enforces one consistent KAYA · KNOCKSSTUDiOS™ mark per canvas/viewport surface
+ * Enforces one consistent KNOCKSSTUDiOS · Hollywood MOTiON Pictures™ mark per canvas/viewport surface
  * so watermarks never stack or collide across compositors.
  */
 
-export const UNIFIED_WATERMARK_TEXT = '© 2024–2026 KAYA · KNOCKSSTUDiOS™';
+export const UNIFIED_WATERMARK_TEXT = '© 2024–2026 KNOCKSSTUDiOS · Hollywood MOTiON Pictures™';
 
 export interface UnifiedWatermarkConfig {
   enabled: boolean;
@@ -15,9 +15,9 @@ export interface UnifiedWatermarkConfig {
 
 const DEFAULT_WATERMARK: UnifiedWatermarkConfig = {
   enabled: true,
-  ownerLabel: 'KAYA · KNOCKSSTUDiOS™',
-  stampCode: 'KNK-2026',
-  tier: 'free',
+  ownerLabel: 'KNOCKSSTUDiOS · Hollywood MOTiON Pictures™',
+  stampCode: 'KMP-2026',
+  tier: 'studio',
 };
 
 let activeConfig: UnifiedWatermarkConfig = { ...DEFAULT_WATERMARK };
@@ -32,8 +32,8 @@ export function setUnifiedWatermarkConfig(patch: Partial<UnifiedWatermarkConfig>
 }
 
 export function getUnifiedWatermarkLabel(customOwner?: string, customCode?: string): string {
-  const owner = (customOwner || activeConfig.ownerLabel || 'KAYA · KNOCKSSTUDiOS™').trim();
-  const code = (customCode || activeConfig.stampCode || 'KNK-2026').trim();
+  const owner = (customOwner || activeConfig.ownerLabel || 'KNOCKSSTUDiOS · Hollywood MOTiON Pictures™').trim();
+  const code = (customCode || activeConfig.stampCode || 'KMP-2026').trim();
   return `© 2024–2026 ${owner} · ${code}`;
 }
 
@@ -60,14 +60,14 @@ export function stampUnifiedCanvasWatermark(
   }
 
   const label = getUnifiedWatermarkLabel(options?.owner, options?.code);
-  const alpha = options?.opacity ?? 0.62;
+  const alpha = options?.opacity ?? 0.65;
 
   ctx.save();
   ctx.font = '600 11px "JetBrains Mono", monospace';
   ctx.textAlign = 'right';
   ctx.textBaseline = 'bottom';
-  ctx.fillStyle = `rgba(245, 233, 234, ${alpha})`;
-  ctx.shadowColor = 'rgba(255, 10, 60, 0.45)';
+  ctx.fillStyle = `rgba(245, 255, 250, ${alpha})`;
+  ctx.shadowColor = 'rgba(255, 0, 127, 0.55)';
   ctx.shadowBlur = 8;
   ctx.fillText(label, width - 16, height - 12);
   ctx.restore();
